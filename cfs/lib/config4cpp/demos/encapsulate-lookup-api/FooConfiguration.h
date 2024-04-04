@@ -59,28 +59,28 @@ public:
 	~FooConfiguration();
 
 	void parse(const char * cfgSource, const char * scope = "")
-											throw (FooConfigurationException);
+											;
 
 	//--------
 	// Lookup-style functions.
 	//--------
 	const char * lookupString(const char * name) const
-											throw (FooConfigurationException);
+											;
 	void lookupList(
 			const char *	name,
 			const char **&	array,
-			int &			arraySize) const throw (FooConfigurationException);
+			int &			arraySize) const ;
 
 	virtual int lookupInt(const char * name) const
-											throw(FooConfigurationException);
+											;
 	virtual float lookupFloat(const char * name) const
-											throw(FooConfigurationException);
+											;
 	virtual bool lookupBoolean(const char * name) const
-											throw(FooConfigurationException);
+											;
 	virtual int lookupDurationMilliseconds(const char * name) const
-											throw(FooConfigurationException);
+											;
 	virtual int lookupDurationSeconds(const char * name) const
-											throw(FooConfigurationException);
+											;
 
 private:
 	//--------

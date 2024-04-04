@@ -95,7 +95,7 @@ FooConfiguration::parse(
 	const char *		cfgInput,
 	const char *		cfgScope,
 	const char *		secInput,
-	const char *		secScope) throw (FooConfigurationException)
+	const char *		secScope) 
 {
 	SchemaValidator		sv;
 	Configuration *		cfg = (Configuration*)m_cfg;

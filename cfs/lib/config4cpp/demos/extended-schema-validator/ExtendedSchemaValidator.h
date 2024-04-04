@@ -28,6 +28,7 @@
 
 #include <config4cpp/SchemaValidator.h>
 #include "SchemaTypeHex.h"
+
 using CONFIG4CPP_NAMESPACE::ConfigurationException;
 using CONFIG4CPP_NAMESPACE::SchemaValidator;
 
@@ -35,7 +36,7 @@ using CONFIG4CPP_NAMESPACE::SchemaValidator;
 class ExtendedSchemaValidator : public SchemaValidator
 {
 public:
-	ExtendedSchemaValidator() throw(ConfigurationException)
+	ExtendedSchemaValidator() 
 	{
 		registerType(new SchemaTypeHex());
 	}

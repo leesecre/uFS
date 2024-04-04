@@ -38,7 +38,7 @@
 #
 # Compile to share library
 #
-#CONFIG_RTE_BUILD_SHARED_LIB=n
+CONFIG_RTE_BUILD_SHARED_LIB=y
 
 #
 # Use newest code breaking previous ABI

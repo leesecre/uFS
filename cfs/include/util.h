@@ -11,6 +11,7 @@
 #include <vector>
 
 #include "typedefs.h"
+#include <atomic>
 // for using pthread
 #include <pthread.h>
 

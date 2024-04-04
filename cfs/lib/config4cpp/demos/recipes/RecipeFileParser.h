@@ -42,7 +42,7 @@ public:
 	// that all the recipes have their required details.
 	//--------
 	void parse(const char * recipeFilename, const char * scope)
-											throw (RecipeFileParserException);
+											;
 
 	//--------
 	// Operations to query information about recipes
@@ -50,15 +50,15 @@ public:
 	void		listRecipeScopes(StringVector & vec);
 
 	const char * getRecipeName(const char * recipeScope)
-										throw (RecipeFileParserException);
+										;
 
 	void		getRecipeIngredients(
 					const char *		recipeScope,
-					StringVector &		vec) throw (RecipeFileParserException);
+					StringVector &		vec) ;
 
 	void		getRecipeSteps(
 					const char *		recipeScope,
-					StringVector &		vec) throw (RecipeFileParserException);
+					StringVector &		vec) ;
 
 private:
 	//--------

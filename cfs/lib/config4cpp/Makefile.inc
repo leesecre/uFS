@@ -38,10 +38,10 @@ endif
 # Update CXX_FLAGS based on BUILD_TYPE (debug or release)
 #--------
 ifeq ($(BUILD_TYPE),release)
-override CXX_FLAGS+= -I$(PROJECT_ROOT)/include -fPIC -O -DNDEBUG
+override CXX_FLAGS+= -fpermissive -I$(PROJECT_ROOT)/include -fPIC -O -DNDEBUG
 else
 BUILD_TYPE=debug
-override CXX_FLAGS+= -I$(PROJECT_ROOT)/include -fPIC -g
+override CXX_FLAGS+= -fpermissive -I$(PROJECT_ROOT)/include -fPIC -g
 endif
 
 

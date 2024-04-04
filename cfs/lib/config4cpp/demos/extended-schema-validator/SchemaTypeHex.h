@@ -45,19 +45,19 @@ public:
 	static int lookupHex(
 		const Configuration *	cfg,
 		const char *			scope,
-		const char *			localName) throw(ConfigurationException);
+		const char *			localName) ;
 
 	static int lookupHex(
 		const Configuration *	cfg,
 		const char *			scope,
 		const char *			localName,
-		int						defaultVal) throw(ConfigurationException);
+		int						defaultVal) ;
 	static int stringToHex(
 		const Configuration *	cfg,
 		const char *			scope,
 		const char *			localName,
 		const char *			str,
-		const char *			typeName = "hex") throw(ConfigurationException);
+		const char *			typeName = "hex") ;
 
 	static bool isHex(const char * str);
 
@@ -67,7 +67,7 @@ protected:
 		const Configuration *	cfg,
 		const char *			typeName,
 		const StringVector &	typeArgs,
-		const char *			rule) const throw(ConfigurationException);
+		const char *			rule) const ;
 
 	virtual bool isA(
 		const SchemaValidator *	sv,

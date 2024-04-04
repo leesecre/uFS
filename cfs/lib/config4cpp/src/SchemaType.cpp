@@ -46,6 +46,15 @@ SchemaType::~SchemaType()
 {
 }
 
+void 
+SchemaType::checkRule(
+        const SchemaValidator * sv,
+        const Configuration *   cfg,
+        const char *            typeName,
+        const StringVector &    typeArgs,
+        const char *            rule) const {};
+
+
 
 
 void
@@ -58,7 +67,7 @@ SchemaType::validate(
 	const char *				origTypeName,
 	const StringVector &		typeArgs,
 	int							indentLevel) const
-											throw(ConfigurationException)
+											
 {
 	const char *				value;
 	const char *				sep;
@@ -118,11 +127,12 @@ SchemaType::callValidate(
 	const char *				origTypeName,
 	const StringVector &		typeArgs,
 	int							indentLevel) const
-											throw(ConfigurationException)
+											
 {
 	sv->callValidate(target, cfg, scope, name, typeName, origTypeName,
 					 typeArgs, indentLevel);
 }
+
 
 
 

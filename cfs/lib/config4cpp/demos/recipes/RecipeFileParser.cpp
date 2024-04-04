@@ -52,7 +52,7 @@ RecipeFileParser::~RecipeFileParser()
 void
 RecipeFileParser::parse(
 	const char *		recipeFilename,
-	const char *		scope) throw (RecipeFileParserException)
+	const char *		scope) 
 {
 	SchemaValidator		sv;
 	StringBuffer		filter;
@@ -94,7 +94,7 @@ RecipeFileParser::listRecipeScopes(StringVector & vec)
 
 const char *
 RecipeFileParser::getRecipeName(const char * recipeScope)
-											throw (RecipeFileParserException)
+											
 {
 	assert(m_parseCalled);
 	try {
@@ -109,7 +109,7 @@ RecipeFileParser::getRecipeName(const char * recipeScope)
 void
 RecipeFileParser::getRecipeIngredients(
 	const char *			recipeScope,
-	StringVector &			result) throw (RecipeFileParserException)
+	StringVector &			result) 
 {
 	assert(m_parseCalled);
 	try {
@@ -124,7 +124,7 @@ RecipeFileParser::getRecipeIngredients(
 void
 RecipeFileParser::getRecipeSteps(
 	const char *			recipeScope,
-	StringVector &			result) throw (RecipeFileParserException)
+	StringVector &			result) 
 {
 	int						i;
 	int						len;

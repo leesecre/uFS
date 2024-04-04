@@ -113,7 +113,7 @@ ConfigParser::ConfigParser(
 	const char *				sourceDescription,
 	ConfigurationImpl *			config,
 	bool						ifExistsIsSpecified)
-												throw(ConfigurationException)
+												
 {
 	StringBuffer				msg;
 

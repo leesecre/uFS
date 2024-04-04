@@ -133,7 +133,7 @@ LexBase::LexBase(
 	Configuration::SourceType	sourceType,
 	const char *				source,
 	UidIdentifierProcessor *	uidIdentifierProcessor)
-												throw(ConfigurationException)
+												
 {
 	StringBuffer				msg;
 
@@ -188,7 +188,7 @@ LexBase::LexBase(
 // Description:
 //----------------------------------------------------------------------
 
-LexBase::LexBase(const char * str) throw(ConfigurationException)
+LexBase::LexBase(const char * str) 
 {
 	StringBuffer			msg;
 
@@ -270,7 +270,7 @@ LexBase::nextByte()
 //----------------------------------------------------------------------
 
 void
-LexBase::nextChar() throw(ConfigurationException)
+LexBase::nextChar() 
 {
 	char				ch;
 	int					status;

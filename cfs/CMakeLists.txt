@@ -1,7 +1,9 @@
 cmake_minimum_required(VERSION 3.12)
+
 project(cfs)
 
 set(CMAKE_CXX_STANDARD 20)
+set(CMAKE_CXX_FLAGS "-latomic")
 
 set(default_build_type Release)
 set(CMAKE_POSITION_INDEPENDENT_CODE ON)

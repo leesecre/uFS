@@ -110,9 +110,9 @@ protected:
 	LexBase(
 		Configuration::SourceType     sourceType,
 		const char *			      source,
-		UidIdentifierProcessor *      uidIdentifierProcessor)
-												throw(ConfigurationException);
-	LexBase(const char * str) throw(ConfigurationException);
+		UidIdentifierProcessor *      uidIdentifierProcessor);
+
+	LexBase(const char * str);
 	virtual ~LexBase();
 
 	//--------
@@ -140,7 +140,7 @@ private:
 			short &			funcType,
 			short &			symbol);
 
-	void nextChar() throw(ConfigurationException);
+	void nextChar();
 	char nextByte();
 	void consumeString(LexToken & token);
 	void consumeBlockString(LexToken &token);

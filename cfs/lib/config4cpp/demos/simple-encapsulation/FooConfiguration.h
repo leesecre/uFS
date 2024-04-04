@@ -59,7 +59,7 @@ public:
 			const char *	cfgInput,
 			const char *	cfgScope = "",
 			const char *	secInput = "",
-			const char *	secScope = "") throw (FooConfigurationException);
+			const char *	secScope = "") ;
 
 	//--------
 	// Acccessors for configuration variables.
