@@ -17,3 +17,7 @@ kind of errors. Just use the pre-existing folders.
 > After building spdk, copy libspdk.so to the /lib
 
 5, cd cfsl mkdir build; cd build; cmake ..; make -j 20
+
+6, Initialize the cpu utilization tracking using ./init_eval.sh
+< Note that, to evaluate the filebench without cpu utilization, 
+	you may need to re-initialize the uFS benchmarks.
