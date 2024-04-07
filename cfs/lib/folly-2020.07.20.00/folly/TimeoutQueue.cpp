@@ -17,7 +17,6 @@
 #include <folly/TimeoutQueue.h>
 #include <algorithm>
 #include <vector>
-#include <limits>
 
 namespace folly {
 

@@ -13,7 +13,7 @@
 ####### Any changes to this file will be overwritten by the next CMake run ####
 ####### The input file was folly-config.cmake.in                            ########
 
-get_filename_component(PACKAGE_PREFIX_DIR "${CMAKE_CURRENT_LIST_DIR}/../../../" ABSOLUTE)
+get_filename_component(PACKAGE_${CMAKE_FIND_PACKAGE_NAME}_COUNTER_1 "${CMAKE_CURRENT_LIST_DIR}/../../../" ABSOLUTE)
 
 macro(set_and_check _var _file)
   set(${_var} "${_file}")
@@ -36,8 +36,8 @@ endmacro()
 
 include(CMakeFindDependencyMacro)
 
-set_and_check(FOLLY_INCLUDE_DIR "${PACKAGE_PREFIX_DIR}/include")
-set_and_check(FOLLY_CMAKE_DIR "${PACKAGE_PREFIX_DIR}/lib/cmake/folly")
+set_and_check(FOLLY_INCLUDE_DIR "${PACKAGE_${CMAKE_FIND_PACKAGE_NAME}_COUNTER_1}/include")
+set_and_check(FOLLY_CMAKE_DIR "${PACKAGE_${CMAKE_FIND_PACKAGE_NAME}_COUNTER_1}/lib/cmake/folly")
 
 # find_dependency() ends up changing PACKAGE_PREFIX_DIR, so save
 # folly's prefix directory in the FOLLY_PREFIX_DIR variable

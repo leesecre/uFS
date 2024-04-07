@@ -21,3 +21,4 @@ Sessionx.vim
 [._]*.un~
 
 logs
+cfs/lib/fmt
