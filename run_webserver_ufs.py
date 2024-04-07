@@ -87,11 +87,11 @@ def start_filebench(num_worker_app_pair, cache_ratio, filebench_out):
     if readonly:
         filebench_command = [
             "env", f"NUM_WORKER={num_worker_app_pair}", f"CACHE_HIT={cache_ratio}",
-            "./record_cpu_util.py", f"{output_dir}/cpuutil_webserver{num_app}", f"./filebench -f workloads/webserver{num_worker_app_pair}-ro.f"]
+            "./record_cpu_util.py", f"{output_dir}/cpuutil_webserver{num_worker_app_pair}_{cache_ratio}", f"./filebench -f workloads/webserver{num_worker_app_pair}-ro.f"]
     else:
         filebench_command = [
             "env", f"NUM_WORKER={num_worker_app_pair}", f"CACHE_HIT={cache_ratio}",
-            "./record_cpu_util.py", f"{output_dir}/cpuutil_webserver{num_app}", f"./filebench -f workloads/webserver{num_worker_app_pair}.f"]
+            "./record_cpu_util.py", f"{output_dir}/cpuutil_webserver{num_worker_app_pair}_{cache_ratio}", f"./filebench -f workloads/webserver{num_worker_app_pair}.f"]
 
     print(filebench_command)
     return subprocess.run(filebench_command, stdout=filebench_out)

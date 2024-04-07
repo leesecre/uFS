@@ -81,7 +81,7 @@ def shutdown_fsp(fs_proc):
 
 def start_filebench(num_app, num_worker, filebench_out):
     filebench_command = [
-        "env", f"NUM_WORKER={num_worker}", "./record_cpu_util.py", f"{output_dir}/cpuutil_varmail{num_app}",  f"NUM_APP={num_app} ./filebench -f workloads/varmail{num_app}.f"
+        "env", f"NUM_WORKER={num_worker}", "./record_cpu_util.py", f"{output_dir}/cpuutil_varmail{num_app}_{num_worker}",  f"NUM_APP={num_app} ./filebench -f workloads/varmail{num_app}.f"
     ]
     print(filebench_command)
     return subprocess.run(filebench_command, stdout=filebench_out)
