@@ -16,8 +16,9 @@ def drop_cache():
     subprocess.run(["sudo", "sh", "-c", "echo 3 > /proc/sys/vm/drop_caches"], stdout=subprocess.DEVNULL, stderr=subprocess.DEVNULL)
     time.sleep(10)
 
-def run_micro_tput(output_file):
+def run_micro_tput(output_dir):
     os.chdir(BENCH_MICRO)
+    output_file = open(f"{output_dir}/fs_micro_all_tput_ext4.out", "w")
 
     for OP in OPS:
         for IO_SIZE in IO_SIZES:
@@ -34,7 +35,7 @@ def run_micro_tput(output_file):
                 drop_cache()
 
             
-                CMD = f"{PINNING} {BENCH_MICRO}build/tput_micro -d /ssd-data -s {OP} {FILE_SIZE}M {IO_SIZE} {NUM_THREAD}"
+                CMD = f"{PINNING} ./record_cpu_util.py {output_dir}/cpuutil_fsmicro_all_tput_{OP}_{IO_SIZE}_{FILE_SIZE}.out -- {BENCH_MICRO}build/tput_micro -d /ssd-data -s {OP} {FILE_SIZE}M {IO_SIZE} {NUM_THREAD}"
                 
                 # Print command.
                 print("Command:", CMD)
@@ -42,13 +43,16 @@ def run_micro_tput(output_file):
                 # Execute
                 subprocess.run(CMD, shell=True, check=True, stdout=output_file, stderr=subprocess.PIPE)
 
-def run_micro_lat(output_file):
+    output_file.close()
+
+def run_micro_lat(output_dir):
     ############# Overriding configurations #############
     global TOTAL_WRITE_SIZE
     TOTAL_WRITE_SIZE = "128M"
     #####################################################
 
     os.chdir(BENCH_MICRO)
+    output_file = open(f"{output_dir}/fs_micro_all_lat_ext4.out", "w")
 
     for OP in OPS:
         for IO_SIZE in IO_SIZES:
@@ -62,7 +66,7 @@ def run_micro_lat(output_file):
             print("Dropping cache.")
             drop_cache()
 
-            CMD = f"{PINNING} {BENCH_MICRO}/build/lat_micro -d /ssd-data -s {OP} {FILE_SIZE}M {IO_SIZE} 1"
+            CMD = f"{PINNING} ./record_cpu_util.py {output_dir}/cpuutil_fsmicro_all_lat_{OP}_{IO_SIZE}_{FILE_SIZE}.out -- {BENCH_MICRO}build/lat_micro -d /ssd-data -s {OP} {FILE_SIZE}M {IO_SIZE} {NUM_THREAD}"
 
             # Print command.
             print("Command:", CMD)
@@ -70,18 +74,17 @@ def run_micro_lat(output_file):
             # Execute
             subprocess.run(CMD, shell=True, check=True, stdout=output_file, stderr=subprocess.PIPE)
 
+    output_file.close()
+
 # Execute only if this script is directly executed. (Not imported)
 if __name__ == "__main__":
     if len(sys.argv) != 2:
         print("Usage: python script.py output_file")
         sys.exit(1)
 
-    output_file = sys.argv[1]
-    output_file = open(f"{output_file}/fs_micro_all_ext4.out", "w")
+    output_dir = sys.argv[1]
     
-    run_micro_tput(output_file)
-    
-    output_file.close()
+    run_micro_tput(output_dir)
 
     print("Output files are in 'results' directory.")
 
