@@ -19,6 +19,9 @@ def drop_cache():
 def run_micro_tput(output_dir):
     os.chdir(BENCH_MICRO)
     output_file = open(f"{output_dir}/fs_micro_all_tput_ext4.out", "w")
+    OPS="sw"
+    TOTAL_WRITE_SIZE=40 * 1024
+    IO_SIZES="64K"
 
     for OP in OPS:
         for IO_SIZE in IO_SIZES:
@@ -47,7 +50,6 @@ def run_micro_tput(output_dir):
 
 def run_micro_lat(output_dir):
     ############# Overriding configurations #############
-    global TOTAL_WRITE_SIZE
     TOTAL_WRITE_SIZE = "128M"
     #####################################################
 

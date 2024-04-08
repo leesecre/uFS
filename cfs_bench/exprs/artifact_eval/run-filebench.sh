@@ -10,13 +10,14 @@ function print_usage_and_exit() {
 	echo "  Specify which filebench to run for which filesystem"
 	echo "    varmail:   Varmail workload"
 	echo "    webserver: Webserver workload"
+	echo "    fileserver: Fileserver workload"
 	echo "    ufs:  run uFS (for varmail, run 1-10 threads; for webserver, run 0/50/75/100% cache hit rate)"
 	echo "    ext4: run ext4 for given workload"
 	exit 1
 }
 
 if [ $# -lt 2 ]; then print_usage_and_exit; fi
-if [ ! "$1" = "varmail" ] && [ ! "$1" = "webserver" ]; then print_usage_and_exit; fi
+if [ ! "$1" = "varmail" ] && [ ! "$1" = "webserver" ] && [ ! "$1" = "fileserver" ]; then print_usage_and_exit; fi
 if [ ! "$2" = "ufs" ] && [ ! "$2" = "ext4" ]; then print_usage_and_exit; fi
 
 source "$AE_SCRIPT_DIR/common.sh"
@@ -47,6 +48,8 @@ if [ "$2" = "ufs" ]; then
 		sudo -E python3 scripts/run_varmail_ufs.py "$data_dir"
 	elif [ "$1" = "webserver" ]; then
 		sudo -E python3 scripts/run_webserver_ufs.py "$data_dir" 0
+	elif [ "$1" = "fileserver" ]; then
+		sudo -E python3 scripts/run_fileserver_ufs.py "$data_dir" 0
 	fi
 
 	# Clean up config files
@@ -68,6 +71,8 @@ elif [ "$2" = "ext4" ]; then
 		sudo -E python3 scripts/run_varmail_ext4.py "$data_dir"
 	elif [ "$1" = "webserver" ]; then
 		sudo -E python3 scripts/run_webserver_ext4.py "$data_dir" 0
+	elif [ "$1" = "fileserver" ]; then
+		sudo -E python3 scripts/run_fileserver_ext4.py "$data_dir" 0
 	fi
 
 	# umount ext4
