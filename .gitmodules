@@ -21,3 +21,6 @@
 	path = cfs/lib/json
 	url = https://github.com/jingliu9/json.git
 	branch = ufs
+[submodule "FS_microbench"]
+	path = FS_microbench
+	url = git@github.com:yulistic-benchmarks/FS_microbench.git

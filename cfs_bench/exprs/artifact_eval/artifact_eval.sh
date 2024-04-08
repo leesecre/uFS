@@ -402,8 +402,8 @@ function ae-cmpl() {
 }
 
 function ae-run() {
-	if [ ! "$1" = "microbench" ] && [ ! "$1" = "filebench" ] && [ ! "$1" = "loadmng" ] && [ ! "$1" = "leveldb" ]; then
-		echo "Usage: ae run [ microbench | filebench | loadmng | leveldb ]"
+	if [ ! "$1" = "microbench" ] && [ ! "$1" = "filebench" ] && [ ! "$1" = "loadmng" ] && [ ! "$1" = "leveldb" ] && [ ! "$1" = "fs_micro" ]; then
+		echo "Usage: ae run [ microbench | filebench | loadmng | leveldb | fs_micro ]"
 		echo "  Specify which benchmark to compile:"
 		echo "    microbench: microbenchmark with 32 workload (fig. 5 and 6 in paper)"
 		echo "    filebench:  Varmail and Webserver worload in filebench (fig. 8)"
@@ -437,6 +437,8 @@ function ae-run() {
 		bash $AE_REPO_DIR/cfs_bench/exprs/artifact_eval/run-loadmng.sh "${@:2}"
 	elif [ "$1" = "leveldb" ]; then
 		bash $AE_REPO_DIR/cfs_bench/exprs/artifact_eval/run-leveldb.sh "${@:2}"
+	elif [ "$1" = "fs_micro" ]; then
+		bash $AE_REPO_DIR/cfs_bench/exprs/artifact_eval/run-fs_micro.sh "${@:2}"
 	fi
 
 	if [ "$?" = "0" ]; then
