@@ -94,8 +94,9 @@ function setup-ext4() {
 		echo "      Will umount first before setup ext4"
 		sudo umount "$KFS_MOUNT_PATH"
 	fi
+	echo "mount with nobarrier"
 	sudo mkfs -F -t ext4 "$DEV_NAME"
-	sudo mount "$DEV_NAME" "$KFS_MOUNT_PATH"
+	sudo mount -o nobarrier "$DEV_NAME" "$KFS_MOUNT_PATH"
 }
 
 function reset-ext4() {
