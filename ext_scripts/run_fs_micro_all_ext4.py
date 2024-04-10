@@ -19,9 +19,9 @@ def drop_cache():
 def run_micro_tput(output_dir):
     os.chdir(BENCH_MICRO)
     output_file = open(f"{output_dir}/fs_micro_all_tput_ext4.out", "w")
-    OPS="sw"
+    OPS=["sw"]
     TOTAL_WRITE_SIZE=40 * 1024
-    IO_SIZES="64K"
+    IO_SIZES=["64K"]
 
     for OP in OPS:
         for IO_SIZE in IO_SIZES:
@@ -50,11 +50,12 @@ def run_micro_tput(output_dir):
 
 def run_micro_lat(output_dir):
     ############# Overriding configurations #############
-    TOTAL_WRITE_SIZE = "128M"
+    TOTAL_WRITE_SIZE = 128
     #####################################################
 
     os.chdir(BENCH_MICRO)
     output_file = open(f"{output_dir}/fs_micro_all_lat_ext4.out", "w")
+    # os.rename('/ssd-data/testfile0-0-0', 'testfile')
 
     for OP in OPS:
         for IO_SIZE in IO_SIZES:
@@ -68,7 +69,7 @@ def run_micro_lat(output_dir):
             print("Dropping cache.")
             drop_cache()
 
-            CMD = f"{PINNING} ./record_cpu_util.py {output_dir}/cpuutil_fsmicro_all_lat_{OP}_{IO_SIZE}_{FILE_SIZE}.out -- {BENCH_MICRO}build/lat_micro -d /ssd-data -s {OP} {FILE_SIZE}M {IO_SIZE} {NUM_THREAD}"
+            CMD = f"{PINNING} ./record_cpu_util.py {output_dir}/cpuutil_fsmicro_all_lat_{OP}_{IO_SIZE}_{FILE_SIZE}.out -- \"{BENCH_MICRO}build/lat_micro -d /ssd-data -s {OP} {FILE_SIZE}M {IO_SIZE} 1\""
 
             # Print command.
             print("Command:", CMD)
@@ -87,6 +88,7 @@ if __name__ == "__main__":
     output_dir = sys.argv[1]
     
     run_micro_tput(output_dir)
+    run_micro_lat(output_dir)
 
     print("Output files are in 'results' directory.")
 

@@ -49,7 +49,6 @@ if __name__ == "__main__":
     # Parse arguments
     args = parser.parse_args()
 
-
     program_name = args.program_name
     program_args = args.program_args
     file_name = args.output_filename
