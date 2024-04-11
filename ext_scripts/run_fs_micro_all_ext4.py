@@ -55,9 +55,13 @@ def run_micro_lat(output_dir):
 
     os.chdir(BENCH_MICRO)
     output_file = open(f"{output_dir}/fs_micro_all_lat_ext4.out", "w")
-    # os.rename('/ssd-data/testfile0-0-0', 'testfile')
 
     for OP in OPS:
+        if OP == "rw" or OP == "rr":
+            fd = os.open("/ssd-data/testfile", os.O_RDWR | os.O_CREAT)
+            os.truncate(fd, TOTAL_WRITE_SIZE * 1024 * 1024)
+            os.close(fd)
+
         for IO_SIZE in IO_SIZES:
             FILE_SIZE = TOTAL_WRITE_SIZE  # There is only 1 thread.
 
