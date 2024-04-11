@@ -36,7 +36,6 @@ def run_micro_tput(output_dir):
 
                 print("Dropping cache.")
                 drop_cache()
-
             
                 CMD = f"{PINNING} ./record_cpu_util.py {output_dir}/cpuutil_fsmicro_all_tput_{OP}_{IO_SIZE}_{FILE_SIZE}.out -- {BENCH_MICRO}build/tput_micro -d /ssd-data -s {OP} {FILE_SIZE}M {IO_SIZE} {NUM_THREAD}"
                 
@@ -57,7 +56,7 @@ def run_micro_lat(output_dir):
     output_file = open(f"{output_dir}/fs_micro_all_lat_ext4.out", "w")
 
     for OP in OPS:
-        if OP == "rw" or OP == "rr":
+        if OP == "sr" or OP == "rr":
             fd = os.open("/ssd-data/testfile", os.O_RDWR | os.O_CREAT)
             os.truncate(fd, TOTAL_WRITE_SIZE * 1024 * 1024)
             os.close(fd)
@@ -79,6 +78,7 @@ def run_micro_lat(output_dir):
             print("Command:", CMD)
 
             # Execute
+            file.write(CMD + '\n')
             subprocess.run(CMD, shell=True, check=True, stdout=output_file, stderr=subprocess.PIPE)
 
     output_file.close()
