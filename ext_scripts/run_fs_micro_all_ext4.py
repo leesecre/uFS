@@ -19,9 +19,7 @@ def drop_cache():
 
 def run_micro_tput(output_dir):
     os.chdir(BENCH_MICRO)
-    OPS=["sw"]
     TOTAL_WRITE_SIZE=40 * 1024
-    IO_SIZES=["64K"]
 
     for OP in OPS:
         for IO_SIZE in IO_SIZES:
