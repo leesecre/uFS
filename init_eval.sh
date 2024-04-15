@@ -1,5 +1,8 @@
 #!/bin/bash
 
+## uFS Build
+# cp -r ./cfs/build/ ~/workspace/uFS/cfs/
+
 ## cpu utils
 cp ./ext_scripts/record_cpu_util.py ~/workspace/uFS-bench/filebench/
 cp ./ext_scripts/record_cpu_util.py ~/workspace/uFS-bench/FS_microbench/

@@ -31,22 +31,22 @@ exit_fname = "/tmp/cfs_exit"
 os.environ["READY_FILE_NAME"] = ready_fname
 
 # Use same amount of workers and apps
-def start_fsp(num_worker_app_pair, fsp_out):
+def start_fsp(num_worker, num_app, fsp_out):
     fsp_command = [CFS_MAIN_BIN_NAME]
-    fsp_command.append(str(num_worker_app_pair))
-    fsp_command.append(str(num_worker_app_pair + 1))
+    fsp_command.append(str(num_worker))
+    fsp_command.append(str(num_app + 1))
     offset_string = ""
-    for j in range(0, num_worker_app_pair):
+    for j in range(0, num_worker):
         offset_string += str(20 * j + 1)
-        if j != num_worker_app_pair - 1:
+        if j != num_worker - 1:
             offset_string += ","
     fsp_command.append(offset_string)
     fsp_command.append(exit_fname)
     fsp_command.append("/tmp/spdk.conf")
     offset_string = ""
-    for j in range(0, num_worker_app_pair):
+    for j in range(0, num_worker):
         offset_string += str(j + 1)
-        if j != num_worker_app_pair - 1:
+        if j != num_worker - 1:
             offset_string += ","
     fsp_command.append(offset_string)
     fsp_command.append("/tmp/fsp.conf")
@@ -158,7 +158,7 @@ if __name__ == "__main__":
     mkfs()
 
     fsp_out = open(f"{sys.argv[1]}/fs_micro_ufs.out", "w")
-    fs_proc = start_fsp(1, fsp_out)
+    fs_proc = start_fsp(1, 1, fsp_out)
 
     run_micro_tput(output_dir)
     run_micro_lat(output_dir)
