@@ -78,94 +78,82 @@ def shutdown_fsp(fs_proc):
 
 # Default configurations
 BENCH_MICRO = "./"  # Set proper path.
-OPS = ["sw", "sr", "rw", "rr"]
-TOTAL_WRITE_SIZE = 1024
+# OPS = ["sw", "sr", "rw", "rr"]
+OPS = ["sw", "rw"]
 IO_SIZES = ["1K", "4K", "16K", "64K", "1M"]
 NUM_THREADS = ["1"]
 # PINNING = "numactl -N 1 -m 1"
 PINNING = ""
 
-def drop_cache():
-    subprocess.run(["sudo", "sh", "-c", "echo 3 > /proc/sys/vm/drop_caches"], stdout=subprocess.DEVNULL, stderr=subprocess.DEVNULL)
-    time.sleep(10)
-
-def run_micro_tput(output_dir):
+def run_micro_tput(output_dir, OP, IO_SIZE, NUM_THREAD):
     os.chdir(BENCH_MICRO)
-    TOTAL_WRITE_SIZE= 5 * 1024
+    TOTAL_WRITE_SIZE= 5 * 1024 # 5GB
 
-    for OP in OPS:
-        for IO_SIZE in IO_SIZES:
-            for NUM_THREAD in NUM_THREADS:
-                # Set file size.
-                FILE_SIZE = TOTAL_WRITE_SIZE // int(NUM_THREAD)  # Round down.
+    FILE_SIZE = TOTAL_WRITE_SIZE // int(NUM_THREAD)  # Round down.
 
-                # Set output file path.
-                OUT_DIR = f"{output_dir}/tput/ufs_out_tput"
-                OUT_FILE = f"{OUT_DIR}/{OP}_{IO_SIZE}_{NUM_THREAD}t"
-                OUT_CPU_FILE = f"{OUT_FILE}.cpu"
-                os.makedirs(OUT_DIR, exist_ok=True)
+    # Set output file path.
+    OUT_DIR = f"{output_dir}/tput/ufs_out_tput"
+    OUT_FILE = f"{OUT_DIR}/{OP}_{IO_SIZE}_{NUM_THREAD}t"
+    OUT_CPU_FILE = f"{OUT_FILE}.cpu"
+    os.makedirs(OUT_DIR, exist_ok=True)
 
-                print("Dropping cache.")
-                drop_cache()
-            
-                CMD = f"{PINNING} ./record_cpu_util.py {OUT_CPU_FILE} -- \"{BENCH_MICRO}build/tput_micro -d /ssd-data -s {OP} {FILE_SIZE}M {IO_SIZE} {NUM_THREAD}\""
-                
-                # Execute
-                with open(f"{OUT_FILE}.out", "w") as out_file:
-                    subprocess.run(f"echo Command: \"{CMD}\" | tee {OUT_FILE}.out", shell=True)
-                    subprocess.run(f"{CMD} | tee -a {OUT_FILE}.out", shell=True)
+    CMD = f"{PINNING} ./record_cpu_util.py {OUT_CPU_FILE} -- \"{BENCH_MICRO}build/tput_micro -s {OP} {FILE_SIZE}M {IO_SIZE} {NUM_THREAD}\""
+    # Execute
+    with open(f"{OUT_FILE}.out", "w") as out_file:
+        subprocess.run(f"echo Command: \"{CMD}\" | tee {OUT_FILE}.out", shell=True)
+        return subprocess.run(f"{CMD} | tee -a {OUT_FILE}.out", shell=True)
 
-def run_micro_lat(output_dir):
-    ############# Overriding configurations #############
-    TOTAL_WRITE_SIZE = 128
-    #####################################################
-
+def run_micro_lat(output_dir, OP, IO_SIZE, NUM_THREAD):
     os.chdir(BENCH_MICRO)
+    TOTAL_WRITE_SIZE= 128 # 128M
 
-    for OP in OPS:
-        if OP == "sr" or OP == "rr":
-            fd = os.open("/ssd-data/testfile", os.O_RDWR | os.O_CREAT)
-            os.truncate(fd, TOTAL_WRITE_SIZE * 1024 * 1024)
-            os.close(fd)
+    FILE_SIZE = TOTAL_WRITE_SIZE
 
-        for IO_SIZE in IO_SIZES:
-            FILE_SIZE = TOTAL_WRITE_SIZE  # There is only 1 thread.
+    # Set output file path.
+    OUT_DIR = f"{output_dir}/tput/ufs_out_lat"
+    OUT_FILE = f"{OUT_DIR}/{OP}_{IO_SIZE}_{NUM_THREAD}_lat"
+    OUT_CPU_FILE = f"{OUT_FILE}.cpu"
+    os.makedirs(OUT_DIR, exist_ok=True)
 
-            # Set output file path.
-            OUT_DIR = f"{output_dir}/lat/ufs_out_lat"
-            OUT_FILE = f"{OUT_DIR}/{OP}_{IO_SIZE}"
-            OUT_CPU_FILE = f"{OUT_FILE}.cpu"
-            os.makedirs(OUT_DIR, exist_ok=True)
+    CMD = f"{PINNING} ./record_cpu_util.py {OUT_CPU_FILE} -- \"{BENCH_MICRO}build/lat_micro -s {OP} {FILE_SIZE}M {IO_SIZE} {NUM_THREAD}\""
 
-            print("Dropping cache.")
-            drop_cache()
+    # Execute
+    with open(f"{OUT_FILE}.out", "w") as out_file:
+        subprocess.run(f"echo Command: \"{CMD}\" | tee {OUT_FILE}.out", shell=True)
+        return subprocess.run(f"{CMD} | tee -a {OUT_FILE}.out", shell=True)
 
-            CMD = f"{PINNING} ./record_cpu_util.py {OUT_CPU_FILE} -- \"{BENCH_MICRO}build/lat_micro -d /ssd-data -s {OP} {FILE_SIZE}M {IO_SIZE} 1\""
+# Run microbench for throughput
+for OP in OPS:
+    for IO_SIZE in IO_SIZES:
+        for NUM_THREAD in NUM_THREADS:
 
-            # Execute
-            with open(f"{OUT_FILE}.out", "w") as out_file:
-                subprocess.run(f"echo Command: \"{CMD}\" | tee {OUT_FILE}.out", shell=True)
-                subprocess.run(f"{CMD} | tee -a {OUT_FILE}.out", shell=True)
+            output_dir = sys.argv[1]
+            mkfs()
+            fsp_out = open(f"{sys.argv[1]}/fs_micro_ufs-{OP}-{IO_SIZE}-{NUM_THREAD}.out", "w")
+            fs_proc = start_fsp(1, 1, fsp_out)
+            p = run_micro_tput(output_dir, OP, IO_SIZE, NUM_THREAD)
 
-# Execute only if this script is directly executed. (Not imported)
-if __name__ == "__main__":
-    if len(sys.argv) != 2:
-        print("Usage: python script.py output_dir")
-        sys.exit(1)
+            shutdown_fsp(fs_proc)
+            fsp_out.close()
 
-    output_dir = sys.argv[1]
+            if p.returncode != 0:
+                print("FS_bench return non-zero exit code!")
+                exit(1)
 
-    mkfs()
+# Run microbench for latency
+for OP in OPS:
+    for IO_SIZE in IO_SIZES:
+        for NUM_THREAD in NUM_THREADS:
 
-    fsp_out = open(f"{sys.argv[1]}/fs_micro_ufs.out", "w")
-    fs_proc = start_fsp(1, 1, fsp_out)
+            output_dir = sys.argv[1]
+            mkfs()
+            fsp_out = open(f"{sys.argv[1]}/fs_micro_ufs_lat-{OP}-{IO_SIZE}-{NUM_THREAD}.out", "w")
+            fs_proc = start_fsp(1, 1, fsp_out)
+            p = run_micro_lat(output_dir, OP, IO_SIZE, NUM_THREAD)
 
-    run_micro_tput(output_dir)
-    run_micro_lat(output_dir)
+            shutdown_fsp(fs_proc)
+            fsp_out.close()
 
-    shutdown_fsp(fs_proc)
-    
-    fsp_out.close()
-
-    print("Output files are in 'results' directory.")
-
+            if p.returncode != 0:
+                print("FS_bench return non-zero exit code!")
+                exit(1)

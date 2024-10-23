@@ -25,7 +25,7 @@ fi
 # a env var that will be exported should have a prefix "AE_" to avoid conflicts
 ## source code repository
 if [ -z "$AE_REPO_URL" ]; then
-	export AE_REPO_URL='https://github.com/WiscADSL/uFS.git'
+	export AE_REPO_URL='https://github.com/leesecre/uFS'
 fi
 if [ -z "$AE_BRANCH" ]; then
 	export AE_BRANCH='main'
@@ -40,6 +40,10 @@ fi
 ## filebench may need to use a customized branch of uFS with a different configuration
 if [ -z "$AE_UFS_FILEBENCH_BRANCH" ]; then
 	export AE_UFS_FILEBENCH_BRANCH='filebench-config'
+fi
+## FS_micro may need to use a customized branch of uFS with a different configuration
+if [ -z "$AE_UFS_FS_MICRO_BRANCH" ]; then
+	export AE_UFS_FS_MICRO_BRANCH='ufs-specific'
 fi
 ## ext4's mount contains lazy operations, which would affect its performance 
 ## wait a while before further experiments
@@ -368,13 +372,14 @@ function ae-init-after-reboot {
 }
 
 function ae-cmpl() {
-	if [ ! "$1" = "microbench" ] && [ ! "$1" = "filebench" ] && [ ! "$1" = "loadmng" ] && [ ! "$1" = "leveldb" ]; then
-		echo "Usage: ae cmpl [ microbench | filebench | loadmng | leveldb ]"
+	if [ ! "$1" = "microbench" ] && [ ! "$1" = "filebench" ] && [ ! "$1" = "loadmng" ] && [ ! "$1" = "leveldb" ] && [ ! "$1" = "fs_micro" ]; then
+		echo "Usage: ae cmpl [ microbench | filebench | loadmng | leveldb | fs_micro ]"
 		echo "  Specify which benchmark to compile:"
 		echo "    microbench: microbenchmark with 32 workload (fig. 5 and 6 in paper)"
 		echo "    filebench:  Varmail and Webserver worload in filebench (fig. 8)"
 		echo "    loadmng:    Load Management benchmark (fig. 9, 10, and 11)"
 		echo "    leveldb:    LevelDB on YCSB workload (fig. 12)"
+		echo "    fs_micro:	  microbench from Oxbow"
 		exit 1
 	fi
 
@@ -390,6 +395,9 @@ function ae-cmpl() {
 		ret=$?
 	elif [ "$1" = "leveldb" ]; then
 		bash $AE_REPO_DIR/cfs_bench/exprs/artifact_eval/cmpl-leveldb.sh "${@:2}"
+		ret=$?
+	elif [ "$1" = "fs_micro" ]; then
+		bash $AE_REPO_DIR/cfs_bench/exprs/artifact_eval/cmpl-fs_micro.sh "${@:2}"
 		ret=$?
 	fi
 
