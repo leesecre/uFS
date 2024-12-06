@@ -32,16 +32,50 @@ def bench_seq_write(
         bench_cfg_dict.update(cfs_update_dict)
 
     value_sz_op_num_dict = {
-        # 64: 2000000,
-        # 1024: 4000000,
-        4096: 250000,
-        # 16384: 50000,
+        # 4096: int(2*1024*1024/4), # 2GB
+        # 16384: int(2*1024*1024/16),
+        # 32768: int(2*1024*1024/32),
+        # 65536: int(2*1024*1024/64),
+        
+        # # 5GB for throughput benchmark
+        # 1024: 262144 * 4 * 5, # 1K
+        # 4096: 65536 * 4 * 5,  # 4K
+        # 16384: 16384 * 4 * 5, # 16K
+        # 65536: 4096 * 4 * 5, # 64K
+        # 262144: 1024 * 4 * 5, # 256K
+        # 524288: 512 * 4 * 5, # 512K
+        # # 1048576: 256 * 4 * 5, # 1M
+        # # 2097152: 128 * 4 * 5 # 2M
+        
+        # multi process test
+        4096: int(2*1024*1024/4),
+        16384: int(2*1024*1024/16),
+        65536: int(2*1024*1024/64),
+        262144: int(2*1024*1024/256),
     }
     num_op_limit_dict = {
         # 4096: 400000, #2G
-        4096: 1000000,  # 8G
+        # 4096: 1000000,  # 8G
         # 4096: 500000, #8G
-        16384: 200000,
+        # 16384: 200000,
+        # 65536: 
+        # 1073741824: 
+
+        # 5GB for throughput benchmark
+        # 1024: 262144 * 4 * 5, # 1K
+        # 4096: 65536 * 4 * 5,  # 4K
+        # 16384: 16384 * 4 * 5, # 16K
+        # 65536: 4096 * 4 * 5, # 64K
+        # 262144: 1024 * 4 * 5, # 256K
+        # 524288: 512 * 4 * 5, # 512K
+        # 1048576: 256 * 4 * 5, # 1M
+        # 2097152: 128 * 4 * 5 # 2M
+        
+        # multi process test
+        4096: int(2*1024*1024/4),
+        16384: int(2*1024*1024/16),
+        65536: int(2*1024*1024/64),
+        262144: int(2*1024*1024/256),
     }
     if is_share and len(value_sz_op_num_dict.keys()) > 0:
         # we only do expr for 4K in share case
@@ -108,8 +142,29 @@ def bench_seq_sync_write(log_dir, num_app_proc=1, is_fsp=True,
     value_sz_op_num_dict = {
         # 64: 2000000,
         # 1024: 4000000,
-        4096: 200000,
+        # 4096: 200000,
         # 16384: 1000000,
+        
+        # 256MB for latency benchmark
+        1024: 262144, # 1K
+        4096: 65536,  # 4K
+        16384: 16384, # 16K
+        65536: 4096, # 64K
+        262144: 1024, # 256K
+        524288: 512, # 512K
+
+        # 1048576: 256, # 1M
+        # 2097152: 128, # 2M
+        # 4096: int(2*1024*1024/4), # 2GB
+        # 16384: int(2*1024*1024/16),
+        # 32768: int(2*1024*1024/32),
+        # 65536: int(2*1024*1024/64),
+        # 5GB for throughput benchmark
+        # 1024: 262144 * 4 * 5, # 1K
+        # 4096: 65536 * 4 * 5,  # 4K
+        # 16384: 16384 * 4 * 5, # 16K
+        # 65536: 4096 * 4 * 5, # 64K
+        # 2097152: 128 * 4 * 5 # 2M
     }
     if '--share_mode=' in cfs_update_dict and '--o_append=' in cfs_update_dict:
         MAX_FSIZE = 5*1024*1024*1024
@@ -158,7 +213,7 @@ def bench_rand_write(log_dir, num_app_proc=1, is_fsp=True,
                      is_append=False, is_cached=True,
                      num_fsp_worker_list=None, per_app_fname=None,
                      dump_mpstat=False, dump_iostat=False,
-                     cfs_update_dict=None):
+                     cfs_update_dict=None, is_latency=False):
     # note currently only support random write for buffered workload
     # assert(is_cached)
 
@@ -167,13 +222,13 @@ def bench_rand_write(log_dir, num_app_proc=1, is_fsp=True,
     bench_cfg_dict = {
         '--benchmarks=': 'rwrite',
         # random write to a 1M range
-        '--max_file_size=': (1024 * 1024),
+        # '--max_file_size=': (1024 * 1024),
     }
 
-    if not is_cached:
-        bench_cfg_dict['--max_file_size='] = 2 * 1024 * 1024 * 1024
-        # make the on-disk write aligned (avoid read traffic)
-        bench_cfg_dict['--rw_align_bytes='] = 4096
+    # if not is_cached:
+    #     bench_cfg_dict['--max_file_size='] = 2 * 1024 * 1024 * 1024
+    #     # make the on-disk write aligned (avoid read traffic)
+    #     bench_cfg_dict['--rw_align_bytes='] = 4096
 
     if cfs_update_dict is not None:
         bench_cfg_dict.update(cfs_update_dict)
@@ -182,16 +237,37 @@ def bench_rand_write(log_dir, num_app_proc=1, is_fsp=True,
         value_sz_op_num_dict = {
             # 64: 1000000,
             # 1024: 200000,
-            4096: 1000000,
+            1024: 262144, # 1K
+            4096: 65536,  # 4K
+            16384: 16384, # 16K
+            65536: 4096, # 64K
+            262144: 1024, # 256K
+            524288: 512, # 512K
             # 16384: 1000000,
         }
     else:
-        value_sz_op_num_dict = {
-            # 64: 1000000,
-            # 1024: 200000,
-            4096: 250000,
-            # 16384: 1000000,
-        }
+        if is_latency:
+            value_sz_op_num_dict = {
+                # 256MB for latency benchmark
+                # 64: 4194304, # 64
+                1024: 262144, # 1K
+                4096: 65536,  # 4K
+                16384: 16384, # 16K
+                65536: 4096, # 64K
+                262144: 1024, # 256K
+                524288: 512, # 512K
+            }
+        else:
+            value_sz_op_num_dict = {
+                # 256MB for latency benchmark
+                # 64: 4194304, # 64
+                1024: 262144 * 4 * 5, # 1K
+                4096: 65536 * 4 * 5,  # 4K
+                16384: 16384 * 4 * 5, # 16K
+                65536: 4096 * 4 * 5, # 64K
+                262144: 1024 * 4 * 5, # 256K
+                524288: 512 * 4 * 5, # 512K
+            }
 
     # pin_cpu_list = [True, False]
     pin_cpu_list = [True]

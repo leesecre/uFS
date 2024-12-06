@@ -49,8 +49,10 @@ print('numapp? - {}'.format(cur_numapp))
 
 LOG_BASE = 'log_{}'.format(sys.argv[1])
 
-num_app_list = [10, 9, 8, 7, 6, 5, 4, 3, 2, 1]
+#num_app_list = [10, 9, 8, 7, 6, 5, 4, 3, 2, 1]
 #num_app_list = [20 - i for i in range(20)]
+# num_app_list = [1]
+num_app_list = [1,2,4,8,10]
 
 if cur_numapp is not None:
     num_app_list = list(range(1, cur_numapp + 1))

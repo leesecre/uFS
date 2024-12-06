@@ -140,38 +140,38 @@ def verify_dev_options():
 
 def get_benchmark_script(bench_code):
     bench_code_mappings = [
-        (['RMPR'], 'bench_mt_randread.py {} cached'),
+        # (['RMPR'], 'bench_mt_randread.py {} cached'),
         (['RDPR'], 'bench_mt_randread.py {}'),
-        (['RMSR'], 'bench_mt_randread.py {} cached share'),
-        (['RDSR'], 'bench_mt_randread.py {} share'),
-        (['RMPS'], 'bench_mt_seqread.py {} cached'),
+        # (['RMSR'], 'bench_mt_randread.py {} cached share'),
+        # (['RDSR'], 'bench_mt_randread.py {} share'),
+        # (['RMPS'], 'bench_mt_seqread.py {} cached'),
         (['RDPS'], 'bench_mt_seqread.py {}'),
-        (['RMSS'], 'bench_mt_seqread.py {} share cached'),
-        (['RDSS'], 'bench_mt_seqread.py {} share'),
-        (['WMPS'], 'bench_mt_write_noflush.py {}'),
-        (['WMSS'], 'bench_mt_write_noflush.py {} share'),
+        # (['RMSS'], 'bench_mt_seqread.py {} share cached'),
+        # (['RDSS'], 'bench_mt_seqread.py {} share'),
+        # (['WMPS'], 'bench_mt_write_noflush.py {}'),
+        # (['WMSS'], 'bench_mt_write_noflush.py {} share'),
         (['AMPS'], 'bench_mt_write_noflush.py {} append'),
-        (['AMSS'], 'bench_mt_write_noflush.py {} append share'),
-        (['WMPR'], 'bench_mt_randwrite.py {} cached'),
-        (['WMSR'], 'bench_mt_randwrite.py {} cached share'),
-        (['WDPS'], 'bench_mt_write_noflush.py {}'),
+        # (['AMSS'], 'bench_mt_write_noflush.py {} append share'),
+        # (['WMPR'], 'bench_mt_randwrite.py {} cached'),
+        # (['WMSR'], 'bench_mt_randwrite.py {} cached share'),
+        # (['WDPS'], 'bench_mt_write_noflush.py {}'),
         (['WDPR'], 'bench_mt_randwrite.py {}'),
-        (['WDSS'], 'bench_mt_write_noflush.py {} share'),
-        (['WDSR'], 'bench_mt_randwrite.py {} share'),
-        (['ADPS'], 'bench_mt_write_sync.py {} append'),
-        (['ADSS'], 'bench_mt_write_sync.py {} append share'),
-        (['S1MP'], 'bench_mt_stat.py {}'),
-        (['S1MS'], 'bench_mt_stat.py {} share'),
-        (['SaMP'], 'bench_mt_statall.py {} 1000'),
-        (['SaMS'], 'bench_mt_statall.py {} 1000 share'),
-        (['LsMP'], 'bench_mt_listdir.py {} 1000'),
-        (['LsMS'], 'bench_mt_listdir.py {} 1000 share'),
-        (['CMP'], 'bench_mt_mkdir.py {} create'),
-        (['CMS'], 'bench_mt_mkdir.py {} create share'),
-        (['UMP'], 'bench_mt_unlink.py {}'),
-        (['UMS'], 'bench_mt_unlink.py {} share'),
-        (['RMP'], 'bench_mt_rename.py {}'),
-        (['RMS'], 'bench_mt_rename.py {} share'),
+        # (['WDSS'], 'bench_mt_write_noflush.py {} share'),
+        # (['WDSR'], 'bench_mt_randwrite.py {} share'),
+        (['ADPS'], 'bench_mt_write_sync.py {} append'),      # Latency benchmark
+        # (['ADSS'], 'bench_mt_write_sync.py {} append share'),
+        # (['S1MP'], 'bench_mt_stat.py {}'),
+        # (['S1MS'], 'bench_mt_stat.py {} share'),
+        # (['SaMP'], 'bench_mt_statall.py {} 1000'),
+        # (['SaMS'], 'bench_mt_statall.py {} 1000 share'),
+        # (['LsMP'], 'bench_mt_listdir.py {} 1000'),
+        # (['LsMS'], 'bench_mt_listdir.py {} 1000 share'),
+        # (['CMP'], 'bench_mt_mkdir.py {} create'),
+        # (['CMS'], 'bench_mt_mkdir.py {} create share'),
+        # (['UMP'], 'bench_mt_unlink.py {}'),
+        # (['UMS'], 'bench_mt_unlink.py {} share'),
+        # (['RMP'], 'bench_mt_rename.py {}'),
+        # (['RMS'], 'bench_mt_rename.py {} share'),
     ]
     for mapping in bench_code_mappings:
         if bench_code in mapping[0] and mapping[1] is not None:
@@ -181,30 +181,45 @@ def get_benchmark_script(bench_code):
 
 def get_default_benchmarks():
     benchmarks = [
-        'RMPR', 'RMSR', 'RDPR', 'RDSR',
-        'RMPS', 'RMSS', 'RDPS', 'RDSS',
-        'WMPS', 'WMSS', 'AMPS', 'AMSS',
-        'WMPR', 'WMSR',
-        'WDPS', 'WDPR', 'WDSS', 'WDSR',
-        'ADPS', 'ADSS',
-        'S1MP', 'S1MS',
-        'SaMP', 'SaMS',
-        'LsMP', 'LsMS',
-        'CMP', 'CMS',
-        'UMP', 'UMS',
-        'RMP', 'RMS',
+        # 'RMPR', 'RMSR', 
+        'RDPR', # Random read 
+        # 'RDSR',
+        # 'RMPS', 'RMSS', 
+        'RDPS', # Seqeuntial read
+        # 'RDSS',
+        # 'WMPS', 'WMSS', 
+        'AMPS', # Seqeuntial write (throughput) 
+        # 'AMSS',
+        # 'WMPR', 'WMSR',
+        # 'WDPS', 
+        #'WDPR', # Randomw write (thp/lat)
+        # 'WDSS', 
+        # 'WDSR',
+        #'ADPS', # sequential write (lat)
+        # 'ADSS',
+        # 'S1MP', 'S1MS',
+        # 'SaMP', 'SaMS',
+        # 'LsMP', 'LsMS',
+        # 'CMP', 'CMS',
+        # 'UMP', 'UMS',
+        # 'RMP', 'RMS',
     ]
     return benchmarks
 
 
 def get_data_plane_benchmarks():
     benchmarks = [
-        'RMPR', 'RMSR', 'RDPR', 'RDSR',
-        'RMPS', 'RMSS', 'RDPS', 'RDSS',
-        'WMPS', 'WMSS', 'AMPS', 'AMSS',
-        'WMPR', 'WMSR',
-        'WDPS', 'WDPR', 'WDSS', 'WDSR',
-        'ADPS', 'ADSS',
+        'RDPR', 
+        'RDPS', 
+        'WDPR',
+        'ADPS', 
+        'AMPS',
+        # 'RMPR', 'RMSR', 'RDPR', 'RDSR',
+        # 'RMPS', 'RMSS', 'RDPS', 'RDSS',
+        # 'WMPS', 'WMSS', 'AMSS',
+        # 'WMPR', 'WMSR',
+        # 'WDPS', 'WDPR', 'WDSS', 'WDSR',
+        # 'ADPS', 'ADSS',
     ]
     return benchmarks
 
@@ -220,9 +235,11 @@ def get_meta_benchmarks():
 def bench_needs_dataprep(bench_code):
     need_prep_list = [
         # all read
-        'RMPR', 'RMSR', 'RDPR', 'RDSR', 'RMPS', 'RMSS', 'RDPS', 'RDSS',
+        'RDPR', 'RDPS',
+        # 'RMPR', 'RMSR', 'RDPR', 'RDSR', 'RMPS', 'RMSS', 'RDPS', 'RDSS',
         # overwrite
-        'WMPS', 'WMSS', 'WMPR', 'WMSR', 'WDPS', 'WDPR', 'WDSS', 'WDSR'
+        'WDPR',
+        # 'WMPS', 'WMSS', 'WMPR', 'WMSR', 'WDPS', 'WDPR', 'WDSS', 'WDSR'
     ]
     if bench_code in need_prep_list:
         return True

@@ -54,15 +54,16 @@ CUR_WK_TYPE = 'seqwrite'
 if cur_is_append:
     CUR_WK_TYPE = 'append'
 
-num_app_list = [10, 9, 8, 7, 6, 5, 4, 3, 2, 1]
+# num_app_list = [10, 9, 8, 7, 6, 5, 4, 3, 2, 1]
+num_app_list = [1]
 #num_app_list = [20 - i for i in range(20)]
 if cur_numapp is not None:
     num_app_list = list(range(1, cur_numapp + 1))
     num_app_list.reverse()
 
 #sync_op_list = [4, 8, 16, 32, 64, 128]
-sync_op_list = [1, 2, 4, 8, 16]
-sync_op_list = [4]
+# sync_op_list = [1, 2, 4, 8, 16]
+sync_op_list = [1]
 
 if tc.use_exact_num_app():
     num_app_list = [cur_numapp]

@@ -66,26 +66,29 @@ if cur_block_no >= 0:
 
 LOG_BASE = 'log_{}'.format(sys.argv[1])
 
-num_app_list = [1, 2, 3, 4, 5, 6]  # @falcon
-num_app_list = [10, 9, 8, 7, 6, 5, 4, 3, 2, 1]  # @bumble
+# num_app_list = [1, 2, 3, 4, 5, 6]  # @falcon
+# num_app_list = [10, 9, 8, 7, 6, 5, 4, 3, 2, 1]  # @bumble
 #num_app_list = [20 - i for i in range(20)]
 
-if cur_numapp is not None:
-    num_app_list = list(range(1, cur_numapp + 1))
-    num_app_list.reverse()
+num_app_list = [1,2,4,8,10] # for multi process test
 
-if tc.use_exact_num_app():
-    num_app_list = [cur_numapp]
+# if cur_numapp is not None:
+#     num_app_list = list(range(1, cur_numapp + 1))
+#     num_app_list.reverse()
+
+# if tc.use_exact_num_app():
+#     num_app_list = [cur_numapp]
 
 for num_app in num_app_list:
-    cur_num_fs_wk_list = [(i + 1) for i in range(num_app)]
+    # cur_num_fs_wk_list = [(i + 1) for i in range(num_app)]
     if not cur_is_fsp:
+        print("not cur is fsp")
         cur_num_fs_wk_list = [1]
     else:
         cur_num_fs_wk_list = [num_app]
         pass
-    if tc.use_single_worker():
-        cur_num_fs_wk_list = [1]
+    # if tc.use_single_worker():
+    #     cur_num_fs_wk_list = [1]
     print(cur_num_fs_wk_list)
     cur_log_dir = tc.get_proj_log_dir(tc.get_expr_user(),
                                       suffix=tc.get_ts_dir_name(),
@@ -101,6 +104,8 @@ for num_app in num_app_list:
         cur_num_fs_wk_list = [1]
     else:
         per_app_fname = {i: 'bench_f_{}'.format(i) for i in range(num_app)}
+    
+    # per_app_fname = 'bench_f_{}'.format(str(num_app))
     print(per_app_fname)
 
     if cur_is_cached:

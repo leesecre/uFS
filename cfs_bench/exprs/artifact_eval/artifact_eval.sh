@@ -44,7 +44,7 @@ fi
 ## ext4's mount contains lazy operations, which would affect its performance 
 ## wait a while before further experiments
 if [ -z "$AE_EXT4_WAIT_AFTER_MOUNT" ]; then
-	export AE_EXT4_WAIT_AFTER_MOUNT='300'  # unit is second
+	export AE_EXT4_WAIT_AFTER_MOUNT='15'  # unit is second
 fi
 
 ## workspace

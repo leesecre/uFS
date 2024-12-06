@@ -68,7 +68,8 @@ if [ "$2" = "ufs" ]; then
 
 	# run_ldb_ufs would do load itself everytime
 	if [ "$1" = "all" ]; then
-		for job in 'a' 'b' 'c' 'd' 'e' 'f'
+		# for job in 'a' 'b' 'c' 'd' 'e' 'f'
+		for job in 'a'
 		do
 			run_one_workload_ufs "ycsb-${job}"
 		done

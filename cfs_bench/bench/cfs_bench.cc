@@ -71,6 +71,7 @@ static bool FLAGS_coordinator = true;
 
 // number of bytes written to each file (by default ~5G)
 static uint64_t FLAGS_max_file_size = ((uint64_t)5 * 1024 * 1000 * 1000);
+// static uint64_t FLAGS_max_file_size = ((uint64_t)6 * 1024 * 1000 * 1000);
 
 // number of bytes that is cached in memory
 // used for cached workloads (by default ~=128M)
@@ -1069,6 +1070,7 @@ class Benchmark {
     int64_t bytes = 0;
 #ifndef CFS_USE_POSIX
     char *wdata = (char *)fs_zalloc(value_size_);
+    // char *wdata = (char *)malloc(value_size_);
 #else
     char *wdata = (char *)malloc(value_size_);
 #endif
@@ -1123,6 +1125,7 @@ class Benchmark {
 #ifndef CFS_USE_POSIX
         // rc = fs_write(thread->fd, slice.data(), cur_value_size);
         rc = fs_allocated_write(thread->fd, wdata, cur_value_size);
+        // rc = fs_write(thread->fd, wdata, cur_value_size);
 #else
         rc = write(thread->fd, wdata, cur_value_size);
 #endif
@@ -1137,6 +1140,7 @@ class Benchmark {
 #ifndef CFS_USE_POSIX
         // rc = fs_pwrite(thread->fd, slice.data(), cur_value_size, cur_off);
         rc = fs_allocated_pwrite(thread->fd, wdata, cur_value_size, cur_off);
+        // rc = fs_pwrite(thread->fd, wdata, cur_value_size, cur_off);
 #else
         // fprintf(stdout, "cur_size:%d, cur_off:%ld\n", cur_value_size,
         // cur_off);
@@ -1168,8 +1172,25 @@ class Benchmark {
       }
       // accounting
       bytes += cur_value_size;
-      thread->stats.FinishedSingleOp();
+      if (FLAGS_sync_numop != -1)
+        thread->stats.FinishedSingleOp();
       if (cc.check_server_said_stop()) break;
+    }
+
+    if (FLAGS_sync_numop == -1)  {
+        fprintf(stderr, "fsync at last\n");
+        int srt;
+#ifndef CFS_USE_POSIX
+        srt = fs_fdatasync(thread->fd);
+#else
+        srt = fdatasync(thread->fd);
+#endif
+        if (srt < 0) {
+          fprintf(stderr, "at last fdatasync error:%s srt:%d\n", strerror(errno),
+                  srt);
+          exit(1);
+        }
+        thread->stats.FinishedSingleOp();
     }
 
     cc.notify_server_that_client_stopped();
@@ -1181,6 +1202,7 @@ class Benchmark {
 
 #ifndef CFS_USE_POSIX
     fs_free(wdata);
+    // free(wdata);
 #else
     free(wdata);
 #endif
@@ -1468,15 +1490,21 @@ class Benchmark {
     const int kRaNumBlock = 1;
 #ifndef CFS_USE_POSIX
     char *rdata = (char *)fs_malloc(kRaNumBlock * value_size_);
+    // char *rdata = (char *)malloc(kRaNumBlock * value_size_);
 #else
     char rdata[value_size_];
 #endif
+    if (!rdata) {
+        fprintf(stderr, "malloc failed");
+        exit(1);
+    }
     memset(rdata, 0, value_size_);
     OpenFile(thread);
     if (compute_crc_) {
       thread->crc_arr = new uint32_t[numop_];
     }
     uint64_t max_req_num;
+
     if (FLAGS_rand_no_overlap) {
       // this benchmark would like to make sure no IO is overlap
       if (FLAGS_rand_no_overlap && FLAGS_rw_align_bytes == 0) {
@@ -1490,14 +1518,19 @@ class Benchmark {
         fprintf(stderr,
                 "file size not enough to complete the aligned req max:%lu\n",
                 max_req_num);
-        exit(1);
+        if (value_size_ != 1024) 
+          exit(1);
+        max_req_num = numop_;
+        FLAGS_rw_align_bytes = 1024;
       }
     } else {
       // it is okay to overlap
       max_req_num = numop_;
     }
+    
     fprintf(stdout, "FLAGS_rw_align_bytes:%d max_req_num:%lu\n",
             FLAGS_rw_align_bytes, max_req_num);
+
     std::vector<off_t> off_vec;
     // prepare offset here
     if (FLAGS_rw_align_bytes != 0) {
@@ -1548,6 +1581,7 @@ class Benchmark {
         // sequential read
 #ifndef CFS_USE_POSIX
         rc = fs_allocated_read(thread->fd, rdata, value_size_);
+        // rc = fs_read(thread->fd, rdata, value_size_);
         // fprintf(stdout, "seqread i:%d firstChar:%c\n", i, rdata[0]);
 #else
         rc = read(thread->fd, rdata, value_size_);
@@ -1566,6 +1600,7 @@ class Benchmark {
 
 #ifndef CFS_USE_POSIX
         rc = fs_allocated_pread(thread->fd, rdata, value_size_, cur_off);
+        // rc = fs_pread(thread->fd, rdata, value_size_, cur_off);
 #else
         rc = pread(thread->fd, rdata, value_size_, cur_off);
 #endif
@@ -1594,6 +1629,7 @@ class Benchmark {
 
 #ifndef CFS_USE_POSIX
     fs_free(rdata);
+    // free(rdata);
 #endif
 
     thread->stats.AddBytes(bytes);

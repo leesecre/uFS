@@ -94,7 +94,7 @@ function setup-ext4() {
 		echo "      Will umount first before setup ext4"
 		sudo umount "$KFS_MOUNT_PATH"
 	fi
-	sudo mkfs -F -t ext4 "$DEV_NAME"
+	sudo mke2fs -F -t ext4 -E lazy_itable_init=0,lazy_journal_init=0 "$DEV_NAME"
 	sudo mount "$DEV_NAME" "$KFS_MOUNT_PATH"
 }
 

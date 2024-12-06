@@ -424,13 +424,32 @@ def bench_rand_read(
     # note for rand-read, one strict-no-overlap is set, 64 needs same size
     # as 4K
     value_sz_op_num_dict = {
-        # 64: 500000,
-        # 1024: 500000,
-        #4096: 500000,
+        # 256MB for latency benchmark
+        # 64: 4194304, # 64
+        # 1024: 262144, # 1K
+        # 4096: 65536,  # 4K
+        # 16384: 16384, # 16K
+        # 65536: 4096, # 64K
+        # 262144: 1024, # 256K
+        # 524288: 512, # 512K
+        # 1048576: 256, # 1M
+        # 2097152: 128, # 2M
+
+        # 5GB for throughput benchmark
+        # 1024: 262144 * 4 * 5, # 1K
+        # 4096: 65536 * 4 * 5,  # 4K
+        # 16384: 16384 * 4 * 5, # 16K
+        # 65536: 4096 * 4 * 5, # 64K
+        # 262144: 1024 * 4 * 5, # 256K
+        # 524288: 512 * 4 * 5, # 512K
+        # 1048576: 256 * 4 * 5, # 1M
+        # 2097152: 128 * 4 * 5 # 2M
+        
+        # multi process test
         4096: int(2*1024*1024/4),
-        # 16384: int(2*1024*1024/16),
-        # 32768: int(2*1024*1024/32),
-        # 65536: int(2*1024*1024/64),
+        16384: int(2*1024*1024/16),
+        65536: int(2*1024*1024/64),
+        262144: int(2*1024*1024/256),
     }
     if is_share:
         # value_sz_op_num_dict = {
@@ -458,6 +477,8 @@ def bench_rand_read(
                     if vs > 4096:
                         bench_cfg_dict['--rw_align_bytes='] = 4096 * \
                             (int((vs - 1) / 4096) + 1)
+                    elif vs < 4096:
+                        bench_cfg_dict['--rw_align_bytes='] = 1024
                     bench_cfg_dict['--numop='] = nop
                     cfs_tc.mk_accessible_dir(cur_run_log_dir)
                     expr_read_mtfsp_multiapp(cur_run_log_dir, nfswk,
