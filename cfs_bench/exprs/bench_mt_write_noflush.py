@@ -54,9 +54,9 @@ LOG_BASE = 'log_{}'.format(sys.argv[1])
 # num_app_list = [1]
 num_app_list = [1,2,4,8,10]
 
-if cur_numapp is not None:
-    num_app_list = list(range(1, cur_numapp + 1))
-    num_app_list.reverse()
+# if cur_numapp is not None:
+#     num_app_list = list(range(1, cur_numapp + 1))
+#     num_app_list.reverse()
 
 if tc.use_exact_num_app():
     num_app_list = [cur_numapp]

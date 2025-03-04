@@ -37,7 +37,6 @@ cur_is_share = False
 cur_sync_op = 4
 cur_numapp = None
 
-
 if len(sys.argv) >= 3:
     for v in sys.argv[2:]:
         if 'mpstat' in v:
@@ -64,18 +63,23 @@ LOG_BASE = 'log_{}'.format(sys.argv[1])
 # num_app_list = [10, 9, 8, 7, 6, 5, 4, 3, 2, 1]
 # num_app_list = [1]
 # num_app_list = [20 - i for i in range(20)]
-if cur_numapp is not None:
-    num_app_list = list(range(1, cur_numapp + 1))
-    num_app_list.reverse()
+# if cur_numapp is not None:
+#     num_app_list = list(range(1, cur_numapp + 1))
+#     num_app_list.reverse()
 
-num_app_list = [1]
-#sync_op_list = [-1] # throughput mode
+# 1 for Latency, 4 for default setting of uFS
+sync_op_list = [4]
 
-if tc.use_exact_num_app():
-    num_app_list = [cur_numapp]
-print('num_app_list:{}'.format(num_app_list))
+# if tc.use_exact_num_app():
+#     num_app_list = [cur_numapp]
+# print('num_app_list:{}'.format(num_app_list))
 
 for sync_op in sync_op_list:
+    if sync_op == 1:
+        num_app_list = [1] # for latency benchmark
+    else:
+        num_app_list = [1,2,4,8,10]
+
     for num_app in num_app_list:
         cur_num_fs_wk_list = [(i + 1) for i in range(num_app)]
         # cur_num_fs_wk_list = [num_app]
@@ -108,17 +112,11 @@ for sync_op in sync_op_list:
             CUR_ARKV_DIR = '{}_crwrite_app_{}'.format(LOG_BASE, num_app)
         else:
             # random write (NOTE: needs the size to be okay)
-            CUR_ARKV_DIR = '{}_rwrite_app_{}'.format(LOG_BASE, num_app)
-            # cur_cfs_update_dict = {
-            #    '--sync_numop=': cur_sync_op,
-            # }
-            # cur_is_no_overlap = True
-        if sync_op == 1:
-            CUR_ARKV_DIR = '{}_latency'.format(LOG_BASE)
-            cur_is_latency = True
-        else:
-            CUR_ARKV_DIR = '{}_throughput'.format(LOG_BASE)
-            cur_is_latency = False
+            if sync_op == 1:
+                CUR_ARKV_DIR = '{}_rwrite_latency'.format(LOG_BASE)
+            else:
+                CUR_ARKV_DIR = '{}_rwrite_thp_app_{}'.format(LOG_BASE, num_app)
+            cur_is_no_overlap = True
             
         mte_wr.bench_rand_write(
             cur_log_dir,
@@ -128,7 +126,7 @@ for sync_op in sync_op_list:
             per_app_fname=per_app_fname,
             dump_iostat=cur_dump_io_stat,
             cfs_update_dict=cur_cfs_update_dict,
-            num_fsp_worker_list=cur_num_fs_wk_list, is_latency=cur_is_latency)
+            num_fsp_worker_list=cur_num_fs_wk_list)
 
         os.mkdir(CUR_ARKV_DIR)
         os.system("mv log{}* {}".format(tc.get_year_str(), CUR_ARKV_DIR))

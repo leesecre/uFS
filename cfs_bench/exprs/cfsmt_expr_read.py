@@ -450,6 +450,7 @@ def bench_rand_read(
         16384: int(2*1024*1024/16),
         65536: int(2*1024*1024/64),
         262144: int(2*1024*1024/256),
+        
     }
     if is_share:
         # value_sz_op_num_dict = {
@@ -461,7 +462,7 @@ def bench_rand_read(
             if value_sz_op_num_dict[sz] > 500000:
                 value_sz_op_num_dict[sz] = 500000
     # pin_cpu_list = [False, True]
-    pin_cpu_list = [True]
+    pin_cpu_list = [True, False]
     clear_pc_list = [True]
     if num_fsp_worker_list is None:
         num_fsp_worker_list = [1]
@@ -477,8 +478,7 @@ def bench_rand_read(
                     if vs > 4096:
                         bench_cfg_dict['--rw_align_bytes='] = 4096 * \
                             (int((vs - 1) / 4096) + 1)
-                    elif vs < 4096:
-                        bench_cfg_dict['--rw_align_bytes='] = 1024
+
                     bench_cfg_dict['--numop='] = nop
                     cfs_tc.mk_accessible_dir(cur_run_log_dir)
                     expr_read_mtfsp_multiapp(cur_run_log_dir, nfswk,

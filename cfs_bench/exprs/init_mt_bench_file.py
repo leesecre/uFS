@@ -47,11 +47,11 @@ else:
 LOG_BASE = 'log_{}'.format(sys.argv[1])
 BENCH_FSIZE = (5 * 1024 * 1024 * 1024)
 #BENCH_FSIZE = (6 * 1024 * 1000 * 1000)
-#NUM_FILES = 1
 NUM_FILES = 10
 
 if len(sys.argv) == 3:
     NUM_FILES = int(sys.argv[2])
+
 
 cur_numop = int(BENCH_FSIZE / 4096)
 

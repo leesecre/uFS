@@ -1,9 +1,3 @@
-#include <fcntl.h>
-#include <cstdint>
-#include <functional>
-#include <iostream>
-#include <sstream>
-#include <unordered_map>
 #include "leveldb/env.h"
 #include "leveldb/slice.h"
 #include "port/port.h"
@@ -14,6 +8,12 @@
 #include "util/mutexlock.h"
 #include "util/random.h"
 #include "util/testutil.h"
+#include <cstdint>
+#include <fcntl.h>
+#include <functional>
+#include <iostream>
+#include <sstream>
+#include <unordered_map>
 
 #include "perfutil/Cycles.h"
 
@@ -23,6 +23,8 @@
 #include "cpucounters.h"
 using namespace pcm;
 #endif
+
+// #define CFS_USE_POSIX 1
 
 #ifndef CFS_USE_POSIX
 #include "fsapi.h"
@@ -34,6 +36,9 @@ using namespace pcm;
 #include <sys/types.h>
 #include <unistd.h>
 #endif
+
+#define ALIGN_MASK(x, mask) (((x) + (mask)) & ~(mask))
+#define ALIGN(x, a) ALIGN_MASK((x), ((__typeof__(x))(a) - 1))
 
 // Comma separated strings corresponding to benchmark names.
 // For example - crread,rwrite,seqwrite
@@ -71,7 +76,6 @@ static bool FLAGS_coordinator = true;
 
 // number of bytes written to each file (by default ~5G)
 static uint64_t FLAGS_max_file_size = ((uint64_t)5 * 1024 * 1000 * 1000);
-// static uint64_t FLAGS_max_file_size = ((uint64_t)6 * 1024 * 1000 * 1000);
 
 // number of bytes that is cached in memory
 // used for cached workloads (by default ~=128M)
@@ -217,11 +221,11 @@ struct DynamicSegmentTracker {
 
 // Helper for quickly generating random data.
 class RandomGenerator {
- private:
+private:
   std::string data_;
   int pos_;
 
- public:
+public:
   RandomGenerator() {
     // We use a limited amount of data over and over again and ensure
     // that it is larger than the compression window (32KB), and also
@@ -261,7 +265,8 @@ static Slice TrimSpace(Slice s) {
 }
 
 static void AppendWithSpace(std::string *str, leveldb::Slice msg) {
-  if (msg.empty()) return;
+  if (msg.empty())
+    return;
   if (!str->empty()) {
     str->push_back(' ');
   }
@@ -321,7 +326,8 @@ void print_basic_metrics(const PCM *m, const State &state1,
 
 std::string temp_format(int32 t) {
   char buffer[1024];
-  if (t == PCM_INVALID_THERMAL_HEADROOM) return "N/A";
+  if (t == PCM_INVALID_THERMAL_HEADROOM)
+    return "N/A";
 
   snprintf(buffer, 1024, "%2d", t);
   return buffer;
@@ -329,7 +335,8 @@ std::string temp_format(int32 t) {
 
 std::string l3cache_occ_format(uint64 o) {
   char buffer[1024];
-  if (o == PCM_INVALID_QOS_MONITORING_DATA) return "N/A";
+  if (o == PCM_INVALID_QOS_MONITORING_DATA)
+    return "N/A";
 
   snprintf(buffer, 1024, "%6d", (uint32)o);
   return buffer;
@@ -352,20 +359,31 @@ void print_per_core_metrics(const PCM *m, const State &states1,
                             const State &states2) {
   cout << " Core (SKT) |";
   cout << " EXEC | IPC  | FREQ  |";
-  if (m->isActiveRelativeFrequencyAvailable()) cout << " AFREQ |";
-  if (m->isL3CacheMissesAvailable()) cout << " L3MISS |";
-  if (m->isL2CacheMissesAvailable()) cout << " L2MISS |";
-  if (m->isL3CacheHitRatioAvailable()) cout << " L3HIT |";
-  if (m->isL2CacheHitRatioAvailable()) cout << " L2HIT |";
-  if (m->isL3CacheMissesAvailable()) cout << " L3MPI |";
-  if (m->isL2CacheMissesAvailable()) cout << " L2MPI | ";
-  if (m->L3CacheOccupancyMetricAvailable()) cout << "  L3OCC |";
-  if (m->CoreLocalMemoryBWMetricAvailable()) cout << "   LMB  |";
-  if (m->CoreRemoteMemoryBWMetricAvailable()) cout << "   RMB  |";
+  if (m->isActiveRelativeFrequencyAvailable())
+    cout << " AFREQ |";
+  if (m->isL3CacheMissesAvailable())
+    cout << " L3MISS |";
+  if (m->isL2CacheMissesAvailable())
+    cout << " L2MISS |";
+  if (m->isL3CacheHitRatioAvailable())
+    cout << " L3HIT |";
+  if (m->isL2CacheHitRatioAvailable())
+    cout << " L2HIT |";
+  if (m->isL3CacheMissesAvailable())
+    cout << " L3MPI |";
+  if (m->isL2CacheMissesAvailable())
+    cout << " L2MPI | ";
+  if (m->L3CacheOccupancyMetricAvailable())
+    cout << "  L3OCC |";
+  if (m->CoreLocalMemoryBWMetricAvailable())
+    cout << "   LMB  |";
+  if (m->CoreRemoteMemoryBWMetricAvailable())
+    cout << "   RMB  |";
 
   cout << " TEMP" << std::endl << std::endl;
   for (uint32 i = 0; i < m->getNumCores(); ++i) {
-    if (m->isCoreOnline(i) == false) continue;
+    if (m->isCoreOnline(i) == false)
+      continue;
 
     // std::cout << "core:" << i << " :";
     cout << " " << setw(3) << i << "   " << setw(2) << m->getSocketId(i);
@@ -387,7 +405,7 @@ static std::vector<std::string> splitStr(const std::string &input, char delim) {
 }
 
 class Stats {
- private:
+private:
   double start_;
   double finish_;
   double seconds_;
@@ -401,7 +419,7 @@ class Stats {
   std::string message_;
   bool stopped_{false};
 
- public:
+public:
   Stats() { Start(); }
 
   void Start() {
@@ -424,11 +442,14 @@ class Stats {
     done_ += other.done_;
     bytes_ += other.bytes_;
     seconds_ += other.seconds_;
-    if (other.start_ < start_) start_ = other.start_;
-    if (other.finish_ > finish_) finish_ = other.finish_;
+    if (other.start_ < start_)
+      start_ = other.start_;
+    if (other.finish_ > finish_)
+      finish_ = other.finish_;
 
     // Just keep the messages from one thread
-    if (message_.empty()) message_ = other.message_;
+    if (message_.empty())
+      message_ = other.message_;
   }
 
   void Stop() {
@@ -489,7 +510,8 @@ class Stats {
   void Report(const leveldb::Slice &name) {
     // Pretend at least one op was done in case we are running a benchmark
     // that does not call FinishedSingleOp().
-    if (done_ < 1) done_ = 1;
+    if (done_ < 1)
+      done_ = 1;
     last_op_nano_ = (uint64_t)last_op_finish_;
 
     std::string extra;
@@ -504,7 +526,7 @@ class Stats {
       extra = rate;
     }
     AppendWithSpace(&extra, message_);
-    {  // json stuff
+    { // json stuff
       // TODO: add the stddev?
       float throughput = done_ / seconds_;
       float latency = (seconds_ * 1e6) / done_;
@@ -548,37 +570,31 @@ struct SharedState {
 
 // Per-thread state for concurrent executions of the same benchmark.
 struct ThreadState {
-  int tid;  // 0..n-1 when running in n threads
-  int cid;  // logical core id, will ignore if <=0
-  int aid;  // app id (currently for dynamic bench)
+  int tid; // 0..n-1 when running in n threads
+  int cid; // logical core id, will ignore if <=0
+  int aid; // app id (currently for dynamic bench)
   int fd;
   std::string path;
-  leveldb::Random rand;  // Has different seeds for different threads
+  leveldb::Random rand; // Has different seeds for different threads
   Stats stats;
   SharedState *shared;
-  uint32_t *crc_arr;  // array to store the crc value of each unit
+  uint32_t *crc_arr; // array to store the crc value of each unit
   uint64_t fileSize;
 
   ThreadState(int index, int cid, int aid, Slice p)
-      : tid(index),
-        cid(cid),
-        aid(aid),
-        fd(-1),
-        path(p.ToString()),
+      : tid(index), cid(cid), aid(aid), fd(-1), path(p.ToString()),
         // rand(1000 + index),
         rand(1000 + index +
-             aid),  // for random bench, gen different rand for different ops
-        shared(nullptr),
-        crc_arr(nullptr),
-        fileSize(0) {}
+             aid), // for random bench, gen different rand for different ops
+        shared(nullptr), crc_arr(nullptr), fileSize(0) {}
 
   ~ThreadState() { delete[] crc_arr; }
 };
 
-}  // namespace
+} // namespace
 
 class Benchmark {
- private:
+private:
   int numop_;
   int value_size_;
   bool value_random_size_;
@@ -633,7 +649,8 @@ class Benchmark {
 
       // do benchmark
       ret = op_func(ctx);
-      if (ret < 0) return -1;
+      if (ret < 0)
+        return -1;
 
       // if move to next segment
       uint64_t cur_ts = g_env->NowCycles();
@@ -669,7 +686,7 @@ class Benchmark {
 
   void PrintEnvironment() {
     time_t now = time(nullptr);
-    fprintf(stderr, "Date:       %s", ctime(&now));  // ctime() adds newline
+    fprintf(stderr, "Date:       %s", ctime(&now)); // ctime() adds newline
 
     FILE *cpuinfo = fopen("/proc/cpuinfo", "r");
     if (cpuinfo != nullptr) {
@@ -776,15 +793,12 @@ class Benchmark {
     }
   }
 
- public:
+public:
   Benchmark()
-      : numop_(FLAGS_numop),
-        value_size_(FLAGS_value_size),
+      : numop_(FLAGS_numop), value_size_(FLAGS_value_size),
         value_random_size_(FLAGS_value_random_size),
-        share_one_file_(FLAGS_share_mode),
-        compute_crc_(FLAGS_compute_crc),
-        fs_initialized_(false),
-        dir_(FLAGS_dir) {
+        share_one_file_(FLAGS_share_mode), compute_crc_(FLAGS_compute_crc),
+        fs_initialized_(false), dir_(FLAGS_dir) {
     if (FLAGS_flist != nullptr) {
       char fname_list_str[kMaxFileNameLen * kMaxNumFile];
       memset(fname_list_str, 0, kMaxFileNameLen * kMaxNumFile);
@@ -851,7 +865,7 @@ class Benchmark {
     ExitFs();
   }
 
- private:
+private:
   struct ThreadArg {
     Benchmark *bm;
     SharedState *shared;
@@ -959,9 +973,8 @@ class Benchmark {
 #endif
     } else {
       if (FLAGS_fs_worker_key_offset < 0) {
-        fprintf(stderr,
-                "WARNING: use single-thread FSP, but key_offset not "
-                "set, set to 1 instead\n");
+        fprintf(stderr, "WARNING: use single-thread FSP, but key_offset not "
+                        "set, set to 1 instead\n");
         // NOTE, here this is for backward compatibility, thus the old expr.
         // script can be run
         FLAGS_fs_worker_key_offset = 1;
@@ -991,7 +1004,8 @@ class Benchmark {
 
   void PinToCore(ThreadState *thread) {
     fprintf(stdout, "pinToCore cid:%d\n", thread->cid);
-    if (thread->cid <= 0) return;
+    if (thread->cid <= 0)
+      return;
     cpu_set_t cpuset;
     CPU_ZERO(&cpuset);
     CPU_SET(thread->cid - 1, &cpuset);
@@ -1070,7 +1084,6 @@ class Benchmark {
     int64_t bytes = 0;
 #ifndef CFS_USE_POSIX
     char *wdata = (char *)fs_zalloc(value_size_);
-    // char *wdata = (char *)malloc(value_size_);
 #else
     char *wdata = (char *)malloc(value_size_);
 #endif
@@ -1083,10 +1096,6 @@ class Benchmark {
     // once random write, if max_file_size is assigned by cmd argument
     // assume will be *cached random write*
     uint64_t randWriteRange = std::min(FLAGS_max_file_size, thread->fileSize);
-
-    if (thread->aid == 0) {
-      // sleep(1);
-    }
 
     if (FLAGS_wid > 0 && (!FLAGS_share_mode)) {
 #ifndef CFS_USE_POSIX
@@ -1125,7 +1134,6 @@ class Benchmark {
 #ifndef CFS_USE_POSIX
         // rc = fs_write(thread->fd, slice.data(), cur_value_size);
         rc = fs_allocated_write(thread->fd, wdata, cur_value_size);
-        // rc = fs_write(thread->fd, wdata, cur_value_size);
 #else
         rc = write(thread->fd, wdata, cur_value_size);
 #endif
@@ -1140,7 +1148,6 @@ class Benchmark {
 #ifndef CFS_USE_POSIX
         // rc = fs_pwrite(thread->fd, slice.data(), cur_value_size, cur_off);
         rc = fs_allocated_pwrite(thread->fd, wdata, cur_value_size, cur_off);
-        // rc = fs_pwrite(thread->fd, wdata, cur_value_size, cur_off);
 #else
         // fprintf(stdout, "cur_size:%d, cur_off:%ld\n", cur_value_size,
         // cur_off);
@@ -1172,25 +1179,9 @@ class Benchmark {
       }
       // accounting
       bytes += cur_value_size;
-      if (FLAGS_sync_numop != -1)
-        thread->stats.FinishedSingleOp();
-      if (cc.check_server_said_stop()) break;
-    }
-
-    if (FLAGS_sync_numop == -1)  {
-        fprintf(stderr, "fsync at last\n");
-        int srt;
-#ifndef CFS_USE_POSIX
-        srt = fs_fdatasync(thread->fd);
-#else
-        srt = fdatasync(thread->fd);
-#endif
-        if (srt < 0) {
-          fprintf(stderr, "at last fdatasync error:%s srt:%d\n", strerror(errno),
-                  srt);
-          exit(1);
-        }
-        thread->stats.FinishedSingleOp();
+      thread->stats.FinishedSingleOp();
+      if (cc.check_server_said_stop())
+        break;
     }
 
     cc.notify_server_that_client_stopped();
@@ -1202,7 +1193,6 @@ class Benchmark {
 
 #ifndef CFS_USE_POSIX
     fs_free(wdata);
-    // free(wdata);
 #else
     free(wdata);
 #endif
@@ -1453,7 +1443,8 @@ class Benchmark {
       thread->stats.FinishedSingleOp();
       bytes += value_size_;
 
-      if (cc.check_server_said_stop()) break;
+      if (cc.check_server_said_stop())
+        break;
     }
 
     cc.notify_server_that_client_stopped();
@@ -1490,13 +1481,12 @@ class Benchmark {
     const int kRaNumBlock = 1;
 #ifndef CFS_USE_POSIX
     char *rdata = (char *)fs_malloc(kRaNumBlock * value_size_);
-    // char *rdata = (char *)malloc(kRaNumBlock * value_size_);
 #else
     char rdata[value_size_];
 #endif
     if (!rdata) {
-        fprintf(stderr, "malloc failed");
-        exit(1);
+      fprintf(stderr, "malloc failed");
+      exit(1);
     }
     memset(rdata, 0, value_size_);
     OpenFile(thread);
@@ -1508,9 +1498,8 @@ class Benchmark {
     if (FLAGS_rand_no_overlap) {
       // this benchmark would like to make sure no IO is overlap
       if (FLAGS_rand_no_overlap && FLAGS_rw_align_bytes == 0) {
-        fprintf(stderr,
-                "random_no_overalap=1 => rw_align_bytes should not be"
-                "0\n");
+        fprintf(stderr, "random_no_overalap=1 => rw_align_bytes should not be"
+                        "0\n");
         exit(1);
       }
       max_req_num = FLAGS_max_file_size / FLAGS_rw_align_bytes;
@@ -1518,16 +1507,12 @@ class Benchmark {
         fprintf(stderr,
                 "file size not enough to complete the aligned req max:%lu\n",
                 max_req_num);
-        if (value_size_ != 1024) 
-          exit(1);
-        max_req_num = numop_;
-        FLAGS_rw_align_bytes = 1024;
       }
     } else {
       // it is okay to overlap
       max_req_num = numop_;
     }
-    
+
     fprintf(stdout, "FLAGS_rw_align_bytes:%d max_req_num:%lu\n",
             FLAGS_rw_align_bytes, max_req_num);
 
@@ -1581,7 +1566,6 @@ class Benchmark {
         // sequential read
 #ifndef CFS_USE_POSIX
         rc = fs_allocated_read(thread->fd, rdata, value_size_);
-        // rc = fs_read(thread->fd, rdata, value_size_);
         // fprintf(stdout, "seqread i:%d firstChar:%c\n", i, rdata[0]);
 #else
         rc = read(thread->fd, rdata, value_size_);
@@ -1600,7 +1584,6 @@ class Benchmark {
 
 #ifndef CFS_USE_POSIX
         rc = fs_allocated_pread(thread->fd, rdata, value_size_, cur_off);
-        // rc = fs_pread(thread->fd, rdata, value_size_, cur_off);
 #else
         rc = pread(thread->fd, rdata, value_size_, cur_off);
 #endif
@@ -1623,13 +1606,13 @@ class Benchmark {
       // do accounting
       thread->stats.FinishedSingleOp();
       bytes += value_size_;
-      if (cc.check_server_said_stop()) break;
+      if (cc.check_server_said_stop())
+        break;
     }
     cc.notify_server_that_client_stopped();
 
 #ifndef CFS_USE_POSIX
     fs_free(rdata);
-    // free(rdata);
 #endif
 
     thread->stats.AddBytes(bytes);
@@ -1650,7 +1633,7 @@ class Benchmark {
     int rc = fs_stat(thread->path.data(), &statbuf);
 #else
     int rc = ::stat(thread->path.data(), &statbuf);
-#endif  // CFS_USE_POSIX
+#endif // CFS_USE_POSIX
     int cur_flags;
     if (rc == 0) {
       cur_flags = O_RDWR;
@@ -1707,14 +1690,15 @@ class Benchmark {
 
       if (rc == 0) {
         fprintf(stderr,
-                "fs_stat succeeded, expected it to fail\n");  // FIXME : stat
-                                                              // does not behave
-                                                              // as expected
+                "fs_stat succeeded, expected it to fail\n"); // FIXME : stat
+                                                             // does not behave
+                                                             // as expected
         cc.notify_server_that_client_stopped();
         exit(1);
       }
       thread->stats.FinishedSingleOp();
-      if (cc.check_server_said_stop()) break;
+      if (cc.check_server_said_stop())
+        break;
     }
     cc.notify_server_that_client_stopped();
   }
@@ -1746,7 +1730,8 @@ class Benchmark {
         exit(1);
       }
       thread->stats.FinishedSingleOp();
-      if (cc.check_server_said_stop()) break;
+      if (cc.check_server_said_stop())
+        break;
     }
     cc.notify_server_that_client_stopped();
     thread->stats.Stop();
@@ -1789,7 +1774,8 @@ class Benchmark {
         exit(1);
       }
       thread->stats.FinishedSingleOp();
-      if (cc.check_server_said_stop()) break;
+      if (cc.check_server_said_stop())
+        break;
     }
     cc.notify_server_that_client_stopped();
     thread->stats.Stop();
@@ -1880,10 +1866,12 @@ class Benchmark {
         exit(1);
       }
       thread->stats.FinishedSingleOp();
-      if (FLAGS_coordinator && cc.check_server_said_stop()) break;
+      if (FLAGS_coordinator && cc.check_server_said_stop())
+        break;
     }
     fprintf(stderr, "finish all aid:%d \n", thread->aid);
-    if (FLAGS_coordinator) cc.notify_server_that_client_stopped();
+    if (FLAGS_coordinator)
+      cc.notify_server_that_client_stopped();
     thread->stats.Stop();
     SignalStopDumpLoad(thread);
     if (!FLAGS_stat_nocreate) {
@@ -2069,13 +2057,15 @@ class Benchmark {
 #endif
       if (fd < 0) {
         fprintf(stderr, "Failed to open%s\n", stat_path.c_str());
-        if (!isClose) cc.notify_server_that_client_stopped();
+        if (!isClose)
+          cc.notify_server_that_client_stopped();
         exit(1);
       }
       if (!isClose) {
         thread->stats.FinishedSingleOp();
         // finish one op
-        if (cc.check_server_said_stop()) break;
+        if (cc.check_server_said_stop())
+          break;
       }
       fds.push_back(fd);
     }
@@ -2109,7 +2099,8 @@ class Benchmark {
       }
       if (isClose) {
         thread->stats.FinishedSingleOp();
-        if (cc.check_server_said_stop()) break;
+        if (cc.check_server_said_stop())
+          break;
       }
     }
 
@@ -2199,7 +2190,8 @@ class Benchmark {
       }
 
       thread->stats.FinishedSingleOp();
-      if (cc.check_server_said_stop()) break;
+      if (cc.check_server_said_stop())
+        break;
     }
     cc.notify_server_that_client_stopped();
     thread->stats.Stop();
@@ -2270,7 +2262,8 @@ class Benchmark {
       }
 
       thread->stats.FinishedSingleOp();
-      if (cc.check_server_said_stop()) break;
+      if (cc.check_server_said_stop())
+        break;
     }
     cc.notify_server_that_client_stopped();
     thread->stats.Stop();
@@ -2289,7 +2282,8 @@ class Benchmark {
   void BenchCreate(ThreadState *thread) {
     PinToCore(thread);
     static constexpr size_t kMaxInitFileSize = 1024 * 1024;
-    if (value_size_ > kMaxInitFileSize) value_size_ = kMaxInitFileSize;
+    if (value_size_ > kMaxInitFileSize)
+      value_size_ = kMaxInitFileSize;
     if (numop_ != FLAGS_numop) {
       char msg[100];
       snprintf(msg, sizeof(msg), "(%d ops)", numop_);
@@ -2364,7 +2358,8 @@ class Benchmark {
       close(fd);
 #endif
       thread->stats.FinishedSingleOp();
-      if ((FLAGS_coordinator) && cc.check_server_said_stop()) break;
+      if ((FLAGS_coordinator) && cc.check_server_said_stop())
+        break;
     }
 #ifndef CFS_USE_POSIX
     // NOTE: This will cause the micros/sec vs. average latency gap larger
@@ -2428,7 +2423,8 @@ class Benchmark {
       }
 
       thread->stats.FinishedSingleOp();
-      if (cc.check_server_said_stop()) break;
+      if (cc.check_server_said_stop())
+        break;
     }
     cc.notify_server_that_client_stopped();
     thread->stats.Stop();
@@ -2491,7 +2487,8 @@ class Benchmark {
       // finish one op
       thread->stats.FinishedSingleOp();
 
-      if (cc.check_server_said_stop()) break;
+      if (cc.check_server_said_stop())
+        break;
     }
 #ifndef CFS_USE_POSIX
     fs_free(initShmPtr);
@@ -2546,7 +2543,8 @@ class Benchmark {
       // finish one op
       thread->stats.FinishedSingleOp();
 
-      if (cc.check_server_said_stop()) break;
+      if (cc.check_server_said_stop())
+        break;
     }
 #ifndef CFS_USE_POSIX
     fs_free(initShmPtr);
@@ -2605,7 +2603,8 @@ class Benchmark {
 #else
         dp = readdir(dentryPtr);
 #endif
-        if (dp == NULL) break;
+        if (dp == NULL)
+          break;
 
         // do stat on that dentry
         std::string stat_path = basepath + dp->d_name;
@@ -2628,7 +2627,8 @@ class Benchmark {
       // finish one op
       thread->stats.FinishedSingleOp();
 
-      if (cc.check_server_said_stop()) break;
+      if (cc.check_server_said_stop())
+        break;
     }
 #ifndef CFS_USE_POSIX
     fs_free(initShmPtr);
@@ -2730,7 +2730,8 @@ class Benchmark {
 
       // finish one op
       thread->stats.FinishedSingleOp();
-      if (cc.check_server_said_stop()) break;
+      if (cc.check_server_said_stop())
+        break;
     }
 
     // benchmark done
@@ -2783,7 +2784,8 @@ class Benchmark {
       }
 
       thread->stats.FinishedSingleOp();
-      if (cc.check_server_said_stop()) break;
+      if (cc.check_server_said_stop())
+        break;
     }
     cc.notify_server_that_client_stopped();
     thread->stats.Stop();
@@ -2841,7 +2843,8 @@ class Benchmark {
         fprintf(stderr, "fs_rename fail. p1:%s p2:%s rc:%d\n", path, pathdst,
                 rc);
       }
-      if (cc.check_server_said_stop()) break;
+      if (cc.check_server_said_stop())
+        break;
     }
     cc.notify_server_that_client_stopped();
     thread->stats.Stop();
@@ -3066,11 +3069,8 @@ class Benchmark {
     struct DiskReadCtx {
       DiskReadCtx(int aid, std::vector<int> &fds, size_t size,
                   int batch_num_files)
-          : aid(aid),
-            fd_vec(fds),
-            max_file_size(FLAGS_in_mem_file_size),
-            read_size(size),
-            in_mem_fset_size(batch_num_files) {
+          : aid(aid), fd_vec(fds), max_file_size(FLAGS_in_mem_file_size),
+            read_size(size), in_mem_fset_size(batch_num_files) {
 #ifndef CFS_USE_POSIX
         read_buf = (char *)fs_malloc(size);
 #endif
@@ -3230,11 +3230,8 @@ class Benchmark {
     struct DiskReadCtx {
       DiskReadCtx(int aid, std::vector<int> &fds, size_t size,
                   int batch_num_files)
-          : aid(aid),
-            fd_vec(fds),
-            max_file_size(FLAGS_in_mem_file_size),
-            read_size(size),
-            do_sync_mod_vec(FLAGS_num_segment, 1) {
+          : aid(aid), fd_vec(fds), max_file_size(FLAGS_in_mem_file_size),
+            read_size(size), do_sync_mod_vec(FLAGS_num_segment, 1) {
 #ifndef CFS_USE_POSIX
         read_buf = (char *)fs_malloc(size);
 
@@ -3452,12 +3449,8 @@ class Benchmark {
     struct DiskReadCtx {
       DiskReadCtx(int aid, std::vector<int> &fds, size_t size, bool is_hot,
                   int batch_num_files)
-          : aid(aid),
-            fd_vec(fds),
-            max_file_size(FLAGS_in_mem_file_size),
-            read_size(size),
-            is_hot(is_hot),
-            fset_size(batch_num_files) {
+          : aid(aid), fd_vec(fds), max_file_size(FLAGS_in_mem_file_size),
+            read_size(size), is_hot(is_hot), fset_size(batch_num_files) {
 #ifndef CFS_USE_POSIX
         read_buf = (char *)fs_malloc(size);
 #endif
@@ -3703,10 +3696,8 @@ class Benchmark {
 
     struct DiskReadCtx {
       DiskReadCtx(std::vector<int> &fds, size_t size, leveldb::Random &rand)
-          : fd_vec(fds),
-            max_file_size(FLAGS_in_mem_file_size),
-            write_size(size),
-            rand(rand) {
+          : fd_vec(fds), max_file_size(FLAGS_in_mem_file_size),
+            write_size(size), rand(rand) {
 #ifndef CFS_USE_POSIX
         write_buf = (char *)fs_malloc(16384);
         for (int i = 0; i < 16384; i++) {
@@ -3870,10 +3861,8 @@ class Benchmark {
 
     struct DiskReadCtx {
       DiskReadCtx(std::vector<int> &fds, size_t size, leveldb::Random &rand)
-          : fd_vec(fds),
-            max_file_size(FLAGS_in_mem_file_size),
-            write_size(size),
-            rand(rand) {
+          : fd_vec(fds), max_file_size(FLAGS_in_mem_file_size),
+            write_size(size), rand(rand) {
 #ifndef CFS_USE_POSIX
         write_buf = (char *)fs_malloc(16384);
         for (int i = 0; i < 16384; i++) {
@@ -4028,11 +4017,8 @@ class Benchmark {
 
     struct DiskReadCtx {
       DiskReadCtx(std::vector<int> &fds, size_t size, leveldb::Random &rand)
-          : fd_vec(fds),
-            max_file_size(FLAGS_in_mem_file_size),
-            read_size(size),
-            real_read_size(size),
-            is_random_size(FLAGS_value_random_size),
+          : fd_vec(fds), max_file_size(FLAGS_in_mem_file_size), read_size(size),
+            real_read_size(size), is_random_size(FLAGS_value_random_size),
             rand(rand) {
 #ifndef CFS_USE_POSIX
         read_buf = (char *)fs_malloc(16384);
@@ -4201,11 +4187,8 @@ class Benchmark {
 
     struct DiskReadCtx {
       DiskReadCtx(std::vector<int> &fds, size_t size, leveldb::Random &rand)
-          : fd_vec(fds),
-            max_file_size(FLAGS_in_mem_file_size),
-            read_size(size),
-            read_size_vec(size, FLAGS_num_segment),
-            rand(rand) {
+          : fd_vec(fds), max_file_size(FLAGS_in_mem_file_size), read_size(size),
+            read_size_vec(size, FLAGS_num_segment), rand(rand) {
 #ifndef CFS_USE_POSIX
         read_buf = (char *)fs_malloc(128 * 1024);
         const size_t kMaxReadSize = 32 * 1024;
@@ -4393,10 +4376,8 @@ class Benchmark {
 
     struct DiskReadCtx {
       DiskReadCtx(std::vector<int> &fds, size_t size, leveldb::Random &rand)
-          : fd_vec(fds),
-            max_file_size(FLAGS_in_mem_file_size),
-            write_size(size),
-            write_size_vec(size, FLAGS_num_segment),
+          : fd_vec(fds), max_file_size(FLAGS_in_mem_file_size),
+            write_size(size), write_size_vec(size, FLAGS_num_segment),
             rand(rand) {
 #ifndef CFS_USE_POSIX
         const size_t kMaxIoSize = 64 * 1024;
@@ -4598,10 +4579,8 @@ class Benchmark {
       const size_t kHotBufSize = 1024 * 32;
       DiskReadCtx(std::vector<int> &fds, int num_hot_f, size_t size,
                   bool allow_rpt)
-          : fd_vec(fds),
-            num_hot_file(num_hot_f),
-            max_file_size(FLAGS_max_file_size),
-            read_size(size),
+          : fd_vec(fds), num_hot_file(num_hot_f),
+            max_file_size(FLAGS_max_file_size), read_size(size),
             allow_repeat(allow_rpt) {
 #ifndef CFS_USE_POSIX
         read_buf = (volatile char *)fs_malloc(size);
@@ -4752,9 +4731,7 @@ class Benchmark {
 
     struct DiskReadCtx {
       DiskReadCtx(std::vector<int> &fds, size_t size, bool allow_rpt)
-          : fd_vec(fds),
-            max_file_size(FLAGS_max_file_size),
-            read_size(size),
+          : fd_vec(fds), max_file_size(FLAGS_max_file_size), read_size(size),
             allow_repeat(allow_rpt) {
 #ifndef CFS_USE_POSIX
         read_buf = (volatile char *)fs_malloc(size);
@@ -4901,9 +4878,7 @@ class Benchmark {
 
     struct WriteSyncCtx {
       WriteSyncCtx(std::vector<int> &fds, size_t size)
-          : fd_vec(fds),
-            max_file_size(FLAGS_max_file_size),
-            write_size(size),
+          : fd_vec(fds), max_file_size(FLAGS_max_file_size), write_size(size),
             no_sync(FLAGS_sync_numop == 0) {
 #ifndef CFS_USE_POSIX
         write_buf = (volatile char *)fs_malloc(size);
@@ -5117,11 +5092,8 @@ class Benchmark {
 
     struct OWSClCtx {
       OWSClCtx(std::string p, int nf, size_t ws, size_t max_fsize, int sync_nop)
-          : fname_prefix(p),
-            num_files(nf),
-            write_size(ws),
-            max_file_size(max_fsize),
-            sync_numop(sync_nop) {
+          : fname_prefix(p), num_files(nf), write_size(ws),
+            max_file_size(max_fsize), sync_numop(sync_nop) {
 #ifndef CFS_USE_POSIX
         write_buf = (char *)fs_malloc(write_size);
 #endif
@@ -5177,17 +5149,20 @@ class Benchmark {
       if (cur_ctx->sync_numop > 0) {
         // if sync_numop > 0, we will treat it as 1
         cur_ctx->ret = fs_fdatasync(cur_ctx->fd);
-        if (cur_ctx->ret < 0) return cur_ctx->ret;
+        if (cur_ctx->ret < 0)
+          return cur_ctx->ret;
       }
 
       if (cur_ctx->off >= cur_ctx->max_file_size) {
         if (cur_ctx->sync_numop <= 0) {
           cur_ctx->ret = fs_fdatasync(cur_ctx->fd);
-          if (cur_ctx->ret < 0) return cur_ctx->ret;
+          if (cur_ctx->ret < 0)
+            return cur_ctx->ret;
         }
 
         cur_ctx->ret = fs_close(cur_ctx->fd);
-        if (cur_ctx->ret < 0) return cur_ctx->ret;
+        if (cur_ctx->ret < 0)
+          return cur_ctx->ret;
         cur_ctx->fidx++;
         cur_ctx->off = 0;
         cur_ctx->open_done = false;
@@ -5458,7 +5433,8 @@ class Benchmark {
       //  cur_idx, data[0]);
       c = data[0];
       thread->stats.FinishedSingleOp();
-      if (cc.check_server_said_stop()) break;
+      if (cc.check_server_said_stop())
+        break;
     }
     thread->stats.Stop();
     cc.notify_server_that_client_stopped();
@@ -5504,7 +5480,7 @@ class Benchmark {
   }
 };
 
-}  // namespace leveldb
+} // namespace leveldb
 
 int main(int argc, char **argv) {
   for (int i = 1; i < argc; i++) {

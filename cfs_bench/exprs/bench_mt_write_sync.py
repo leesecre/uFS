@@ -55,20 +55,26 @@ if cur_is_append:
     CUR_WK_TYPE = 'append'
 
 # num_app_list = [10, 9, 8, 7, 6, 5, 4, 3, 2, 1]
-num_app_list = [1]
 #num_app_list = [20 - i for i in range(20)]
-if cur_numapp is not None:
-    num_app_list = list(range(1, cur_numapp + 1))
-    num_app_list.reverse()
+# if cur_numapp is not None:
+#     num_app_list = list(range(1, cur_numapp + 1))
+#     num_app_list.reverse()
 
 #sync_op_list = [4, 8, 16, 32, 64, 128]
-# sync_op_list = [1, 2, 4, 8, 16]
-sync_op_list = [1]
+#sync_op_list = [1, 2, 4, 8, 16]
 
-if tc.use_exact_num_app():
-    num_app_list = [cur_numapp]
+# 1 for Latency, 4 for default setting of uFS
+sync_op_list = [4]
+
+# if tc.use_exact_num_app():
+#     num_app_list = [cur_numapp]
 
 for sync_op in sync_op_list:
+    if sync_op == 1:
+        num_app_list = [1] # for latency benchmark
+    else:
+        num_app_list = [1,2,4,8,10]
+
     for num_app in num_app_list:
         cur_cfs_update_dict = {
             '--sync_numop=': sync_op,
@@ -110,10 +116,10 @@ for sync_op in sync_op_list:
         os.mkdir(CUR_ARKV_DIR)
         os.system("mv log{}* {}".format(tc.get_year_str(), CUR_ARKV_DIR))
 
-        if not cur_is_fsp:
-            os.system("tune2fs -l /dev/{} > {}/kfs_mount_option".format(
-                cur_dev_name, CUR_ARKV_DIR))
-            tc.dump_kernel_dirty_flush_config(CUR_ARKV_DIR)
+        # if not cur_is_fsp:
+        #     os.system("tune2fs -l /dev/{} > {}/kfs_mount_option".format(
+        #         cur_dev_name, CUR_ARKV_DIR))
+        #     tc.dump_kernel_dirty_flush_config(CUR_ARKV_DIR)
 
         time.sleep(2)
 

@@ -72,7 +72,8 @@ def reset_spdk():
 
 
 def setup_ext4(has_journal=True, readahead_kb=None, delay_allocate=True):
-    cmd = 'mkfs -F -t ext4 {}'.format(DEV_NAME)
+    # cmd = 'mkfs -F -t ext4 {}'.format(DEV_NAME)
+    cmd = 'mke2fs -t ext4 -J size=10000 -E lazy_itable_init=0,lazy_journal_init=0 -N 1000 -F -G 1 {}'.format(DEV_NAME)
     logging.debug(cmd)
     ret = subprocess.call(cmd, shell=True)
     if ret != 0:
@@ -86,24 +87,37 @@ def setup_ext4(has_journal=True, readahead_kb=None, delay_allocate=True):
         if ret != 0:
             logging.error("Cannot disable journal")
     # mount
-    dealloc_opt = ''
-    if delay_allocate is False:
-        # To verify: `# mount`
-        dealloc_opt = '-o nodelalloc'
+    # dealloc_opt = '-o barrier=0'
+    # if delay_allocate is False:
+    #     # To verify: `# mount`
+    #     dealloc_opt = '-o nodelalloc'
+    # ret = subprocess.call('sudo mount {} {} {}'.format(
+    #     dealloc_opt, DEV_NAME, dir_name), shell=True)
+
+    default_opt = '-o barrier=0'
     ret = subprocess.call('sudo mount {} {} {}'.format(
-        dealloc_opt, DEV_NAME, dir_name), shell=True)
+        default_opt, DEV_NAME, dir_name), shell=True)
     if ret != 0:
         logging.error(
             "dev:{} cannot mount to dir:{}".format(DEV_NAME, dir_name))
     else:
         logging.info("ext4 mounted")
 
+    # warming up SSD
+    print(f"Warming up SSD in by {dir_name}/temp file ...")
+    cmd = "sudo dd if=/dev/zero of={}/temp bs=1G count=100 oflag=direct".format(dir_name)
+    ret = subprocess.call(cmd, shell=True)
+    if ret != 0:
+        logging.error("cannot warmup")
+        return
+    print("Warming up Done")
+
     # set readahead
-    if readahead_kb is not None:
-        ret = subprocess.call(
-            'blockdev --setra {} {}'.format(readahead_kb, DEV_NAME), shell=True)
-        if ret == 0:
-            logging.info("readahead set to {}KB".format(readahead_kb))
+    # if readahead_kb is not None:
+    #     ret = subprocess.call(
+    #         'blockdev --setra {} {}'.format(readahead_kb, DEV_NAME), shell=True)
+    #     if ret == 0:
+    #         logging.info("readahead set to {}KB".format(readahead_kb))
 
     # create bench data dir
     ret = subprocess.call(
@@ -142,24 +156,28 @@ def get_benchmark_script(bench_code):
     bench_code_mappings = [
         # (['RMPR'], 'bench_mt_randread.py {} cached'),
         (['RDPR'], 'bench_mt_randread.py {}'),
-        # (['RMSR'], 'bench_mt_randread.py {} cached share'),
-        # (['RDSR'], 'bench_mt_randread.py {} share'),
-        # (['RMPS'], 'bench_mt_seqread.py {} cached'),
+        # # (['RMSR'], 'bench_mt_randread.py {} cached share'),
+        (['RDSR'], 'bench_mt_randread.py {} share'),
+        # # (['RMPS'], 'bench_mt_seqread.py {} cached'),
         (['RDPS'], 'bench_mt_seqread.py {}'),
-        # (['RMSS'], 'bench_mt_seqread.py {} share cached'),
-        # (['RDSS'], 'bench_mt_seqread.py {} share'),
+        # # (['RMSS'], 'bench_mt_seqread.py {} share cached'),
+        (['RDSS'], 'bench_mt_seqread.py {} share'),
+    
+        # (['AMPS'], 'bench_mt_write_noflush.py {} append'),
         # (['WMPS'], 'bench_mt_write_noflush.py {}'),
-        # (['WMSS'], 'bench_mt_write_noflush.py {} share'),
-        (['AMPS'], 'bench_mt_write_noflush.py {} append'),
         # (['AMSS'], 'bench_mt_write_noflush.py {} append share'),
         # (['WMPR'], 'bench_mt_randwrite.py {} cached'),
         # (['WMSR'], 'bench_mt_randwrite.py {} cached share'),
-        # (['WDPS'], 'bench_mt_write_noflush.py {}'),
-        (['WDPR'], 'bench_mt_randwrite.py {}'),
         # (['WDSS'], 'bench_mt_write_noflush.py {} share'),
         # (['WDSR'], 'bench_mt_randwrite.py {} share'),
-        (['ADPS'], 'bench_mt_write_sync.py {} append'),      # Latency benchmark
-        # (['ADSS'], 'bench_mt_write_sync.py {} append share'),
+
+        (['ADPS'], 'bench_mt_write_sync.py {} append'),
+        (['ADSS'], 'bench_mt_write_sync.py {} append share'),
+        (['WDPS'], 'bench_mt_write_sync.py {} '),
+        (['WDSS'], 'bench_mt_write_sync.py {} share'),
+        (['WDPR'], 'bench_mt_randwrite.py {}'),
+        (['WDSR'], 'bench_mt_randwrite.py {} share'),
+
         # (['S1MP'], 'bench_mt_stat.py {}'),
         # (['S1MS'], 'bench_mt_stat.py {} share'),
         # (['SaMP'], 'bench_mt_statall.py {} 1000'),
@@ -182,20 +200,31 @@ def get_benchmark_script(bench_code):
 def get_default_benchmarks():
     benchmarks = [
         # 'RMPR', 'RMSR', 
-        'RDPR', # Random read 
         # 'RDSR',
         # 'RMPS', 'RMSS', 
-        'RDPS', # Seqeuntial read
         # 'RDSS',
         # 'WMPS', 'WMSS', 
-        'AMPS', # Seqeuntial write (throughput) 
+
         # 'AMSS',
         # 'WMPR', 'WMSR',
         # 'WDPS', 
-        #'WDPR', # Randomw write (thp/lat)
         # 'WDSS', 
         # 'WDSR',
-        #'ADPS', # sequential write (lat)
+
+        ### Read benchmark
+        # 'RDPR', # Random read 
+        #'RDSR', # not working
+        # 'RDPS', # Seqeuntial read
+        #'RDSS',
+
+        # # ### Write benchmark
+        'ADPS', # Appending with sequential
+        #'ADSS',
+        'WDPS', # Sequential overwrite
+        #'WDSS',
+        'WDPR', # Random overwrite
+        #'WDSR',
+
         # 'ADSS',
         # 'S1MP', 'S1MS',
         # 'SaMP', 'SaMS',
@@ -212,8 +241,10 @@ def get_data_plane_benchmarks():
         'RDPR', 
         'RDPS', 
         'WDPR',
-        'ADPS', 
+        'ADPS',
+        'WDPS',
         'AMPS',
+        'WMPS',
         # 'RMPR', 'RMSR', 'RDPR', 'RDSR',
         # 'RMPS', 'RMSS', 'RDPS', 'RDSS',
         # 'WMPS', 'WMSS', 'AMSS',
@@ -235,10 +266,10 @@ def get_meta_benchmarks():
 def bench_needs_dataprep(bench_code):
     need_prep_list = [
         # all read
-        'RDPR', 'RDPS',
+        'RDPR', 'RDSR', 'RDPS', 'RDSS'
         # 'RMPR', 'RMSR', 'RDPR', 'RDSR', 'RMPS', 'RMSS', 'RDPS', 'RDSS',
         # overwrite
-        'WDPR',
+        'WDPR', 'WDPS', 'WMPS', 'WDSS', 'WDPR', 'WDSR'
         # 'WMPS', 'WMSS', 'WMPR', 'WMSR', 'WDPS', 'WDPR', 'WDSS', 'WDSR'
     ]
     if bench_code in need_prep_list:
@@ -342,21 +373,25 @@ class Benchmark(object):
             raise RuntimeError("benchmark:{} not supported".format(code))
         if bench_needs_dataprep(code):
             self.prep_data_file()
+
         logging.info('-------{}-------'.format(code))
         cmd = script_name.format(self.fs)
         cmd = '{}/cfs_bench/exprs/{} numapp={}'.format(
             cfs_common.get_cfs_root_dir(), cmd, self.max_num_app)
+        print('cmd: {}'.format(cmd))
+
         if not self.is_fsp():  # if ext4, must add "mpstat" to collect CPU utilization info
             cmd = '{} {}'.format(cmd, 'mpstat')
+
         print('--- run benchmark:{} ---'.format(code))
-        need_reset_kfs_bg_flush = False
-        if not is_fsp(self.fs):
-            if is_bench_stress_bg_flush(code):
-                print('----- rest bg_flush is set to true')
-                need_reset_kfs_bg_flush = True
-                set_kfs_bg_dirty_flush(bench_kfs_bg_dirty_flush_bytes(code),
-                                       bench_kfs_bg_dirty_flush_ratio(code))
-        print(need_reset_kfs_bg_flush)
+        # need_reset_kfs_bg_flush = False
+        # if not is_fsp(self.fs):
+        #     if is_bench_stress_bg_flush(code):
+        #         print('----- rest bg_flush is set to true')
+        #         need_reset_kfs_bg_flush = True
+        #         set_kfs_bg_dirty_flush(bench_kfs_bg_dirty_flush_bytes(code),
+        #                                bench_kfs_bg_dirty_flush_ratio(code))
+        # print(need_reset_kfs_bg_flush)
 
         for rpt in range(self.repeat_num):
             if is_fsp(self.fs):
@@ -369,8 +404,8 @@ class Benchmark(object):
             self.save_expr_result(code, rpt)
             print('save result done')
 
-        if need_reset_kfs_bg_flush:
-            reset_kfs_bg_dirty_flush()
+        # if need_reset_kfs_bg_flush:
+        #     reset_kfs_bg_dirty_flush()
 
         logging.info('----------------')
 
@@ -385,6 +420,7 @@ class Benchmark(object):
         # does not
         need_data_prep_list = []
         no_data_prep_list = []
+        print("benchmarks: {}", self.benchmarks)
         for bench in self.benchmarks:
             if bench_needs_dataprep(bench):
                 need_data_prep_list.append(bench)
