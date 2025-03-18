@@ -29,6 +29,7 @@ def expr_read_mtfsp_multiapp(
         num_app_proc,
         bench_cfg_dict,
         is_fsp=True,
+        is_oxbow=False,
         clear_pgcache=False,
         pin_cpu=False,
         per_app_fname=None,
@@ -130,9 +131,10 @@ def expr_read_mtfsp_multiapp(
 
     # update parameters for kernel FS benchmarking
     if not is_fsp:
-        if '--dir=' not in bench_args:
-            if per_app_dir_name is None:
-                bench_args['--dir='] = cfs_tc.get_kfs_data_dir()
+        if not is_oxbow:
+            if '--dir=' not in bench_args:
+                if per_app_dir_name is None:
+                    bench_args['--dir='] = cfs_tc.get_kfs_data_dir()
         if dump_mpstat:
             # start mpstat
             # mpstat_cmd = 'mpstat -P ALL {} {}'.format(mpstat_interval_sec,
@@ -154,8 +156,13 @@ def expr_read_mtfsp_multiapp(
             #p_iostat = run(iostat_cmd, stdout=Capture(), async_=True)
             disks_before = psutil.disk_io_counters(perdisk=True)
 
+    if is_oxbow:
+        if '--dir=' not in bench_args:
+            if per_app_dir_name is None:
+                bench_args['--dir='] = "/oxbow"
+
     # start coordinator here
-    if not is_fsp:
+    if not is_fsp or is_oxbow:
         start_bench_coordinator(num_app_proc=num_app_proc)
         print('cordinator started num_app_proc:{}'.format(num_app_proc))
 
@@ -252,6 +259,13 @@ def expr_read_mtfsp_multiapp(
                     bench_app_cmd_dict[i], per_app_flist[i]
                 )
 
+    env = None
+    if is_oxbow:
+        env = os.environ.copy()
+        env["LD_PRELOAD"] = f"{os.environ.get('LIBFS_BUILD', '')}/liboxbow_libfs.so"
+        # for i in range(num_app_proc):
+        #     bench_app_cmd_dict[i] = '{}'.format(bench_app_cmd_dict[i])
+
     print(bench_app_cmd_dict)
 
     # start benchmarking clients
@@ -259,8 +273,9 @@ def expr_read_mtfsp_multiapp(
     for i in range(num_app_proc):
         # print(bench_app_cmd_dict[i])
         p_bench_r_dict[i] = run(bench_app_cmd_dict[i], stdout=Capture(),
-                                async_=True)
+                                async_=True, env=env)
 
+    print("wait for clients finishing ...")
     # wait for clients finishing
     for pr in p_bench_r_dict.values():
         pr.wait()
@@ -276,6 +291,7 @@ def expr_read_mtfsp_multiapp(
         disks_after = psutil.disk_io_counters(perdisk=True)
 
     time.sleep(2)
+    print("Time to shutdown ...")
 
     if is_fsp:
         # shutdown FSP
@@ -475,9 +491,9 @@ def bench_rand_read(
                             case_log_dir, str(is_fsp), str(cp), str(pc),
                             str(nfswk))
                     bench_cfg_dict['--value_size='] = vs
-                    if vs > 4096:
-                        bench_cfg_dict['--rw_align_bytes='] = 4096 * \
-                            (int((vs - 1) / 4096) + 1)
+                    # if vs > 4096:
+                    #     bench_cfg_dict['--rw_align_bytes='] = 4096 * \
+                    #         (int((vs - 1) / 4096) + 1)
 
                     bench_cfg_dict['--numop='] = nop
                     cfs_tc.mk_accessible_dir(cur_run_log_dir)

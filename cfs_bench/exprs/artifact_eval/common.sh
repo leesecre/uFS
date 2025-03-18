@@ -55,7 +55,7 @@ function cmpl-ufs() {
 ## Environment Setup
 
 function setup-spdk() {
-	DEV_NAME="/dev/$SSD_NAME"
+	DEV_NAME="/dev/$AE_SSD_NAME"
 	if sudo grep -qF "$DEV_NAME $KFS_MOUNT_PATH" /proc/mounts ; then
 		echo "WARN: Detect $DEV_NAME has already mounted on $KFS_MOUNT_PATH"
 		echo "      Will umount first before setup SPDK"
@@ -65,7 +65,7 @@ function setup-spdk() {
 }
 
 function reset-spdk() {
-	DEV_NAME="/dev/$SSD_NAME"
+	DEV_NAME="/dev/$AE_SSD_NAME"
 	if sudo grep -qF "$DEV_NAME $KFS_MOUNT_PATH" /proc/mounts ; then
 		echo "WARN: Detect $DEV_NAME has already mounted on $KFS_MOUNT_PATH"
 		echo "      Will NOT reset SPDK"
@@ -87,7 +87,7 @@ function reset-spdk() {
 # Ref: https://askubuntu.com/questions/402785/writes-occurring-to-fresh-ext4-partition-every-second-endlessly-cause-and-solut
 # TODO: use non-lazy mount
 function setup-ext4() {
-	DEV_NAME="/dev/$SSD_NAME"
+	DEV_NAME="/dev/$AE_SSD_NAME"
 	# check if already mount; if yes, umount first and print warning
 	if sudo grep -qF "$DEV_NAME $KFS_MOUNT_PATH" /proc/mounts ; then
 		echo "WARN: Detect $DEV_NAME has already mounted on $KFS_MOUNT_PATH"

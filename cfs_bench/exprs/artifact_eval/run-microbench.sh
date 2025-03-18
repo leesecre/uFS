@@ -12,12 +12,13 @@ function print_usage_and_exit() {
 	echo "    ufs-single: single-threaded uFS (depends on cmpl, may or may not use journaling)"
 	echo "    ext4:       ext4 with journaling (default of ext4)"
 	echo "    ext4nj:     ext4 without journaling"
+	echo "    oxbow:	"
 	exit 1
 }
 
 if [ $# -lt 1 ]; then print_usage_and_exit; fi
 if [ ! "$1" = "ufs" ] && [ ! "$1" = "ufs-single" ] && \
-	[ ! "$1" = "ext4" ] && [ ! "$1" = "ext4nj" ]
+	[ ! "$1" = "ext4" ] && [ ! "$1" = "ext4nj" ] && [ ! "$1" = "oxbow" ]
 then print_usage_and_exit; fi
 
 source "$AE_SCRIPT_DIR/common.sh"
@@ -58,4 +59,7 @@ elif [ "$1" = "ext4nj" ]; then
 	reset-spdk
 	sudo -E python3 fsp_microbench_suite.py --fs ext4nj --numapp=10 "${@:2}"
 	sudo mv ext4_*_run_0 "$data_dir"
+elif [ "$1" = "oxbow" ]; then
+	sudo -E python3 fsp_microbench_suite.py --fs oxbow --numapp=10 "${@:2}"
+	sudo mv oxbow_*_run_0 "$data_dir"
 fi

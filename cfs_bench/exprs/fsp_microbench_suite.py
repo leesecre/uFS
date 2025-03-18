@@ -10,8 +10,8 @@ import cfs_test_common as cfs_common
 
 # FSP whole set of microbenchmark
 
-DEV_NAME = "/dev/" + os.environ["SSD_NAME"]
-PCIE_ADDR = os.environ["SSD_PICE_ADDR"]
+DEV_NAME = "/dev/" + os.environ["AE_SSD_NAME"]
+PCIE_ADDR = os.environ["AE_SSD_PICE_ADDR"]
 
 def get_host_name():
     return os.uname().nodename
@@ -220,9 +220,9 @@ def get_default_benchmarks():
         # # ### Write benchmark
         'ADPS', # Appending with sequential
         #'ADSS',
-        'WDPS', # Sequential overwrite
+        #'WDPS', # Sequential overwrite
         #'WDSS',
-        'WDPR', # Random overwrite
+        #'WDPR', # Random overwrite
         #'WDSR',
 
         # 'ADSS',
@@ -340,6 +340,11 @@ def is_fsp(fs_str):
     else:
         return False
 
+def is_oxbow(fs_str):
+    if 'oxbow' in fs_str:
+        return True
+    else:
+        return False
 
 class Benchmark(object):
     def __init__(self, fs, benchmarks, num_app):
@@ -352,6 +357,9 @@ class Benchmark(object):
 
     def is_fsp(self):
         return 'fsp' in self.fs
+
+    def is_oxbow(self):
+        return 'oxbow' in self.fs
 
     def prep_data_file(self):
         if not self.data_file_prepared:
@@ -380,8 +388,8 @@ class Benchmark(object):
             cfs_common.get_cfs_root_dir(), cmd, self.max_num_app)
         print('cmd: {}'.format(cmd))
 
-        if not self.is_fsp():  # if ext4, must add "mpstat" to collect CPU utilization info
-            cmd = '{} {}'.format(cmd, 'mpstat')
+        # if not self.is_fsp():  # if ext4, must add "mpstat" to collect CPU utilization info
+        #     cmd = '{} {}'.format(cmd, 'mpstat')
 
         print('--- run benchmark:{} ---'.format(code))
         # need_reset_kfs_bg_flush = False
@@ -398,6 +406,8 @@ class Benchmark(object):
                 cfs_common.write_fsp_cfs_config_file(
                     split_policy=bench_split_policy_no(code),
                     dirtyFlushRatio=bench_fs_dirty_flush_ratio(code))
+            print('cmd: {}'.format(cmd))
+
             ret = subprocess.call(cmd, shell=True)
             if ret != 0:
                 sys.exit(1)
@@ -479,6 +489,18 @@ def main(args, loglevel):
             b.run()
         if not args.nomount and not args.devonly:
             reset_ext4()
+    elif args.fs == 'oxbow':
+        if not args.devonly:
+            if args.jobs is None:
+                jobs = get_default_benchmarks()
+            else:
+                jobs = args.jobs.split(',')
+                all_benchmarks = get_default_benchmarks()
+                for j in jobs:
+                    assert j in all_benchmarks
+            logging.info(f"RUN jobs: {jobs}")
+            b = Benchmark('oxbow', jobs, args.numapp)
+            b.run()
     else:
         logging.error("fs not supported")
 

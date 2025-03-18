@@ -1,34 +1,7 @@
-# uFS
+# uFS-bench for oxbow
 
-![Status](https://img.shields.io/badge/Version-Experimental-green.svg)
-[![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg)](https://opensource.org/licenses/MIT)
-
-uFS is a filesystem semi-microkernel that designs for device performance delivery and scalability.
-We primarily design for modern ultra-fast NVMe devices and multi-core machine. uFS runs as a standalone user-level filesystem process, provides POSIX compatible APIs and crash consistency guarantee, and dynamically adapts to the application demands.
-
-You could learn more about uFS design and semi-microkernel approach in our SOSP'21 paper *[Scale and Performance in a Filesystem Semi-microkernel](https://research.cs.wisc.edu/adsl/Publications/ufs-sosp21.pdf)*.
-
-
-## Repo Structure
-
-```
-uFS
- |---- cfs
-         |---- include               # uFS's cpp headers
-         |---- lib                   # uFS's dependent libraries
-         |---- src                   # uFS's cpp source code
-         |---- test                  # tests for uFS, including utility tools like cli and mkfs
-         |---- tools
- |---- cfs_bench
-         |---- bench                 # cpp source code for uFS's microbench
-         |---- exprs                 # scripts to run uFS's experiments
-         |---- helpers
-         |---- include
-         |---- port
-         |---- util
-```
-
-The other benchmarks in our paper besides microbenchmark (`cfs_bench`) are in a separate repo [uFS-bench](https://github.com/WiscADSL/uFS-bench), including `filebench`, `leveldb` and `scalefs_bench`.
+Utilize microbench of uFS to evaluate oxbow file system.
+We don't require cfs to be build, only cfs_bench required.
 
 ## Get Started
 
@@ -38,26 +11,30 @@ the user-level NVMe driver provided by SPDK and the version (18.04) is embeded i
 ### Download and Build
 
 Please check this [section](https://github.com/WiscADSL/uFS/tree/main/cfs_bench/exprs/artifact_eval#initialization) in artifact evalution document to *setup the environments* and *install necessary dependencies*.
-Then to build uFS, try these:
+DO NOT use artifcat_eval.sh directly in this BRANCH!
+You may install config4cpp as the script do, and tbb can be build by sudo apt-get install libtbb-dev
 
+Then to build uFS-bench, try these:
 ```
 # assume all the dependencies have been installed by artifact_eval.sh
-cd cfs
+cd cfs_bench
 mkdir build && cd build
 cmake ..
 make -j $(proc)              # proc: set it according to core number
 ```
 
-### A Simple Example
+### Setting
 
-After building uFS, please reboot the machine and we recommand always run `ae init-after-reboot` immediately after booting to setup the pinned memory required by SPDK. This [document](./cfs/test/client/CLI-README.md) illustrates the very basic example to domenstrate uFS is successfully running with our command line tool (CLI).
+Checking set_env.sh in oxbow root directory and check env variables are proper.
+You may put some proper values for running the uFS-bench.
 
-## Artifact and Experiments of the Paper
+### Running
 
-We provide full automation for building, running and visualizing our experiments in the SOSP paper [here](https://github.com/WiscADSL/uFS/tree/sosp-21/cfs_bench/exprs/artifact_eval); please check tag [`sosp-21`](https://github.com/WiscADSL/uFS/tree/sosp-21) and tag [`sosp-21-filebench-config`](https://github.com/WiscADSL/uFS/tree/sosp-21-filebench-config) for details. The experiments require a machine with at least 20 physical cores (on one NUMA node) and one NVMe SSD. To fully reproduce the results presented in our paper, an Intel Optane SSD (as specified in the paper) is preferred.
+After you starting daemon and devfs, try these to run uFS-bench:
+```
+cd bench/uFS/cfs_bench/exprs/artifact_eval
+./artifact_eval.sh run microbench oxbow
+```
 
-We thank the anonymous artifact evaluators for giving us feedback.
-
-## Contact
-
-If you have any questions, feel free to open issues at this repository or contact `jingliu [at] cs [dot] wisc [dot] edu` for assistance.
+You can change benchmark on fsp_microbench_suite.py.
+Check each benchmark related python file on get_benchmark_script().

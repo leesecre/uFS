@@ -74,7 +74,7 @@ def get_kfs_data_dir():
 
 
 def get_kfs_dev_name():
-    kfs_dev_name = os.environ.get('SSD_NAME')
+    kfs_dev_name = os.environ.get('AE_SSD_NAME')
     if kfs_dev_name is None:
         raise RuntimeError('SSD_NAME not set')
     return kfs_dev_name
@@ -228,6 +228,10 @@ def expr_mkfs_for_kfs():
     print(get_div_str('kernel fs benchmark directory content:'))
     print(os.listdir(get_kfs_data_dir()))
 
+def expr_mkfs_for_oxbow():
+    print(get_div_str('mkfs for oxbow fs'))
+    os.system('sudo rm -rf /oxbow/bench_*')
+    print(get_div_str('oxbow fs benchmark directory content:'))
 
 def fsp_do_clean_sock():
     os.system('rm -f /ufs-*')

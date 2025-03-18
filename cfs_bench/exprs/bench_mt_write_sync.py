@@ -20,11 +20,15 @@ if len(sys.argv) < 2:
     sys.exit(1)
 
 cur_is_fsp = None
+cur_is_oxbow = None
 if 'ext4' in sys.argv[1]:
     cur_is_fsp = False
     cur_dev_name = tc.get_kfs_dev_name()
 elif 'fsp' in sys.argv[1]:
     cur_is_fsp = True
+elif 'oxbow' in sys.argv[1]:
+    cur_is_fsp = False
+    cur_is_oxbow = True
 else:
     print_usage()
     sys.exit(1)
@@ -64,7 +68,7 @@ if cur_is_append:
 #sync_op_list = [1, 2, 4, 8, 16]
 
 # 1 for Latency, 4 for default setting of uFS
-sync_op_list = [4]
+sync_op_list = [1, 4]
 
 # if tc.use_exact_num_app():
 #     num_app_list = [cur_numapp]
@@ -107,6 +111,7 @@ for sync_op in sync_op_list:
             cur_log_dir,
             num_app_proc=num_app,
             is_fsp=cur_is_fsp,
+            is_oxbow=cur_is_oxbow,
             is_append=cur_is_append,
             per_app_fname=per_app_fname,
             dump_iostat=(

@@ -126,7 +126,7 @@ def bench_seq_write(
                     time.sleep(1)
 
 
-def bench_seq_sync_write(log_dir, num_app_proc=1, is_fsp=True,
+def bench_seq_sync_write(log_dir, num_app_proc=1, is_fsp=True, is_oxbow=False,
                          is_append=False,
                          num_fsp_worker_list=None, per_app_fname=None,
                          dump_mpstat=False, dump_iostat=False,
@@ -144,20 +144,20 @@ def bench_seq_sync_write(log_dir, num_app_proc=1, is_fsp=True,
         
         value_sz_op_num_dict = {
             # 256MB for latency benchmark
-            # 1024: 262144, # 1K
-            # 4096: 65536,  # 4K
-            # 16384: 16384, # 16K
-            # 65536: 4096, # 64K
-            # 262144: 1024, # 256K
-            # 524288: 512, # 512K
+            1024: 262144, # 1K
+            4096: 65536,  # 4K
+            16384: 16384, # 16K
+            65536: 4096, # 64K
+            262144: 1024, # 256K
+            524288: 512, # 512K
         
             # 2GB for latency
-            1024: 262144 * 8, # 1K
-            4096: 65536 * 8,  # 4K
-            16384: 16384 * 8, # 16K
-            65536: 4096 * 8, # 64K
-            262144: 1024 * 8, # 256K
-            524288: 512 * 8, # 512K
+            # 1024: 262144 * 8, # 1K
+            # 4096: 65536 * 8,  # 4K
+            # 16384: 16384 * 8, # 16K
+            # 65536: 4096 * 8, # 64K
+            # 262144: 1024 * 8, # 256K
+            # 524288: 512 * 8, # 512K
         }
     else:
         # Throughput benchmark
@@ -200,6 +200,8 @@ def bench_seq_sync_write(log_dir, num_app_proc=1, is_fsp=True,
                         # mkfs
                         if is_fsp:
                             cfs_tc.expr_mkfs()
+                        elif is_oxbow:
+                            cfs_tc.expr_mkfs_for_oxbow()
                         else:
                             cfs_tc.expr_mkfs_for_kfs()
                         # wait a bit after mkfs
@@ -210,6 +212,7 @@ def bench_seq_sync_write(log_dir, num_app_proc=1, is_fsp=True,
                         num_app_proc,
                         bench_cfg_dict,
                         is_fsp=is_fsp,
+                        is_oxbow=is_oxbow,
                         clear_pgcache=cp,
                         pin_cpu=pc,
                         per_app_fname=per_app_fname,

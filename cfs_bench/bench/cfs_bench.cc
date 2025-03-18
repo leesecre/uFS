@@ -24,7 +24,8 @@
 using namespace pcm;
 #endif
 
-// #define CFS_USE_POSIX 1
+/* For oxbow and ext4 */
+#define CFS_USE_POSIX 1
 
 #ifndef CFS_USE_POSIX
 #include "fsapi.h"

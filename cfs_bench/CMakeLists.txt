@@ -120,7 +120,7 @@ if(ENABLE_DUMPLOAD)
   target_compile_definitions(${BENCH_BIN_NAME} PRIVATE DO_DUMPLOAD)
 endif()
 target_link_libraries(
-  ${BENCH_BIN_NAME} PRIVATE libconfig4cpp.a libcfs.so rt libtbb.so.2
+  ${BENCH_BIN_NAME} PRIVATE libconfig4cpp.a rt libtbb.so.2
                             libtbbmalloc.so.2 pthread)
 
 target_compile_definitions(

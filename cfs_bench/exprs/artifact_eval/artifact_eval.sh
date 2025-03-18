@@ -48,8 +48,8 @@ if [ -z "$AE_EXT4_WAIT_AFTER_MOUNT" ]; then
 fi
 
 ## workspace
-export AE_WORK_DIR="$HOME/workspace"
-export AE_REPO_DIR="$AE_WORK_DIR/uFS"
+export AE_WORK_DIR="$CFS_ROOT_DIR"
+export AE_REPO_DIR="$CFS_ROOT_DIR"
 export AE_BENCH_REPO_DIR="$AE_WORK_DIR/uFS-bench"
 export AE_SCRIPT_DIR="$AE_REPO_DIR/cfs_bench/exprs/artifact_eval"
 ## number of threads to compile
@@ -425,8 +425,10 @@ function ae-run() {
 	sudo killall testRWFsUtil
 	sudo killall fsProcOfflineCheckpointer
 	sudo rm -rf /ufs-*
-	sudo rm -rf /dev/shm/*
-	sudo ipcrm --all
+	if [ ! "$2" = "oxbow" ]; then
+		sudo rm -rf /dev/shm/*
+		sudo ipcrm --all
+	fi
 	set -e
 
 	if [ "$1" = "microbench" ]; then
