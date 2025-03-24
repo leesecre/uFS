@@ -428,6 +428,11 @@ function ae-run() {
 	if [ ! "$2" = "oxbow" ]; then
 		sudo rm -rf /dev/shm/*
 		sudo ipcrm --all
+	else
+		if [ -z "$OXBOW_ENV_SOURCED" ]; then
+			echo "Do source set_env.sh first."
+			exit 1
+	 	fi
 	fi
 	set -e
 
