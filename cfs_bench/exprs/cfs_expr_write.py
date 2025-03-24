@@ -31,7 +31,7 @@ from cfs_test_common import mk_accessible_dir
 def expr_write_1fsp_1t(log_dir_name, clear_pgcache=False, pin_cpu=True,
                        is_seq=True, cur_numop=100, cur_value_size=4096,
                        is_value_random_size=False,
-                       is_fsp=True, is_mkfs=False, cfg_update_dict=None):
+                       is_fsp=True, is_oxbow=False, is_mkfs=False, cfg_update_dict=None):
     # is_mkfs is used to specify if file is pre-allocated or not
     if is_mkfs and is_fsp:
         expr_mkfs()
@@ -65,8 +65,10 @@ def expr_write_1fsp_1t(log_dir_name, clear_pgcache=False, pin_cpu=True,
     bench_args['--histogram='] = 1
     if is_value_random_size:
         bench_args['--value_random_size='] = 1
-    if not is_fsp:
+    if not is_fsp and not is_oxbow:
         bench_args['--dir='] = get_kfs_data_dir()
+    if is_oxbow:
+        bench_args['--dir='] = "/oxbow"
     if pin_cpu:
         bench_args['--core_ids='] = '3'
     bench_r_cmd = '{} {}'. \
@@ -80,25 +82,30 @@ def expr_write_1fsp_1t(log_dir_name, clear_pgcache=False, pin_cpu=True,
         start_bench_coordinator()
         print('coordinator started')
 
-    # p_bench_r = run(bench_r_cmd)
-    p_bench_r = run(bench_r_cmd, stdout=Capture())
+    if is_oxbow:
+        env = os.environ.copy()
+        env["LD_PRELOAD"] = f"{os.environ.get('LIBFS_BUILD', '')}/liboxbow_libfs.so"
+        p_bench_r = run(bench_r_cmd, stdout=Capture(), env=env)
+    else:
+        # p_bench_r = run(bench_r_cmd)
+        p_bench_r = run(bench_r_cmd, stdout=Capture())
 
     if is_fsp:
         shutdown_fs(exit_signal_fname, p_fs)
 
     print(get_div_str('DONE!'))
 
-    if is_fsp:
-        if os.path.exists(ready_fname):
-            print('readFile:{} exists'.format(ready_fname))
-            os.remove(ready_fname)
-        write_file(fsp_log_name, p_fs.stdout.text)
-    write_file(bench_log_name, p_bench_r.stdout.text)
-    bench_args['clear_page_cache'] = clear_pgcache
-    bench_args['pin_cpu'] = pin_cpu
-    bench_args['is_seq'] = is_seq
-    bench_args['is_mkfs'] = is_mkfs
-    dump_expr_config(expr_cfg_name, bench_args)
+    # if is_fsp:
+    #     if os.path.exists(ready_fname):
+    #         print('readFile:{} exists'.format(ready_fname))
+    #         os.remove(ready_fname)
+    #     write_file(fsp_log_name, p_fs.stdout.text)
+    # write_file(bench_log_name, p_bench_r.stdout.text)
+    # bench_args['clear_page_cache'] = clear_pgcache
+    # bench_args['pin_cpu'] = pin_cpu
+    # bench_args['is_seq'] = is_seq
+    # bench_args['is_mkfs'] = is_mkfs
+    # dump_expr_config(expr_cfg_name, bench_args)
 
 
 def expr_run_1(log_dir, is_fsp=True, cfg_update_dict=None):

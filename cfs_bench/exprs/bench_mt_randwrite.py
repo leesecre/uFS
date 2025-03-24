@@ -20,11 +20,15 @@ if len(sys.argv) < 2:
     sys.exit(1)
 
 cur_is_fsp = None
+cur_is_oxbow = None
 if 'ext4' in sys.argv[1]:
     cur_is_fsp = False
     cur_dev_name = tc.get_kfs_dev_name()
 elif 'fsp' in sys.argv[1]:
     cur_is_fsp = True
+elif 'oxbow' in sys.argv[1]:
+    cur_is_fsp = False
+    cur_is_oxbow = True
 else:
     print_usage()
     sys.exit(1)
@@ -68,7 +72,7 @@ LOG_BASE = 'log_{}'.format(sys.argv[1])
 #     num_app_list.reverse()
 
 # 1 for Latency, 4 for default setting of uFS
-sync_op_list = [1, 4]
+sync_op_list = [1]
 
 # if tc.use_exact_num_app():
 #     num_app_list = [cur_numapp]
@@ -97,7 +101,7 @@ for sync_op in sync_op_list:
                                         suffix=tc.get_ts_dir_name(),
                                         do_mkdir=True)
         cur_dump_io_stat = False
-        if not cur_is_fsp:
+        if not cur_is_fsp and not cur_is_oxbow:
             cur_dump_io_stat = True
 
         # stress sharing
@@ -122,6 +126,7 @@ for sync_op in sync_op_list:
             cur_log_dir,
             num_app_proc=num_app,
             is_fsp=cur_is_fsp,
+            is_oxbow=cur_is_oxbow,
             is_cached=cur_is_cached,
             per_app_fname=per_app_fname,
             dump_iostat=cur_dump_io_stat,
@@ -130,10 +135,12 @@ for sync_op in sync_op_list:
 
         os.mkdir(CUR_ARKV_DIR)
         os.system("mv log{}* {}".format(tc.get_year_str(), CUR_ARKV_DIR))
-        if not cur_is_fsp:
-            os.system("tune2fs -l /dev/{} > {}/kfs_mount_option".format(
-                cur_dev_name, CUR_ARKV_DIR))
-            tc.dump_kernel_dirty_flush_config(CUR_ARKV_DIR)
+
+        # if not cur_is_fsp:
+        #     os.system("tune2fs -l /dev/{} > {}/kfs_mount_option".format(
+        #         cur_dev_name, CUR_ARKV_DIR))
+        #     tc.dump_kernel_dirty_flush_config(CUR_ARKV_DIR)
+
         time.sleep(1)
 
 tc.save_default_cfg_config(CUR_ARKV_DIR)

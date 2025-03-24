@@ -30,6 +30,7 @@ def expr_read_mtfsp_multiapp(
         bench_cfg_dict,
         is_fsp=True,
         is_oxbow=False,
+        is_append=False,
         clear_pgcache=False,
         pin_cpu=False,
         per_app_fname=None,
@@ -57,7 +58,10 @@ def expr_read_mtfsp_multiapp(
 
     # clear page cache
     if clear_pgcache:
-        cfs_tc.clear_page_cache(is_slient=False)
+        if not is_oxbow and not is_append:
+            cfs_tc.clear_page_cache(is_slient=False)
+        else:
+            cfs_tc.clear_page_cache_oxbow()
 
     print(log_dir_name)
     bench_log_name = '{}/bench_log'.format(log_dir_name)
@@ -389,6 +393,8 @@ def bench_rand_read(
         log_dir,
         num_app_proc=1,
         is_fsp=True,
+        is_oxbow=False,
+        is_thp=False,
         is_seq=False,
         is_share=False,
         num_fsp_worker_list=None,
@@ -439,35 +445,53 @@ def bench_rand_read(
 
     # note for rand-read, one strict-no-overlap is set, 64 needs same size
     # as 4K
-    value_sz_op_num_dict = {
-        # 256MB for latency benchmark
-        # 64: 4194304, # 64
-        # 1024: 262144, # 1K
-        # 4096: 65536,  # 4K
-        # 16384: 16384, # 16K
-        # 65536: 4096, # 64K
-        # 262144: 1024, # 256K
-        # 524288: 512, # 512K
-        # 1048576: 256, # 1M
-        # 2097152: 128, # 2M
+    if not is_thp:
+        value_sz_op_num_dict = {
+            # 256MB for latency benchmark
+            # 64: 4194304, # 64
+            1024: 262144, # 1K
+            4096: 65536,  # 4K
+            16384: 16384, # 16K
+            65536: 4096, # 64K
+            262144: 1024, # 256K
+            524288: 512, # 512K
+            # 1048576: 256, # 1M
+            # 2097152: 128, # 2M
 
-        # 5GB for throughput benchmark
-        # 1024: 262144 * 4 * 5, # 1K
-        # 4096: 65536 * 4 * 5,  # 4K
-        # 16384: 16384 * 4 * 5, # 16K
-        # 65536: 4096 * 4 * 5, # 64K
-        # 262144: 1024 * 4 * 5, # 256K
-        # 524288: 512 * 4 * 5, # 512K
-        # 1048576: 256 * 4 * 5, # 1M
-        # 2097152: 128 * 4 * 5 # 2M
-        
-        # multi process test
-        4096: int(2*1024*1024/4),
-        16384: int(2*1024*1024/16),
-        65536: int(2*1024*1024/64),
-        262144: int(2*1024*1024/256),
-        
-    }
+            # 5GB for throughput benchmark
+            # 1024: 262144 * 4 * 5, # 1K
+            # 4096: 65536 * 4 * 5,  # 4K
+            # 16384: 16384 * 4 * 5, # 16K
+            # 65536: 4096 * 4 * 5, # 64K
+            # 262144: 1024 * 4 * 5, # 256K
+            # 524288: 512 * 4 * 5, # 512K
+            # 1048576: 256 * 4 * 5, # 1M
+            # 2097152: 128 * 4 * 5 # 2M
+            
+            # multi process test
+            # 4096: int(2*1024*1024/4),
+            # 16384: int(2*1024*1024/16),
+            # 65536: int(2*1024*1024/64),
+            # 262144: int(2*1024*1024/256),
+        }
+    else:
+        value_sz_op_num_dict = {
+            # 5GB for throughput benchmark
+            # 1024: 262144 * 4 * 5, # 1K
+            4096: 65536 * 4 * 5,  # 4K
+            # 16384: 16384 * 4 * 5, # 16K
+            # 65536: 4096 * 4 * 5, # 64K
+            # 262144: 1024 * 4 * 5, # 256K
+            # 524288: 512 * 4 * 5, # 512K
+            # 1048576: 256 * 4 * 5, # 1M
+            # 2097152: 128 * 4 * 5 # 2M
+            # multi process test
+            # 4096: int(2*1024*1024/4),
+            # 16384: int(2*1024*1024/16),
+            # 65536: int(2*1024*1024/64),
+            # 262144: int(2*1024*1024/256),
+        }
+
     if is_share:
         # value_sz_op_num_dict = {
         #    4096: 0,
@@ -478,7 +502,7 @@ def bench_rand_read(
             if value_sz_op_num_dict[sz] > 500000:
                 value_sz_op_num_dict[sz] = 500000
     # pin_cpu_list = [False, True]
-    pin_cpu_list = [True, False]
+    pin_cpu_list = [False]
     clear_pc_list = [True]
     if num_fsp_worker_list is None:
         num_fsp_worker_list = [1]
@@ -499,7 +523,9 @@ def bench_rand_read(
                     cfs_tc.mk_accessible_dir(cur_run_log_dir)
                     expr_read_mtfsp_multiapp(cur_run_log_dir, nfswk,
                                              num_app_proc, bench_cfg_dict,
-                                             is_fsp=is_fsp, clear_pgcache=True,
+                                             is_fsp=is_fsp,
+                                             is_oxbow=is_oxbow,
+                                             clear_pgcache=True,
                                              pin_cpu=pc,
                                              per_app_fname=per_app_fname,
                                              is_share=is_share,

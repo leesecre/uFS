@@ -20,11 +20,15 @@ if len(sys.argv) < 2:
     sys.exit(1)
 
 cur_is_fsp = None
+cur_is_oxbow = None
 if 'ext4' in sys.argv[1]:
     cur_is_fsp = False
     cur_dev_name = tc.get_kfs_dev_name()
 elif 'fsp' in sys.argv[1]:
     cur_is_fsp = True
+elif 'oxbow' in sys.argv[1]:
+    cur_is_fsp = False
+    cur_is_oxbow = True
 else:
     print_usage()
     sys.exit(1)
@@ -37,7 +41,7 @@ cur_is_dump_mpstat = False
 cur_block_no = -1
 cur_is_share = False
 cur_numapp = None
-
+cur_is_thp = False
 
 if len(sys.argv) >= 3:
     for a in sys.argv[2:]:
@@ -70,7 +74,8 @@ LOG_BASE = 'log_{}'.format(sys.argv[1])
 # num_app_list = [10, 9, 8, 7, 6, 5, 4, 3, 2, 1]  # @bumble
 #num_app_list = [20 - i for i in range(20)]
 
-num_app_list = [1,2,4,8,10] # for multi process test
+# num_app_list = [1,2,4,8,10] # for multi process test
+num_app_list = [1]
 
 # if cur_numapp is not None:
 #     num_app_list = list(range(1, cur_numapp + 1))
@@ -95,8 +100,10 @@ for num_app in num_app_list:
                                       do_mkdir=True)
     # dump io stats for kernel fs
     cur_dump_io_stat = False
-    if not cur_is_fsp:
-        cur_dump_io_stat = True
+    # if not cur_is_fsp:
+    #     cur_dump_io_stat = True
+    if num_app != 1:
+        cur_is_thp = True
 
     # stress sharing
     if cur_is_share:
@@ -129,6 +136,8 @@ for num_app in num_app_list:
             cur_log_dir,
             num_app_proc=num_app,
             is_fsp=cur_is_fsp,
+            is_oxbow=cur_is_oxbow,
+            is_thp=cur_is_thp,
             is_seq=True,
             strict_no_overlap=cur_is_no_overlap,
             per_app_fname=per_app_fname,
@@ -137,12 +146,15 @@ for num_app in num_app_list:
 
     os.mkdir(CUR_ARKV_DIR)
     os.system("mv log{}* {}".format(tc.get_year_str(), CUR_ARKV_DIR))
+
     # save the mount option for the device to check the kernel FS experiment
     # config
-    if not cur_is_fsp:
-        os.system("tune2fs -l /dev/{} > {}/kfs_mount_option".format(
-            cur_dev_name, CUR_ARKV_DIR))
-        tc.dump_kernel_dirty_flush_config(CUR_ARKV_DIR)
+
+    # if not cur_is_fsp:
+    #     os.system("tune2fs -l /dev/{} > {}/kfs_mount_option".format(
+    #         cur_dev_name, CUR_ARKV_DIR))
+    #     tc.dump_kernel_dirty_flush_config(CUR_ARKV_DIR)
+
     time.sleep(1)
 
 tc.save_default_cfg_config(CUR_ARKV_DIR)

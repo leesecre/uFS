@@ -68,7 +68,7 @@ if cur_is_append:
 #sync_op_list = [1, 2, 4, 8, 16]
 
 # 1 for Latency, 4 for default setting of uFS
-sync_op_list = [1, 4]
+sync_op_list = [1]
 
 # if tc.use_exact_num_app():
 #     num_app_list = [cur_numapp]
@@ -77,7 +77,7 @@ for sync_op in sync_op_list:
     if sync_op == 1:
         num_app_list = [1] # for latency benchmark
     else:
-        num_app_list = [1,2,4,8,10]
+        num_app_list = [10]
 
     for num_app in num_app_list:
         cur_cfs_update_dict = {
@@ -115,7 +115,7 @@ for sync_op in sync_op_list:
             is_append=cur_is_append,
             per_app_fname=per_app_fname,
             dump_iostat=(
-                not cur_is_fsp),
+                not cur_is_fsp and not cur_is_oxbow),
             num_fsp_worker_list=cur_num_fs_wk_list,
             cfs_update_dict=cur_cfs_update_dict)
         os.mkdir(CUR_ARKV_DIR)

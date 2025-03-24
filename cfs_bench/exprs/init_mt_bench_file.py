@@ -9,6 +9,9 @@ import time
 from cfs_test_common import start_fs_proc
 from cfs_test_common import get_microbench_bin
 from cfs_test_common import shutdown_fs
+from cfs_test_common import expr_mkfs_oxbow
+from cfs_test_common import expr_checkpoint_oxbow
+
 
 import cfs_expr_read as read_expr
 import cfs_expr_write as write_expr
@@ -34,10 +37,16 @@ if len(sys.argv) < 2:
     sys.exit(1)
 
 cur_is_fsp = None
+cur_is_oxbow = None
 if 'ext4' in sys.argv[1]:
     cur_is_fsp = False
+    cur_is_oxbow = False
+elif 'oxbow' in sys.argv[1]:
+    cur_is_fsp = False
+    cur_is_oxbow = True
 elif 'fsp' in sys.argv[1]:
     cur_is_fsp = True
+    cur_is_oxbow = False
 else:
     print_usage()
     sys.exit(1)
@@ -51,7 +60,8 @@ NUM_FILES = 10
 
 if len(sys.argv) == 3:
     NUM_FILES = int(sys.argv[2])
-
+        
+# NUM_FILES = 1
 
 cur_numop = int(BENCH_FSIZE / 4096)
 
@@ -60,6 +70,8 @@ print('Init data files for benchmarking - BENCH_FSIZE(GB):{} NUM_FILES:{}'.
 
 if cur_is_fsp:
     common_expr.expr_mkfs()
+elif cur_is_oxbow:
+    expr_mkfs_oxbow()
 else:
     common_expr.expr_mkfs_for_kfs()
 
@@ -78,18 +90,27 @@ for i in range(NUM_FILES):
         cur_numop=cur_numop,
         cur_value_size=4096,
         is_fsp=cur_is_fsp,
+        is_oxbow=cur_is_oxbow,
         cfg_update_dict={
             '--fname=': 'bench_f_{}'.format(i),
             '--fs_worker_key_list=': 1})
     if cur_is_fsp:
         common_expr.fsp_do_offline_checkpoint()
+    if cur_is_oxbow:
+        time.sleep(5)
+        expr_checkpoint_oxbow()
 
     time.sleep(2)
 
 CUR_ARKV_DIR = '{}_mt_dataprep'.format(LOG_BASE)
 
+if cur_is_oxbow:
+    time.sleep(10)
+    expr_checkpoint_oxbow()
+
 if not os.path.exists(CUR_ARKV_DIR):
     os.mkdir(CUR_ARKV_DIR)
+
 os.system("mv log{}* {}".format(common_expr.get_year_str(), CUR_ARKV_DIR))
 
 # clean the root-permissioned shms

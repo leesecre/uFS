@@ -9,7 +9,8 @@ import psutil
 import os
 import time
 import shutil
-
+import signal
+import subprocess
 
 def compute_avg(l):
     if len(l) == 0:
@@ -228,10 +229,70 @@ def expr_mkfs_for_kfs():
     print(get_div_str('kernel fs benchmark directory content:'))
     print(os.listdir(get_kfs_data_dir()))
 
-def expr_mkfs_for_oxbow():
-    print(get_div_str('mkfs for oxbow fs'))
-    os.system('sudo rm -rf /oxbow/bench_*')
-    print(get_div_str('oxbow fs benchmark directory content:'))
+
+def signal_to_process(process_name, sig=signal.SIGINT):
+
+    pids = os.popen(f"pgrep -f {process_name}").read().strip().splitlines()
+    if not pids:
+        print(f"'{process_name}' no such process")
+        return True
+    print(f"{process_name} being exiting...")
+    for pid in pids:
+        os.system(f"kill -{sig.value} {pid}")
+
+def expr_checkpoint_oxbow():
+    oxbow_root = os.environ.get("OXBOW_ROOT")
+    if oxbow_root: 
+        script_path = os.path.join(oxbow_root, "scripts", "device", "send_ckpt_signal.sh")
+        os.system(f"bash {script_path}")
+    else:
+        print("Check set_env.sh for OXBOW_ROOT")
+    print("wait for devfs do checkpointing... ")
+    time.sleep(20)
+
+def expr_exit_oxbow_daemon():
+    signal_to_process("secure_daemon", sig=signal.SIGINT)
+    time.sleep(5)
+    mount_point = "/oxbow"
+    result = os.system(f"umount {mount_point}")
+    if result != 0:
+        print("Failed to umount oxbow")
+
+def expr_start_oxbow_daemon():
+    tmux_daemon_pane = "oxbow:0.1"
+    cmd = "cd ~/codes/oxbow.code/oxbow/secure_daemon && ./run.sh"
+    tmux_cmd = f'tmux send-keys -t {tmux_daemon_pane} "{cmd}" Enter'
+    os.system(tmux_cmd)
+    print("wait for daemon do initiating... ")
+    time.sleep(20)
+
+def expr_start_oxbow_devfs():
+    tmux_daemon_pane = "oxbow:0.3"
+    cmd = "cd ~/codes/oxbow.code/oxbow/devfs && ./run.sh"
+    tmux_cmd = f'tmux send-keys -t {tmux_daemon_pane} "{cmd}" Enter'
+    os.system(tmux_cmd)
+    print("wait for devfs do initiating... ")
+    time.sleep(5)
+
+def expr_exit_oxbow_devfs():
+    signal_to_process("devfs", sig=signal.SIGINT)
+    time.sleep(5)
+
+def clear_page_cache_oxbow():
+    expr_exit_oxbow_daemon()
+    expr_start_oxbow_daemon()
+    print("clear page cache for oxbow")
+    
+def expr_mkfs_oxbow():
+    print("mkfs for oxbow starting")
+    expr_exit_oxbow_devfs()
+    expr_exit_oxbow_daemon()
+    # MKFS
+    oxbow_root = os.environ.get("OXBOW_ROOT")
+    script_path = os.path.join(oxbow_root, "scripts", "host", "mkfs.sh")
+    os.system(f"bash {script_path}")
+    expr_start_oxbow_devfs()
+    expr_start_oxbow_daemon()
 
 def fsp_do_clean_sock():
     os.system('rm -f /ufs-*')

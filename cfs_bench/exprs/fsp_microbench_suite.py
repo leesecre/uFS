@@ -212,18 +212,18 @@ def get_default_benchmarks():
         # 'WDSR',
 
         ### Read benchmark
-        # 'RDPR', # Random read 
+        'RDPR', # Random read 
         #'RDSR', # not working
         # 'RDPS', # Seqeuntial read
-        #'RDSS',
+        # #'RDSS',
 
-        # # ### Write benchmark
-        'ADPS', # Appending with sequential
-        #'ADSS',
-        #'WDPS', # Sequential overwrite
-        #'WDSS',
-        #'WDPR', # Random overwrite
-        #'WDSR',
+        # # # ### Write benchmark
+        # 'ADPS', # Appending with sequential
+        # #'ADSS',
+        # 'WDPS', # Sequential overwrite
+        # #'WDSS',
+        # 'WDPR', # Random overwrite
+        # #'WDSR',
 
         # 'ADSS',
         # 'S1MP', 'S1MS',
@@ -364,10 +364,12 @@ class Benchmark(object):
     def prep_data_file(self):
         if not self.data_file_prepared:
             print(self.fs)
-            if self.is_fsp():
-                cfs_common.expr_mkfs()
-            else:
-                cfs_common.expr_mkfs_for_kfs()
+            # if self.is_fsp():
+            #     cfs_common.expr_mkfs()
+            # elif self.is_oxbow():
+            #     cfs_common.expr_mkfs_oxbow()
+            # else:
+            #     cfs_common.expr_mkfs_for_kfs()
             init_cmd = '{}/cfs_bench/exprs/init_mt_bench_file.py {} {}'. format(
                 cfs_common.get_cfs_root_dir(), self.fs, self.max_num_app)
             print(init_cmd)
