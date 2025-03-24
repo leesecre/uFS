@@ -39,7 +39,7 @@ using namespace pcm;
 #endif
 
 #define ALIGN_MASK(x, mask) (((x) + (mask)) & ~(mask))
-#define ALIGN(x, a) ALIGN_MASK((x), ((__typeof__(x))(a) - 1))
+#define ALIGN(x, a) ALIGN_MASK((x), ((__typeof__(x))(a)-1))
 
 // Comma separated strings corresponding to benchmark names.
 // For example - crread,rwrite,seqwrite
@@ -417,6 +417,7 @@ private:
   uint64_t last_op_nano_;
   double last_op_finish_;
   Histogram hist_;
+  Histogram fsync_hist_;
   std::string message_;
   bool stopped_{false};
 
@@ -465,6 +466,8 @@ public:
   }
 
   void AddMessage(leveldb::Slice msg) { AppendWithSpace(&message_, msg); }
+
+  void FinishedFsync(double latency) { fsync_hist_.Add(latency); }
 
   void FinishedSingleOp() {
     if (first_op_nano_ == 0) {
@@ -542,6 +545,9 @@ public:
             seconds_ * 1e6 / done_, (extra.empty() ? "" : " "), extra.c_str());
     if (FLAGS_histogram) {
       fprintf(stdout, "Microseconds per op:\n%s\n", hist_.ToString().c_str());
+      if (FLAGS_sync_numop > 0)
+        fprintf(stdout, "Microseconds per fsync:\n%s\n",
+                fsync_hist_.ToString().c_str());
     }
     fprintf(stdout, "Verify Ts: start:%lu end:%lu\n", first_op_nano_,
             last_op_nano_);
@@ -1060,6 +1066,7 @@ private:
   void RWrite(ThreadState *thread) { DoWrite(thread, false); }
 
   void DoWrite(ThreadState *thread, bool seq) {
+    uint64_t fsync_start, fsync_end;
     PinToCore(thread);
 #ifndef CFS_USE_POSIX
     fprintf(stderr, "init tid aid:%d\n", thread->aid);
@@ -1166,16 +1173,20 @@ private:
       curSyncCounter++;
       if (curSyncCounter == FLAGS_sync_numop) {
         int srt;
+
+        fsync_start = PerfUtils::Cycles::toNanoseconds(g_env->NowCycles());
 #ifndef CFS_USE_POSIX
         srt = fs_fdatasync(thread->fd);
 #else
         srt = fdatasync(thread->fd);
 #endif
+        fsync_end = PerfUtils::Cycles::toNanoseconds(g_env->NowCycles());
         if (srt < 0) {
           fprintf(stderr, "fdatasync error:%s i:%d srt:%d\n", strerror(errno),
                   i, srt);
           exit(1);
         }
+        thread->stats.FinishedFsync(double(fsync_end - fsync_start) / 1000);
         curSyncCounter = 0;
       }
       // accounting
@@ -1190,6 +1201,7 @@ private:
     thread->stats.Stop();
     fprintf(stderr, "finish all ops\n");
 
+    fdatasync(thread->fd);
     SignalStopDumpLoad(thread);
 
 #ifndef CFS_USE_POSIX
