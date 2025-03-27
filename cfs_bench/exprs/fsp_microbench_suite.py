@@ -214,15 +214,15 @@ def get_default_benchmarks():
         ### Read benchmark
         'RDPR', # Random read 
         #'RDSR', # not working
-        # 'RDPS', # Seqeuntial read
+        'RDPS', # Seqeuntial read
         # #'RDSS',
 
         # # # ### Write benchmark
-        # 'ADPS', # Appending with sequential
+        'ADPS', # Appending with sequential
         # #'ADSS',
-        # 'WDPS', # Sequential overwrite
+        'WDPS', # Sequential overwrite
         # #'WDSS',
-        # 'WDPR', # Random overwrite
+        'WDPR', # Random overwrite
         # #'WDSR',
 
         # 'ADSS',

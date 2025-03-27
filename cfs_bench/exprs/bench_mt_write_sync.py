@@ -77,7 +77,7 @@ for sync_op in sync_op_list:
     if sync_op == 1:
         num_app_list = [1] # for latency benchmark
     else:
-        num_app_list = [10]
+        num_app_list = [1,2,4,8,10]
 
     for num_app in num_app_list:
         cur_cfs_update_dict = {

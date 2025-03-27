@@ -242,7 +242,7 @@ def signal_to_process(process_name, sig=signal.SIGINT):
 
 def expr_checkpoint_oxbow():
     oxbow_root = os.environ.get("OXBOW_ROOT")
-    if oxbow_root: 
+    if oxbow_root:
         script_path = os.path.join(oxbow_root, "scripts", "device", "send_ckpt_signal.sh")
         os.system(f"bash {script_path}")
     else:
@@ -251,8 +251,9 @@ def expr_checkpoint_oxbow():
     time.sleep(20)
 
 def expr_exit_oxbow_daemon():
+    print("Send exit signal to daemon ...")
     signal_to_process("secure_daemon", sig=signal.SIGINT)
-    time.sleep(5)
+    time.sleep(20)
     mount_point = "/oxbow"
     result = os.system(f"umount {mount_point}")
     if result != 0:
@@ -282,7 +283,7 @@ def clear_page_cache_oxbow():
     expr_exit_oxbow_daemon()
     expr_start_oxbow_daemon()
     print("clear page cache for oxbow")
-    
+
 def expr_mkfs_oxbow():
     print("mkfs for oxbow starting")
     expr_exit_oxbow_devfs()
