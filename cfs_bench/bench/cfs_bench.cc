@@ -124,7 +124,7 @@ static bool FLAGS_compute_crc = false;
 static bool FLAGS_share_mode = false;
 
 // For writing, how many number of operations will be followed by a fsync()
-static int FLAGS_sync_numop = -1;
+static int FLAGS_sync_numop = -2;
 
 // Dedicated access one single block that specified by this flag
 // If specified, will overwrite all the other random access patterns
@@ -1201,7 +1201,11 @@ private:
     thread->stats.Stop();
     fprintf(stderr, "finish all ops\n");
 
+#ifndef CFS_USE_POSIX
+    fs_fdatasync(thread->fd);
+#else
     fdatasync(thread->fd);
+#endif
     SignalStopDumpLoad(thread);
 
 #ifndef CFS_USE_POSIX

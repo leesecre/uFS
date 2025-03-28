@@ -5,6 +5,8 @@ import sys
 import os
 import time
 import psutil
+import subprocess
+import signal
 
 from sarge import run, Capture
 import cfs_test_common as cfs_tc
@@ -269,8 +271,17 @@ def expr_read_mtfsp_multiapp(
         env["LD_PRELOAD"] = f"{os.environ.get('LIBFS_BUILD', '')}/liboxbow_libfs.so"
         # for i in range(num_app_proc):
         #     bench_app_cmd_dict[i] = '{}'.format(bench_app_cmd_dict[i])
+    if '--sync_numop=' not in bench_cfg_dict:
+        bench_cfg_dict['--sync_numop='] = -1
 
     print(bench_app_cmd_dict)
+
+    # if bench_cfg_dict['--sync_numop='] > 1:
+    print("It is throughput benchmark!")
+    perf_output_path = os.path.join("/tmp/perf", f"Throughput-{bench_args['--benchmarks=']}-iosize{bench_args['--value_size=']}-{num_app_proc}")
+    proc = subprocess.Popen(f'sudo nice -n 0 perf record -a -o {perf_output_path} &',
+                                shell=True, preexec_fn=os.setpgrp)
+    perf_pid = proc.pid
 
     # start benchmarking clients
     p_bench_r_dict = {}
@@ -283,6 +294,10 @@ def expr_read_mtfsp_multiapp(
     # wait for clients finishing
     for pr in p_bench_r_dict.values():
         pr.wait()
+    
+    # if bench_cfg_dict['--sync_numop='] > 1:
+    os.killpg(os.getpgid(perf_pid), signal.SIGTERM)
+    print(f"Perf stat output saved to {perf_output_path}")
 
     if dump_mpstat:
         end_cpu_pct = psutil.cpu_percent(interval=None, percpu=True)
@@ -445,6 +460,7 @@ def bench_rand_read(
 
     # note for rand-read, one strict-no-overlap is set, 64 needs same size
     # as 4K
+<<<<<<< HEAD
     if not is_thp:
         value_sz_op_num_dict = {
             # 256MB for latency benchmark
@@ -491,6 +507,16 @@ def bench_rand_read(
             # 65536: int(2*1024*1024/64),
             # 262144: int(2*1024*1024/256),
         }
+=======
+    value_sz_op_num_dict = {
+        # 1GB for latency
+        # 1024: 262144 * 4, # 1K
+        # 4096: 65536 * 4,  # 4K
+        # 16384: 16384 * 4, # 16K
+        # 65536: 4096 * 4, # 64K
+        # 262144: 1024 * 4, # 256K
+        # 524288: 512 * 4, # 512K
+>>>>>>> main
 
     if is_share:
         # value_sz_op_num_dict = {
@@ -502,7 +528,11 @@ def bench_rand_read(
             if value_sz_op_num_dict[sz] > 500000:
                 value_sz_op_num_dict[sz] = 500000
     # pin_cpu_list = [False, True]
+<<<<<<< HEAD
     pin_cpu_list = [False]
+=======
+    pin_cpu_list = [True]
+>>>>>>> main
     clear_pc_list = [True]
     if num_fsp_worker_list is None:
         num_fsp_worker_list = [1]
