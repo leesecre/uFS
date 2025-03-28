@@ -64,7 +64,12 @@ if cur_is_append:
 #sync_op_list = [1, 2, 4, 8, 16]
 
 # 1 for Latency, 4 for default setting of uFS
-sync_op_list = [4]
+# sync_op_list = [4, 64, 128, 256, -1]
+# 1024, 4096, 16384, 32768
+if cur_is_append:
+    sync_op_list = [131072]
+else:
+    sync_op_list = [1]
 
 # if tc.use_exact_num_app():
 #     num_app_list = [cur_numapp]
@@ -73,7 +78,7 @@ for sync_op in sync_op_list:
     if sync_op == 1:
         num_app_list = [1] # for latency benchmark
     else:
-        num_app_list = [1,2,4,8,10]
+        num_app_list = [1, 2, 4, 8, 10]
 
     for num_app in num_app_list:
         cur_cfs_update_dict = {

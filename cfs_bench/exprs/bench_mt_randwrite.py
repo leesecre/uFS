@@ -68,7 +68,9 @@ LOG_BASE = 'log_{}'.format(sys.argv[1])
 #     num_app_list.reverse()
 
 # 1 for Latency, 4 for default setting of uFS
-sync_op_list = [4]
+# sync_op_list = [32, 64, 128, 256, -1]
+# sync_op_list = [-1]
+sync_op_list = [1]
 
 # if tc.use_exact_num_app():
 #     num_app_list = [cur_numapp]

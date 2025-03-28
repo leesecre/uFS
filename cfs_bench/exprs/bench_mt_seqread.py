@@ -71,7 +71,7 @@ LOG_BASE = 'log_{}'.format(sys.argv[1])
 #num_app_list = [20 - i for i in range(20)]
 
 num_app_list = [1,2,4,8,10] # for multi process test
-
+# num_app_list = [1]
 # if cur_numapp is not None:
 #     num_app_list = list(range(1, cur_numapp + 1))
 #     num_app_list.reverse()

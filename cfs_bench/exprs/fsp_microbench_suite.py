@@ -157,11 +157,11 @@ def get_benchmark_script(bench_code):
         # (['RMPR'], 'bench_mt_randread.py {} cached'),
         (['RDPR'], 'bench_mt_randread.py {}'),
         # # (['RMSR'], 'bench_mt_randread.py {} cached share'),
-        (['RDSR'], 'bench_mt_randread.py {} share'),
+        #(['RDSR'], 'bench_mt_randread.py {} share'),
         # # (['RMPS'], 'bench_mt_seqread.py {} cached'),
         (['RDPS'], 'bench_mt_seqread.py {}'),
         # # (['RMSS'], 'bench_mt_seqread.py {} share cached'),
-        (['RDSS'], 'bench_mt_seqread.py {} share'),
+        #(['RDSS'], 'bench_mt_seqread.py {} share'),
     
         # (['AMPS'], 'bench_mt_write_noflush.py {} append'),
         # (['WMPS'], 'bench_mt_write_noflush.py {}'),
@@ -172,14 +172,14 @@ def get_benchmark_script(bench_code):
         # (['WDSR'], 'bench_mt_randwrite.py {} share'),
 
         (['ADPS'], 'bench_mt_write_sync.py {} append'),
-        (['ADSS'], 'bench_mt_write_sync.py {} append share'),
+        # (['ADSS'], 'bench_mt_write_sync.py {} append share'),
         (['WDPS'], 'bench_mt_write_sync.py {} '),
-        (['WDSS'], 'bench_mt_write_sync.py {} share'),
+        # (['WDSS'], 'bench_mt_write_sync.py {} share'),
         (['WDPR'], 'bench_mt_randwrite.py {}'),
-        (['WDSR'], 'bench_mt_randwrite.py {} share'),
+        # (['WDSR'], 'bench_mt_randwrite.py {} share'),
 
-        # (['S1MP'], 'bench_mt_stat.py {}'),
         # (['S1MS'], 'bench_mt_stat.py {} share'),
+        # (['S1MP'], 'bench_mt_stat.py {}'),
         # (['SaMP'], 'bench_mt_statall.py {} 1000'),
         # (['SaMS'], 'bench_mt_statall.py {} 1000 share'),
         # (['LsMP'], 'bench_mt_listdir.py {} 1000'),
@@ -212,17 +212,17 @@ def get_default_benchmarks():
         # 'WDSR',
 
         ### Read benchmark
-        # 'RDPR', # Random read 
+        'RDPR', # Random read 
         #'RDSR', # not working
-        # 'RDPS', # Seqeuntial read
+        'RDPS', # Seqeuntial read
         #'RDSS',
 
         # # ### Write benchmark
-        'ADPS', # Appending with sequential
+        #'ADPS', # Appending with sequential
         #'ADSS',
-        'WDPS', # Sequential overwrite
+        #'WDPS', # Sequential overwrite
         #'WDSS',
-        'WDPR', # Random overwrite
+        #'WDPR', # Random overwrite
         #'WDSR',
 
         # 'ADSS',
