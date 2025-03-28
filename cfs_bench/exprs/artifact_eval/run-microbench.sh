@@ -53,13 +53,13 @@ elif [ "$1" = "ufs-single" ]; then
 	cleanup-ufs-config
 elif [ "$1" = "ext4" ]; then
 	reset-spdk
-	sudo -E python3 fsp_microbench_suite.py --fs ext4 --numapp=10 "${@:2}"
+	sudo -E python3 fsp_microbench_suite.py --fs ext4 --numapp=16 "${@:2}"
 	sudo mv ext4_*_run_0 "$data_dir"
 elif [ "$1" = "ext4nj" ]; then
 	reset-spdk
-	sudo -E python3 fsp_microbench_suite.py --fs ext4nj --numapp=10 "${@:2}"
+	sudo -E python3 fsp_microbench_suite.py --fs ext4nj --numapp=16 "${@:2}"
 	sudo mv ext4_*_run_0 "$data_dir"
 elif [ "$1" = "oxbow" ]; then
-	sudo -E python3 fsp_microbench_suite.py --fs oxbow --numapp=10 "${@:2}"
+	sudo -E python3 fsp_microbench_suite.py --fs oxbow --numapp=16 "${@:2}"
 	sudo mv oxbow_*_run_0 "$data_dir"
 fi

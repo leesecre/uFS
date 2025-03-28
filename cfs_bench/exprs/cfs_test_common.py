@@ -243,7 +243,12 @@ def signal_to_process(process_name, sig=signal.SIGINT):
 def expr_checkpoint_oxbow():
     oxbow_root = os.environ.get("OXBOW_ROOT")
     if oxbow_root:
-        script_path = os.path.join(oxbow_root, "scripts", "device", "send_ckpt_signal.sh")
+        # Send local checkpoint signal (from host to host)
+        # script_path = os.path.join(oxbow_root, "scripts", "device",
+        # "send_ckpt_signal.sh")
+
+        # Send remote checkpoint signal (from host to device)
+        script_path = os.path.join(oxbow_root, "scripts", "host", "remote_ckpt.sh")
         os.system(f"bash {script_path}")
     else:
         print("Check set_env.sh for OXBOW_ROOT")
@@ -261,7 +266,8 @@ def expr_exit_oxbow_daemon():
 
 def expr_start_oxbow_daemon():
     tmux_daemon_pane = "oxbow:0.1"
-    cmd = "cd ~/codes/oxbow.code/oxbow/secure_daemon && ./run.sh"
+    # cmd = "cd ~/codes/oxbow.code/oxbow/secure_daemon && ./run.sh"
+    cmd = "cd $SECURE_DAEMON && ./run.sh"
     tmux_cmd = f'tmux send-keys -t {tmux_daemon_pane} "{cmd}" Enter'
     os.system(tmux_cmd)
     print("wait for daemon do initiating... ")
@@ -269,14 +275,21 @@ def expr_start_oxbow_daemon():
 
 def expr_start_oxbow_devfs():
     tmux_daemon_pane = "oxbow:0.3"
-    cmd = "cd ~/codes/oxbow.code/oxbow/devfs && ./run.sh"
+    # cmd = "cd ~/codes/oxbow.code/oxbow/devfs && ./run.sh"
+    cmd = "cd $DEVFS && ./run.sh"
     tmux_cmd = f'tmux send-keys -t {tmux_daemon_pane} "{cmd}" Enter'
     os.system(tmux_cmd)
     print("wait for devfs do initiating... ")
     time.sleep(5)
 
 def expr_exit_oxbow_devfs():
-    signal_to_process("devfs", sig=signal.SIGINT)
+    tmux_daemon_pane = "oxbow:0.3"
+    tmux_cmd = f'tmux send-keys -t {tmux_daemon_pane} C-c'
+    os.system(tmux_cmd)
+
+    # Works for local devfs.
+    # signal_to_process("devfs", sig=signal.SIGINT)
+
     time.sleep(5)
 
 def clear_page_cache_oxbow():

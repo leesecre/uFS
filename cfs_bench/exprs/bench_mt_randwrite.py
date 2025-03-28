@@ -72,7 +72,8 @@ LOG_BASE = 'log_{}'.format(sys.argv[1])
 #     num_app_list.reverse()
 
 # 1 for Latency, 4 for default setting of uFS
-sync_op_list = [1]
+# sync_op_list = [1]
+sync_op_list = [4]
 
 # if tc.use_exact_num_app():
 #     num_app_list = [cur_numapp]
@@ -82,7 +83,8 @@ for sync_op in sync_op_list:
     if sync_op == 1:
         num_app_list = [1] # for latency benchmark
     else:
-        num_app_list = [1,2,4,8,10]
+        # num_app_list = [1,2,4,8,10] # uFS
+        num_app_list = [1,2,4,8,10,16] # oxbow, ext4
 
     for num_app in num_app_list:
         cur_num_fs_wk_list = [(i + 1) for i in range(num_app)]

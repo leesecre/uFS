@@ -68,12 +68,28 @@ if cur_is_append:
 #sync_op_list = [1, 2, 4, 8, 16]
 
 # 1 for Latency, 4 for default setting of uFS
-# sync_op_list = [4, 64, 128, 256, -1]
-# 1024, 4096, 16384, 32768
-if cur_is_append:
-    sync_op_list = [131072]
+# Determine the benchmark type from command line arguments
+benchmark_type = "ADPS" if cur_is_append and not cur_is_share else "other"
+if "WDPS" in os.environ.get("BENCHMARK_TYPE", ""):
+    benchmark_type = "WDPS"
+elif "WDSS" in os.environ.get("BENCHMARK_TYPE", ""):
+    benchmark_type = "WDSS"
+elif "ADSS" in os.environ.get("BENCHMARK_TYPE", ""):
+    benchmark_type = "ADSS"
+
+# Set sync_op_list based on benchmark type
+if benchmark_type == "ADPS":
+    sync_op_list = [131072]  # it is max for append
+    print("=========================================")
+    print(f"BENCHMARK TYPE: {benchmark_type}")
+    print(f"USING SYNC_OP_LIST: {sync_op_list}")
+    print("=========================================")
 else:
-    sync_op_list = [1]
+    sync_op_list = [4]  # default setting for other benchmarks
+    print("=========================================")
+    print(f"BENCHMARK TYPE: {benchmark_type}")
+    print(f"USING SYNC_OP_LIST: {sync_op_list}")
+    print("=========================================")
 
 # if tc.use_exact_num_app():
 #     num_app_list = [cur_numapp]
@@ -82,7 +98,8 @@ for sync_op in sync_op_list:
     if sync_op == 1:
         num_app_list = [1] # for latency benchmark
     else:
-        num_app_list = [1, 2, 4, 8, 10]
+        # num_app_list = [1,2,4,8,10] # uFS
+        num_app_list = [1,2,4,8,10,16] # oxbow, ext4
 
     for num_app in num_app_list:
         cur_cfs_update_dict = {

@@ -460,7 +460,6 @@ def bench_rand_read(
 
     # note for rand-read, one strict-no-overlap is set, 64 needs same size
     # as 4K
-<<<<<<< HEAD
     if not is_thp:
         value_sz_op_num_dict = {
             # 256MB for latency benchmark
@@ -507,16 +506,6 @@ def bench_rand_read(
             # 65536: int(2*1024*1024/64),
             # 262144: int(2*1024*1024/256),
         }
-=======
-    value_sz_op_num_dict = {
-        # 1GB for latency
-        # 1024: 262144 * 4, # 1K
-        # 4096: 65536 * 4,  # 4K
-        # 16384: 16384 * 4, # 16K
-        # 65536: 4096 * 4, # 64K
-        # 262144: 1024 * 4, # 256K
-        # 524288: 512 * 4, # 512K
->>>>>>> main
 
     if is_share:
         # value_sz_op_num_dict = {
@@ -528,11 +517,7 @@ def bench_rand_read(
             if value_sz_op_num_dict[sz] > 500000:
                 value_sz_op_num_dict[sz] = 500000
     # pin_cpu_list = [False, True]
-<<<<<<< HEAD
     pin_cpu_list = [False]
-=======
-    pin_cpu_list = [True]
->>>>>>> main
     clear_pc_list = [True]
     if num_fsp_worker_list is None:
         num_fsp_worker_list = [1]
