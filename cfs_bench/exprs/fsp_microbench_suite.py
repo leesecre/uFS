@@ -410,7 +410,14 @@ class Benchmark(object):
                     dirtyFlushRatio=bench_fs_dirty_flush_ratio(code))
             print('cmd: {}'.format(cmd))
 
-            ret = subprocess.call(cmd, shell=True)
+            # Set benchmark type as environment variable
+            env_cmd = 'BENCHMARK_TYPE={} {}'.format(code, cmd)
+            print('=========================================')
+            print('Setting benchmark type to: {}'.format(code))
+            print('Running command: {}'.format(env_cmd))
+            print('=========================================')
+
+            ret = subprocess.call(env_cmd, shell=True)
             if ret != 0:
                 sys.exit(1)
             self.save_expr_result(code, rpt)

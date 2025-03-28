@@ -82,12 +82,18 @@ num_app_list = [1]
 
 # if tc.use_exact_num_app():
 #     num_app_list = [cur_numapp]
-throughput_bench=[False, True]
+
+## Select throughput or(and) latency benchmark
+# throughput_bench=[False, True]
+throughput_bench=[True]
+
 for thp in throughput_bench:
     if thp:
-        num_app = [1, 2, 4, 8, 10]
+        # num_app_list = [1, 2, 4, 8, 10] # uFS
+        num_app_list = [1, 2, 4, 8, 10, 16] # oxbow, ext4
     else:
-        num_app = [1]
+        num_app_list = [1]
+
     for num_app in num_app_list:
         # cur_num_fs_wk_list = [(i + 1) for i in range(num_app)]
         if not cur_is_fsp:
