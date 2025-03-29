@@ -236,7 +236,7 @@ def signal_to_process(process_name, sig=signal.SIGINT):
     if not pids:
         print(f"'{process_name}' no such process")
         return True
-    print(f"{process_name} being exiting...")
+    # print(f"{process_name} being exiting...")
     for pid in pids:
         os.system(f"kill -{sig.value} {pid}")
 
@@ -252,11 +252,11 @@ def expr_checkpoint_oxbow():
         os.system(f"bash {script_path}")
     else:
         print("Check set_env.sh for OXBOW_ROOT")
-    print("wait for devfs do checkpointing... ")
+    print("Checkpoint oxbow. (wait for 20 seconds) ############ (CHECKPOINT) ############")
     time.sleep(20)
 
 def expr_exit_oxbow_daemon():
-    print("Send exit signal to daemon ...")
+    print("Exit daemon (wait for 20 seconds).")
     signal_to_process("secure_daemon", sig=signal.SIGINT)
     time.sleep(20)
     mount_point = "/oxbow"
@@ -265,24 +265,27 @@ def expr_exit_oxbow_daemon():
         print("Failed to umount oxbow")
 
 def expr_start_oxbow_daemon():
+    print("Start daemon (wait for 20 seconds).")
     tmux_daemon_pane = "oxbow:0.1"
     # cmd = "cd ~/codes/oxbow.code/oxbow/secure_daemon && ./run.sh"
     cmd = "cd $SECURE_DAEMON && ./run.sh"
     tmux_cmd = f'tmux send-keys -t {tmux_daemon_pane} "{cmd}" Enter'
     os.system(tmux_cmd)
-    print("wait for daemon do initiating... ")
+    # print("wait for daemon do initiating... ")
     time.sleep(20)
 
 def expr_start_oxbow_devfs():
+    print("Start devfs (wait for 5 seconds).")
     tmux_daemon_pane = "oxbow:0.3"
     # cmd = "cd ~/codes/oxbow.code/oxbow/devfs && ./run.sh"
     cmd = "cd $DEVFS && ./run.sh"
     tmux_cmd = f'tmux send-keys -t {tmux_daemon_pane} "{cmd}" Enter'
     os.system(tmux_cmd)
-    print("wait for devfs do initiating... ")
+    # print("wait for devfs do initiating... ")
     time.sleep(5)
 
 def expr_exit_oxbow_devfs():
+    print("Exit devfs (wait for 5 seconds).")
     tmux_daemon_pane = "oxbow:0.3"
     tmux_cmd = f'tmux send-keys -t {tmux_daemon_pane} C-c'
     os.system(tmux_cmd)
@@ -293,18 +296,18 @@ def expr_exit_oxbow_devfs():
     time.sleep(5)
 
 def clear_page_cache_oxbow():
+    print("Clear page cache for oxbow ############ (DROP CACHE) ############")
     expr_exit_oxbow_daemon()
     expr_start_oxbow_daemon()
-    print("clear page cache for oxbow")
 
 def expr_mkfs_oxbow():
-    print("mkfs for oxbow starting")
+    print("MKFS for oxbow starting ############ (MKFS) ############")
     expr_exit_oxbow_devfs()
     expr_exit_oxbow_daemon()
     # MKFS
     oxbow_root = os.environ.get("OXBOW_ROOT")
     script_path = os.path.join(oxbow_root, "scripts", "host", "mkfs.sh")
-    os.system(f"bash {script_path}")
+    os.system(f"bash {script_path} > /dev/null 2>&1")
     expr_start_oxbow_devfs()
     expr_start_oxbow_daemon()
 
