@@ -271,9 +271,12 @@ def expr_read_mtfsp_multiapp(
         env["LD_PRELOAD"] = f"{os.environ.get('LIBFS_BUILD', '')}/liboxbow_libfs.so"
         # for i in range(num_app_proc):
         #     bench_app_cmd_dict[i] = '{}'.format(bench_app_cmd_dict[i])
+    if '--sync_numop=' not in bench_cfg_dict:
+        bench_cfg_dict['--sync_numop='] = -1
 
     print(bench_app_cmd_dict)
 
+    # if bench_cfg_dict['--sync_numop='] > 1:
     print("It is throughput benchmark!")
     perf_output_path = os.path.join("/tmp/perf", f"Throughput-{bench_args['--benchmarks=']}-iosize{bench_args['--value_size=']}-{num_app_proc}")
     os.makedirs("/tmp/perf", exist_ok=True)
@@ -292,6 +295,10 @@ def expr_read_mtfsp_multiapp(
     # wait for clients finishing
     for pr in p_bench_r_dict.values():
         pr.wait()
+    
+    # if bench_cfg_dict['--sync_numop='] > 1:
+    os.killpg(os.getpgid(perf_pid), signal.SIGTERM)
+    print(f"Perf stat output saved to {perf_output_path}")
 
     os.killpg(os.getpgid(perf_pid), signal.SIGTERM)
     print(f"Perf stat output saved to {perf_output_path}")

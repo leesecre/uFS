@@ -68,8 +68,6 @@ if cur_is_append:
 #sync_op_list = [1, 2, 4, 8, 16]
 
 # 1 for Latency, 4 for default setting of uFS
-# sync_op_list = [1]
-
 # Determine the benchmark type from command line arguments
 benchmark_type = "ADPS" if cur_is_append and not cur_is_share else "other"
 if "WDPS" in os.environ.get("BENCHMARK_TYPE", ""):

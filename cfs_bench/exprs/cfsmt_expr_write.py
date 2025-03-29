@@ -144,26 +144,26 @@ def bench_seq_sync_write(log_dir, num_app_proc=1, is_fsp=True, is_oxbow=False,
         
         value_sz_op_num_dict = {
             # 256MB for latency benchmark
-            1024: 262144, # 1K
-            4096: 65536,  # 4K
-            16384: 16384, # 16K
-            65536: 4096, # 64K
-            262144: 1024, # 256K
-            524288: 512, # 512K
-        
-            # 2GB for latency
-            # 1024: 262144 * 8, # 1K
-            # 4096: 65536 * 8,  # 4K
-            # 16384: 16384 * 8, # 16K
-            # 65536: 4096 * 8, # 64K
-            # 262144: 1024 * 8, # 256K
-            # 524288: 512 * 8, # 512K
+            # 1024: 262144, # 1K
+            # 4096: 65536,  # 4K
+            # 16384: 16384, # 16K
+            # 65536: 4096, # 64K
+            # 262144: 1024, # 256K
+            # 524288: 512, # 512K
+
+            # 1GB for latency
+            1024: 262144 * 4, # 1K
+            4096: 65536 * 4,  # 4K
+            16384: 16384 * 4, # 16K
+            65536: 4096 * 4, # 64K
+            262144: 1024 * 4, # 256K
+            524288: 512 * 4, # 512K
         }
     else:
         # Throughput benchmark
         value_sz_op_num_dict = {
             # 4096: 250000, # first value
-            4096: 65536 * 8 # 2GB
+            4096: 65536 * 8, # 2GB
             # 16384: 60000, # Not work
         }
 
@@ -181,7 +181,7 @@ def bench_seq_sync_write(log_dir, num_app_proc=1, is_fsp=True, is_oxbow=False,
         for vsz in value_sz_op_num_dict:
             value_sz_op_num_dict[vsz] = int(PER_APP_SIZE/vsz)
     # pin_cpu_list = [True, False]
-    pin_cpu_list = [False]
+    pin_cpu_list = [True] # pinning was faster
     clear_pc_list = [True]
     if num_fsp_worker_list is None:
         num_fsp_worker_list = [3]
@@ -257,20 +257,20 @@ def bench_rand_write(log_dir, num_app_proc=1, is_fsp=True, is_oxbow=False,
         if cfs_update_dict['--sync_numop='] == 1:
             value_sz_op_num_dict = {
                 # 256MB for latency benchmark
-                1024: 262144, # 1K
-                4096: 65536,  # 4K
-                16384: 16384, # 16K
-                65536: 4096, # 64K
-                262144: 1024, # 256K
-                524288: 512, # 512K
+                # 1024: 262144, # 1K
+                # 4096: 65536,  # 4K
+                # 16384: 16384, # 16K
+                # 65536: 4096, # 64K
+                # 262144: 1024, # 256K
+                # 524288: 512, # 512K
                 
-                # 2GB for latency
-                # 1024: 262144 * 8, # 1K
-                # 4096: 65536 * 8,  # 4K
-                # 16384: 16384 * 8, # 16K
-                # 65536: 4096 * 8, # 64K
-                # 262144: 1024 * 8, # 256K
-                # 524288: 512 * 8, # 512K
+                # 1GB for latency
+                1024: 262144 * 4, # 1K
+                4096: 65536 * 4,  # 4K
+                16384: 16384 * 4, # 16K
+                65536: 4096 * 4, # 64K
+                262144: 1024 * 4, # 256K
+                524288: 512 * 4, # 512K
             }
         else:
             # Throughput benchmark
@@ -281,7 +281,7 @@ def bench_rand_write(log_dir, num_app_proc=1, is_fsp=True, is_oxbow=False,
             }
 
     # pin_cpu_list = [True, False]
-    pin_cpu_list = [False]
+    pin_cpu_list = [True, False]
     clear_pc_list = [True]
     if num_fsp_worker_list is None:
         num_fsp_worker_list = [1]

@@ -74,7 +74,8 @@ LOG_BASE = 'log_{}'.format(sys.argv[1])
 
 # num_app_list = [1, 2, 3, 4, 5, 6]  # @falcon
 # num_app_list = [10, 9, 8, 7, 6, 5, 4, 3, 2, 1]  # @bumble
-#num_app_list = [1,2,4,8,10] # for multi process test
+# num_app_list = [1]
+num_app_list = [1,2,4,8,10] # for multi process test
 #num_app_list = [20 - i for i in range(20)]
 
 # if cur_numapp is not None:
