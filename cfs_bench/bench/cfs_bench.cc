@@ -1010,6 +1010,7 @@ private:
   }
 
   void PinToCore(ThreadState *thread) {
+#ifndef CFS_USE_POSIX
     fprintf(stdout, "pinToCore cid:%d\n", thread->cid);
     if (thread->cid <= 0)
       return;
@@ -1021,6 +1022,7 @@ private:
       fprintf(stderr, "thread-%d cannot pin to core-%d\n", thread->tid,
               thread->cid);
     }
+#endif
   }
 
   void FlushAllData(ThreadState *thread) {
