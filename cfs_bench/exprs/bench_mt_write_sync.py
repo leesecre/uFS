@@ -80,18 +80,25 @@ elif "ADSS" in os.environ.get("BENCHMARK_TYPE", ""):
     benchmark_type = "ADSS"
 
 # Set sync_op_list based on benchmark type
-if benchmark_type == "ADPS":
-    sync_op_list = [131072]  # it is max for append
-    print("=========================================")
-    print(f"BENCHMARK TYPE: {benchmark_type}")
-    print(f"USING SYNC_OP_LIST: {sync_op_list}")
-    print("=========================================")
-else:
-    sync_op_list = [4]  # default setting for other benchmarks
-    print("=========================================")
-    print(f"BENCHMARK TYPE: {benchmark_type}")
-    print(f"USING SYNC_OP_LIST: {sync_op_list}")
-    print("=========================================")
+# if benchmark_type == "ADPS":
+    # sync_op_list = [131072]  # it is max for append
+    # print("=========================================")
+    # print(f"BENCHMARK TYPE: {benchmark_type}")
+    # print(f"USING SYNC_OP_LIST: {sync_op_list}")
+    # print("=========================================")
+# else:
+    # sync_op_list = [4]  # default setting for other benchmarks
+    # print("=========================================")
+    # print(f"BENCHMARK TYPE: {benchmark_type}")
+    # print(f"USING SYNC_OP_LIST: {sync_op_list}")
+    # print("=========================================")
+
+
+sync_op_list = [131072]  # it is max for append
+print("=========================================")
+print(f"BENCHMARK TYPE: {benchmark_type}")
+print(f"USING SYNC_OP_LIST: {sync_op_list}")
+print("=========================================")
 
 # if tc.use_exact_num_app():
 #     num_app_list = [cur_numapp]
