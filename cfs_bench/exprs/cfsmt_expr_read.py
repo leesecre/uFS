@@ -60,7 +60,7 @@ def expr_read_mtfsp_multiapp(
     if clear_pgcache:
         if not is_oxbow and not is_append:
             cfs_tc.clear_page_cache(is_slient=False)
-        else:
+        elif is_oxbow and not is_append:
             cfs_tc.clear_page_cache_oxbow()
 
     print(log_dir_name)
