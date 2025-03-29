@@ -5,6 +5,8 @@ import sys
 import os
 import time
 import psutil
+import subprocess
+import signal
 
 from sarge import run, Capture
 import cfs_test_common as cfs_tc
@@ -272,6 +274,13 @@ def expr_read_mtfsp_multiapp(
 
     print(bench_app_cmd_dict)
 
+    print("It is throughput benchmark!")
+    perf_output_path = os.path.join("/tmp/perf", f"Throughput-{bench_args['--benchmarks=']}-iosize{bench_args['--value_size=']}-{num_app_proc}")
+    os.makedirs("/tmp/perf", exist_ok=True)
+    proc = subprocess.Popen(f'sudo nice -n 0 perf record -a -o {perf_output_path} &',
+                                shell=True, preexec_fn=os.setpgrp)
+    perf_pid = proc.pid
+
     # start benchmarking clients
     p_bench_r_dict = {}
     for i in range(num_app_proc):
@@ -283,6 +292,9 @@ def expr_read_mtfsp_multiapp(
     # wait for clients finishing
     for pr in p_bench_r_dict.values():
         pr.wait()
+
+    os.killpg(os.getpgid(perf_pid), signal.SIGTERM)
+    print(f"Perf stat output saved to {perf_output_path}")
 
     if dump_mpstat:
         end_cpu_pct = psutil.cpu_percent(interval=None, percpu=True)
