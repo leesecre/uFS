@@ -453,6 +453,24 @@ class Benchmark(object):
             self.run_single_bench(bench)
 
 
+def warmup_ssd():
+    # warming up SSD
+    print(f"Warming up SSD in by {DEV_NAME} file ... Is this the right path?")
+    
+    # Get user confirmation
+    user_input = input("Is this the right path? (y/n): ")
+    if user_input.lower() != 'y':
+        print("Exiting as the path was not confirmed.")
+        sys.exit(1)
+    
+    cmd = "sudo dd if=/dev/zero of={} bs=1G count=100 oflag=direct".format(DEV_NAME)
+    ret = subprocess.call(cmd, shell=True)
+    if ret != 0:
+        logging.error("cannot warmup")
+        return
+    print("Warming up Done")
+
+
 def main(args, loglevel):
     logging.basicConfig(format="%(levelname)s: %(message)s", level=loglevel)
     logging.info('run microbenchmark-commit:{}'.format(get_commit_id()))
@@ -500,6 +518,7 @@ def main(args, loglevel):
             reset_ext4()
     elif args.fs == 'oxbow':
         if not args.devonly:
+            warmup_ssd()
             if args.jobs is None:
                 jobs = get_default_benchmarks()
             else:
