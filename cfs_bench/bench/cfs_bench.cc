@@ -743,6 +743,7 @@ private:
 
     benchmark_fn_map_["ramrand"] = &Benchmark::BenchRamRand;
     benchmark_fn_map_["seqwrite"] = &Benchmark::SeqWrite;
+    benchmark_fn_map_["append"] = &Benchmark::SeqWrite;
     benchmark_fn_map_["rwrite"] = &Benchmark::RWrite;
     benchmark_fn_map_["crwritecross"] = &Benchmark::CachedRandomWriteCross;
     benchmark_fn_map_["seqread"] = &Benchmark::SeqRead;

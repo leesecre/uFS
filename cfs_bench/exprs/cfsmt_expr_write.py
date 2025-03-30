@@ -131,11 +131,19 @@ def bench_seq_sync_write(log_dir, num_app_proc=1, is_fsp=True, is_oxbow=False,
                          num_fsp_worker_list=None, per_app_fname=None,
                          dump_mpstat=False, dump_iostat=False,
                          cfs_update_dict=None):
-    case_name = 'seqwrite'
+    if is_append:
+        case_name = 'append'
+    else:
+        case_name = 'seqwrite'
     case_log_dir = '{}/{}'.format(log_dir, case_name)
-    bench_cfg_dict = {
-        '--benchmarks=': 'seqwrite',
-    }
+    if is_append:
+        bench_cfg_dict = {
+            '--benchmarks=': 'append',
+        }
+    else:
+        bench_cfg_dict = {
+            '--benchmarks=': 'seqwrite',
+        }
 
     if cfs_update_dict is not None:
         bench_cfg_dict.update(cfs_update_dict)
@@ -167,21 +175,17 @@ def bench_seq_sync_write(log_dir, num_app_proc=1, is_fsp=True, is_oxbow=False,
             # 16384: 60000, # Not work
         }
 
-    # 5GB for throughput benchmark
-    # 1024: 262144 * 4 * 5, # 1K
-    # 4096: 65536 * 4 * 5,  # 4K
-    # 16384: 16384 * 4 * 5, # 16K
-    # 65536: 4096 * 4 * 5, # 64K
-    # 2097152: 128 * 4 * 5 # 2M
-
-
     if '--share_mode=' in cfs_update_dict and '--o_append=' in cfs_update_dict:
         MAX_FSIZE = 5*1024*1024*1024
         PER_APP_SIZE = MAX_FSIZE / num_app_proc
         for vsz in value_sz_op_num_dict:
             value_sz_op_num_dict[vsz] = int(PER_APP_SIZE/vsz)
-    # pin_cpu_list = [True, False]
-    pin_cpu_list = [True] # pinning was faster
+
+    if not is_fsp: # ext4 and oxbow case
+        pin_cpu_list = [False]
+    if is_fsp:
+        pin_cpu_list = [True]
+
     clear_pc_list = [True]
     if num_fsp_worker_list is None:
         num_fsp_worker_list = [3]
@@ -280,8 +284,11 @@ def bench_rand_write(log_dir, num_app_proc=1, is_fsp=True, is_oxbow=False,
                 #16384: 60000, # Not work
             }
 
-    # pin_cpu_list = [True, False]
-    pin_cpu_list = [True, False]
+    if not is_fsp: # ext4 and oxbow case
+        pin_cpu_list = [False]
+    if is_fsp:
+        pin_cpu_list = [True]
+
     clear_pc_list = [True]
     if num_fsp_worker_list is None:
         num_fsp_worker_list = [1]

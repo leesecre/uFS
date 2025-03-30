@@ -72,8 +72,7 @@ LOG_BASE = 'log_{}'.format(sys.argv[1])
 #     num_app_list.reverse()
 
 # 1 for Latency, 4 for default setting of uFS
-# sync_op_list = [1]
-sync_op_list = [4]
+sync_op_list = [131072]
 
 # if tc.use_exact_num_app():
 #     num_app_list = [cur_numapp]
@@ -119,9 +118,10 @@ for sync_op in sync_op_list:
         else:
             # random write (NOTE: needs the size to be okay)
             if sync_op == 1:
-                CUR_ARKV_DIR = '{}_rwrite_latency'.format(LOG_BASE)
+                CUR_ARKV_DIR = '{}_randwrite_latency'.format(LOG_BASE)
             else:
-                CUR_ARKV_DIR = '{}_rwrite_thp_app_{}'.format(LOG_BASE, num_app)
+                CUR_ARKV_DIR = '{}_randwrite_throughput-{}'.format(
+                                    LOG_BASE, num_app)
             cur_is_no_overlap = True
             
         mte_wr.bench_rand_write(

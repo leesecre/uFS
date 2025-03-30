@@ -86,8 +86,8 @@ num_app_list = [1,2,4,8,10] # for multi process test
 #     num_app_list = [cur_numapp]
 
 ## Select throughput or(and) latency benchmark
-# throughput_bench=[False, True]
-throughput_bench=[True]
+throughput_bench=[False, True]
+# throughput_bench=[False]
 
 for thp in throughput_bench:
     if thp:
@@ -112,8 +112,8 @@ for thp in throughput_bench:
                                         do_mkdir=True)
         # dump io stats for kernel fs
         cur_dump_io_stat = False
-        if not cur_is_fsp and not cur_is_oxbow:
-            cur_dump_io_stat = True
+        # if not cur_is_fsp and not cur_is_oxbow:
+        #     cur_dump_io_stat = True
 
         # stress sharing
         if cur_is_share:
@@ -140,7 +140,10 @@ for thp in throughput_bench:
                 num_fsp_worker_list=cur_num_fs_wk_list)
         else:
             # on-disk random read
-            CUR_ARKV_DIR = '{}_randread_app_{}'.format(LOG_BASE, num_app)
+            if thp:
+                CUR_ARKV_DIR = '{}_randread_throughput_app_{}'.format(LOG_BASE, num_app)
+            else:
+                CUR_ARKV_DIR = '{}_randread_latency'.format(LOG_BASE)
             cur_is_no_overlap = True
             mte_rd.bench_rand_read(
                 cur_log_dir,

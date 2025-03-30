@@ -74,6 +74,7 @@ def reset_spdk():
 def setup_ext4(has_journal=True, readahead_kb=None, delay_allocate=True):
     # cmd = 'mkfs -F -t ext4 {}'.format(DEV_NAME)
     cmd = 'mke2fs -t ext4 -J size=10000 -E lazy_itable_init=0,lazy_journal_init=0 -N 1000 -F -G 1 {}'.format(DEV_NAME)
+    print(cmd)
     logging.debug(cmd)
     ret = subprocess.call(cmd, shell=True)
     if ret != 0:
@@ -95,6 +96,7 @@ def setup_ext4(has_journal=True, readahead_kb=None, delay_allocate=True):
     #     dealloc_opt, DEV_NAME, dir_name), shell=True)
 
     default_opt = '-o barrier=0'
+    #default_opt = '-o data=journal,barrier=0'
     ret = subprocess.call('sudo mount {} {} {}'.format(
         default_opt, DEV_NAME, dir_name), shell=True)
     if ret != 0:
@@ -212,17 +214,17 @@ def get_default_benchmarks():
         # 'WDSR',
 
         ### Read benchmark
-        'RDPR', # Random read 
+        #'RDPR', # Random read 
         #'RDSR', # not working
-        'RDPS', # Seqeuntial read
+        #'RDPS', # Seqeuntial read
         # #'RDSS',
 
         # # ### Write benchmark
-        #'ADPS', # Appending with sequential
+        'ADPS', # Appending with sequential
         #'ADSS',
-        #'WDPS', # Sequential overwrite
+        'WDPS', # Sequential overwrite
         #'WDSS',
-        #'WDPR', # Random overwrite
+        'WDPR', # Random overwrite
         #'WDSR',
 
 

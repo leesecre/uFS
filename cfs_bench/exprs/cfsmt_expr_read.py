@@ -60,10 +60,11 @@ def expr_read_mtfsp_multiapp(
 
     # clear page cache
     if clear_pgcache:
-        if not is_oxbow and not is_append:
+        if is_oxbow:
+            if not is_append:
+                cfs_tc.clear_page_cache_oxbow()
+        else:
             cfs_tc.clear_page_cache(is_slient=False)
-        elif is_oxbow and not is_append:
-            cfs_tc.clear_page_cache_oxbow()
 
     print(log_dir_name)
     bench_log_name = '{}/bench_log'.format(log_dir_name)
@@ -276,13 +277,15 @@ def expr_read_mtfsp_multiapp(
 
     print(bench_app_cmd_dict)
 
-    # if bench_cfg_dict['--sync_numop='] > 1:
-    print("It is throughput benchmark!")
-    perf_output_path = os.path.join("/tmp/perf", f"Throughput-{bench_args['--benchmarks=']}-iosize{bench_args['--value_size=']}-{num_app_proc}")
-    os.makedirs("/tmp/perf", exist_ok=True)
-    proc = subprocess.Popen(f'sudo nice -n 0 perf record -a -o {perf_output_path} &',
-                                shell=True, preexec_fn=os.setpgrp)
-    perf_pid = proc.pid
+
+    if bench_cfg_dict['--sync_numop='] > 1:
+        print("It is throughput benchmark!")
+        perf_output_path = os.path.join("/tmp/perf",
+                                f"Throughput-{bench_args['--benchmarks=']}-iosize{bench_args['--value_size=']}-{num_app_proc}")
+        proc = subprocess.Popen(f'sudo nice -n 0 perf record -a -o {perf_output_path} &',
+                                    shell=True, preexec_fn=os.setpgrp)
+        perf_pid = proc.pid
+
 
     # start benchmarking clients
     p_bench_r_dict = {}
@@ -296,12 +299,10 @@ def expr_read_mtfsp_multiapp(
     for pr in p_bench_r_dict.values():
         pr.wait()
     
-    # if bench_cfg_dict['--sync_numop='] > 1:
-    os.killpg(os.getpgid(perf_pid), signal.SIGTERM)
-    print(f"Perf stat output saved to {perf_output_path}")
+    if bench_cfg_dict['--sync_numop='] > 1:
+        os.killpg(os.getpgid(perf_pid), signal.SIGTERM)
+        print(f"Perf stat output saved to {perf_output_path}")
 
-    os.killpg(os.getpgid(perf_pid), signal.SIGTERM)
-    print(f"Perf stat output saved to {perf_output_path}")
 
     if dump_mpstat:
         end_cpu_pct = psutil.cpu_percent(interval=None, percpu=True)
@@ -449,6 +450,10 @@ def bench_rand_read(
         bench_cfg_dict = {
             '--benchmarks=': 'rread',
         }
+
+    if is_thp:
+        bench_cfg_dict['--sync_numop='] = 1000 # only for marking this is throuhgput benc
+
     case_log_dir = '{}/{}'.format(log_dir, case_name)
 
     if strict_no_overlap:
@@ -468,30 +473,22 @@ def bench_rand_read(
         value_sz_op_num_dict = {
             # 256MB for latency benchmark
             # 64: 4194304, # 64
-            1024: 262144, # 1K
-            4096: 65536,  # 4K
-            16384: 16384, # 16K
-            65536: 4096, # 64K
-            262144: 1024, # 256K
-            524288: 512, # 512K
+            # 1024: 262144, # 1K
+            # 4096: 65536,  # 4K
+            # 16384: 16384, # 16K
+            # 65536: 4096, # 64K
+            # 262144: 1024, # 256K
+            # 524288: 512, # 512K
             # 1048576: 256, # 1M
             # 2097152: 128, # 2M
 
-            # 5GB for throughput benchmark
-            # 1024: 262144 * 4 * 5, # 1K
-            # 4096: 65536 * 4 * 5,  # 4K
-            # 16384: 16384 * 4 * 5, # 16K
-            # 65536: 4096 * 4 * 5, # 64K
-            # 262144: 1024 * 4 * 5, # 256K
-            # 524288: 512 * 4 * 5, # 512K
-            # 1048576: 256 * 4 * 5, # 1M
-            # 2097152: 128 * 4 * 5 # 2M
-            
-            # multi process test
-            # 4096: int(2*1024*1024/4),
-            # 16384: int(2*1024*1024/16),
-            # 65536: int(2*1024*1024/64),
-            # 262144: int(2*1024*1024/256),
+            # 1GB for latency
+            1024: 262144 * 4, # 1K
+            4096: 65536 * 4,  # 4K
+            16384: 16384 * 4, # 16K
+            65536: 4096 * 4, # 64K
+            262144: 1024 * 4, # 256K
+            524288: 512 * 4, # 512K
         }
     else:
         value_sz_op_num_dict = {
@@ -506,9 +503,9 @@ def bench_rand_read(
             # 2097152: 128 * 4 * 5 # 2M
             # multi process test
             4096: int(2*1024*1024/4),
-            # 16384: int(2*1024*1024/16),
-            # 65536: int(2*1024*1024/64),
-            # 262144: int(2*1024*1024/256),
+            16384: int(2*1024*1024/16),
+            65536: int(2*1024*1024/64),
+            262144: int(2*1024*1024/256),
         }
 
     if is_share:
@@ -520,8 +517,13 @@ def bench_rand_read(
                 int((5 * 1024 * 1024) / 4) / num_app_proc) - 2
             if value_sz_op_num_dict[sz] > 500000:
                 value_sz_op_num_dict[sz] = 500000
-    # pin_cpu_list = [False, True]
-    pin_cpu_list = [False]
+
+    if not is_fsp: # ext4 and oxbow case
+        pin_cpu_list = [False]
+    if is_fsp:
+        pin_cpu_list = [True]
+
+    # pin_cpu_list = [False]
     clear_pc_list = [True]
     if num_fsp_worker_list is None:
         num_fsp_worker_list = [1]

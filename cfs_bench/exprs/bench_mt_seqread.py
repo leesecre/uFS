@@ -83,8 +83,7 @@ LOG_BASE = 'log_{}'.format(sys.argv[1])
 #     num_app_list = [cur_numapp]
 
 ## Select throughput or(and) latency benchmark
-# throughput_bench=[False, True]
-throughput_bench=[True]
+throughput_bench=[False, True]
 
 for thp in throughput_bench:
     if thp:
@@ -137,7 +136,10 @@ for thp in throughput_bench:
                 num_fsp_worker_list=cur_num_fs_wk_list)
         else:
             # on-disk sequtial read
-            CUR_ARKV_DIR = '{}_seqread_app_{}'.format(LOG_BASE, num_app)
+            if thp:
+                CUR_ARKV_DIR = '{}_seqread_throughput_app_{}'.format(LOG_BASE, num_app)
+            else:
+                CUR_ARKV_DIR = '{}_seqread_latency'.format(LOG_BASE)
             cur_is_no_overlap = True
             mte_rd.bench_rand_read(
                 cur_log_dir,
