@@ -94,8 +94,12 @@ function setup-ext4() {
 		echo "      Will umount first before setup ext4"
 		sudo umount "$KFS_MOUNT_PATH"
 	fi
-	sudo mke2fs -F -t ext4 -E lazy_itable_init=0,lazy_journal_init=0 "$DEV_NAME"
-	sudo mount "$DEV_NAME" "$KFS_MOUNT_PATH"
+	sudo mke2fs -t ext4 -J size=10000 -E lazy_itable_init=0,lazy_journal_init=0 -N 10000 -F -G 1 "$DEV_NAME"
+	#sudo mount "$DEV_NAME" "$KFS_MOUNT_PATH"
+	sudo mount -o data=journal "$DEV_NAME" "$KFS_MOUNT_PATH"
+	echo "warming up SSD"
+	sudo dd if=/dev/zero of="$KFS_MOUNT_PATH"/temp bs=1G count=100 oflag=direct
+	# sudo mount -o data=journal "$DEV_NAME" "$KFS_MOUNT_PATH"
 }
 
 function reset-ext4() {

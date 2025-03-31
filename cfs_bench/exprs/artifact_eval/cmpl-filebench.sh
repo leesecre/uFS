@@ -18,7 +18,7 @@ if [ ! "$2" = "ufs" ] && [ ! "$2" = "ext4" ]; then print_usage_and_exit; fi
 source "$AE_SCRIPT_DIR/common.sh"
 
 cd "$AE_REPO_DIR"
-git checkout "$AE_UFS_FILEBENCH_BRANCH"
+# git checkout "$AE_UFS_FILEBENCH_BRANCH"
 
 if [ "$1" = "varmail" ]; then
 	export VAR_MACRO='-DVAR'

@@ -71,9 +71,9 @@ def reset_spdk():
         logging.info('reset spdk done')
 
 
-def setup_ext4(has_journal=True, readahead_kb=None, delay_allocate=True):
+def setup_ext4(has_journal=True, data_journal=False, readahead_kb=None, delay_allocate=True):
     # cmd = 'mkfs -F -t ext4 {}'.format(DEV_NAME)
-    cmd = 'mke2fs -t ext4 -J size=10000 -E lazy_itable_init=0,lazy_journal_init=0 -N 1000 -F -G 1 {}'.format(DEV_NAME)
+    cmd = 'mke2fs -t ext4 -J size=10000 -E lazy_itable_init=0,lazy_journal_init=0 -N 10000 -F -G 1 {}'.format(DEV_NAME)
     print(cmd)
     logging.debug(cmd)
     ret = subprocess.call(cmd, shell=True)
@@ -82,11 +82,13 @@ def setup_ext4(has_journal=True, readahead_kb=None, delay_allocate=True):
         return
     dir_name = cfs_common.get_kfs_mount_dir()
     subprocess.call('sudo mkdir -p {}'.format(dir_name), shell=True)
+
     if not has_journal:
         ret = subprocess.call(
             'tune2fs -O ^has_journal {}'.format(DEV_NAME), shell=True)
         if ret != 0:
             logging.error("Cannot disable journal")
+
     # mount
     # dealloc_opt = '-o barrier=0'
     # if delay_allocate is False:
@@ -95,8 +97,11 @@ def setup_ext4(has_journal=True, readahead_kb=None, delay_allocate=True):
     # ret = subprocess.call('sudo mount {} {} {}'.format(
     #     dealloc_opt, DEV_NAME, dir_name), shell=True)
 
-    default_opt = '-o barrier=0'
-    #default_opt = '-o data=journal,barrier=0'
+    if (data_journal):
+        default_opt = '-o data=journal'
+    else:
+        default_opt = ''
+
     ret = subprocess.call('sudo mount {} {} {}'.format(
         default_opt, DEV_NAME, dir_name), shell=True)
     if ret != 0:
@@ -498,11 +503,13 @@ def main(args, loglevel):
             b.run()
         if not args.nomount and not args.devonly:
             reset_spdk()
-    elif args.fs == 'ext4' or args.fs == 'ext4nj':
-        cur_has_journal = (args.fs == 'ext4')
+    elif args.fs == 'ext4' or args.fs == 'ext4nj' or args.fs == 'ext4dj':
+        cur_has_journal = (args.fs == 'ext4' or args.fs == 'ext4dj')
+        cur_data_journal = (args.fs == 'ext4dj')
         if not args.nomount:
             setup_ext4(
                 has_journal=cur_has_journal,
+                data_journal=cur_data_journal,
                 readahead_kb=args.ra,
                 delay_allocate=(not args.nodalloc))
         verify_dev_options()
@@ -542,7 +549,7 @@ def parse_cmd_args():
     parser = argparse.ArgumentParser(
         description="Run FSP microbenchmark")
     parser.add_argument('--fs', required=True,
-                        help='file system type [fsp|ext4|ext4nj]')
+                        help='file system type [fsp|ext4|ext4nj|ext4dj]')
     parser.add_argument('--ra', type=int, default=None,
                         help='readahead size in bytes')
     parser.add_argument('--nodalloc', action='store_true',

@@ -38,9 +38,9 @@ if [ -z "$AE_BENCH_BRANCH" ]; then
 	export AE_BENCH_BRANCH='main'
 fi
 ## filebench may need to use a customized branch of uFS with a different configuration
-if [ -z "$AE_UFS_FILEBENCH_BRANCH" ]; then
-	export AE_UFS_FILEBENCH_BRANCH='filebench-config'
-fi
+# if [ -z "$AE_UFS_FILEBENCH_BRANCH" ]; then
+# 	export AE_UFS_FILEBENCH_BRANCH='filebench-config'
+# fi
 ## ext4's mount contains lazy operations, which would affect its performance 
 ## wait a while before further experiments
 if [ -z "$AE_EXT4_WAIT_AFTER_MOUNT" ]; then
@@ -50,7 +50,7 @@ fi
 ## workspace
 export AE_WORK_DIR="$CFS_ROOT_DIR"
 export AE_REPO_DIR="$CFS_ROOT_DIR"
-export AE_BENCH_REPO_DIR="$AE_WORK_DIR/uFS-bench"
+export AE_BENCH_REPO_DIR="$AE_WORK_DIR/oxbow-uFS_bench"
 export AE_SCRIPT_DIR="$AE_REPO_DIR/cfs_bench/exprs/artifact_eval"
 ## number of threads to compile
 export AE_CMPL_THREADS="15"  # avoid too many threads causing OOM
