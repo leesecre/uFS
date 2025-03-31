@@ -273,12 +273,12 @@ def expr_read_mtfsp_multiapp(
         # for i in range(num_app_proc):
         #     bench_app_cmd_dict[i] = '{}'.format(bench_app_cmd_dict[i])
     if '--sync_numop=' not in bench_cfg_dict:
-        bench_cfg_dict['--sync_numop='] = -1
+        bench_cfg_dict['--sync_numop='] = -2
 
     print(bench_app_cmd_dict)
 
 
-    if bench_cfg_dict['--sync_numop='] > 1:
+    if bench_cfg_dict['--sync_numop='] > 1 or bench_cfg_dict['--sync_numop='] == -1:
         print("It is throughput benchmark!")
         perf_output_path = os.path.join("/tmp/perf",
                                 f"Throughput-{bench_args['--benchmarks=']}-iosize{bench_args['--value_size=']}-{num_app_proc}")
@@ -299,7 +299,7 @@ def expr_read_mtfsp_multiapp(
     for pr in p_bench_r_dict.values():
         pr.wait()
     
-    if bench_cfg_dict['--sync_numop='] > 1:
+    if bench_cfg_dict['--sync_numop='] > 1 or bench_cfg_dict['--sync_numop='] == -1:
         os.killpg(os.getpgid(perf_pid), signal.SIGTERM)
         print(f"Perf stat output saved to {perf_output_path}")
 
@@ -523,7 +523,6 @@ def bench_rand_read(
     if is_fsp:
         pin_cpu_list = [True]
 
-    # pin_cpu_list = [False]
     clear_pc_list = [True]
     if num_fsp_worker_list is None:
         num_fsp_worker_list = [1]

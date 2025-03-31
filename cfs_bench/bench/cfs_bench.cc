@@ -1199,6 +1199,24 @@ private:
         break;
     }
 
+    /* sync at the end of all operations */
+    if (FLAGS_sync_numop == -1) {
+      int srt;
+
+      fsync_start = PerfUtils::Cycles::toNanoseconds(g_env->NowCycles());
+#ifndef CFS_USE_POSIX
+      srt = fs_fdatasync(thread->fd);
+#else
+      srt = fdatasync(thread->fd);
+#endif
+      fsync_end = PerfUtils::Cycles::toNanoseconds(g_env->NowCycles());
+      if (srt < 0) {
+        fprintf(stderr, "fdatasync error:%s srt:%d\n", strerror(errno), srt);
+        exit(1);
+      }
+      thread->stats.FinishedFsync(double(fsync_end - fsync_start) / 1000);
+    }
+
     cc.notify_server_that_client_stopped();
     thread->stats.AddBytes(bytes);
     thread->stats.Stop();
@@ -1209,6 +1227,7 @@ private:
 #else
     fdatasync(thread->fd);
 #endif
+
     SignalStopDumpLoad(thread);
 
 #ifndef CFS_USE_POSIX
