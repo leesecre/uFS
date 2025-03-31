@@ -545,8 +545,8 @@ public:
     if (FLAGS_histogram) {
       fprintf(stdout, "Microseconds per op:\n%s\n", hist_.ToString().c_str());
       if (FLAGS_sync_numop > 0)
-      fprintf(stdout, "Microseconds per fsync:\n%s\n",
-              fsync_hist_.ToString().c_str());
+        fprintf(stdout, "Microseconds per fsync:\n%s\n",
+                fsync_hist_.ToString().c_str());
     }
     fprintf(stdout, "Verify Ts: start:%lu end:%lu\n", first_op_nano_,
             last_op_nano_);
@@ -1194,16 +1194,28 @@ private:
         break;
     }
 
+    if (FLAGS_sync_numop == -1) {
+      int srt;
+      fsync_start = PerfUtils::Cycles::toNanoseconds(g_env->NowCycles());
+#ifndef CFS_USE_POSIX
+      srt = fs_fdatasync(thread->fd);
+#else
+      srt = fdatasync(thread->fd);
+#endif
+      fsync_end = PerfUtils::Cycles::toNanoseconds(g_env->NowCycles());
+      if (srt < 0) {
+        fprintf(stderr, "fdatasync error:%s i:%d srt:%d\n", strerror(errno),
+                srt);
+        exit(1);
+      }
+      thread->stats.FinishedFsync(double(fsync_end - fsync_start) / 1000);
+    }
+
     cc.notify_server_that_client_stopped();
     thread->stats.AddBytes(bytes);
     thread->stats.Stop();
     fprintf(stderr, "finish all ops\n");
 
-#ifndef CFS_USE_POSIX
-    fs_fdatasync(thread->fd);
-#else
-    fdatasync(thread->fd);
-#endif
     SignalStopDumpLoad(thread);
 
 #ifndef CFS_USE_POSIX
@@ -1440,8 +1452,8 @@ private:
         // rc = fs_allocated_pread(thread->fd, rdata, value_size_, cur_off);
         rc = fs_cpc_pread(thread->fd, rdata, value_size_, cur_off);
         // rc = fs_uc_pread(thread->fd, rdata, value_size_, cur_off);
-        // dump_pread_result(rdata, "benchf", thread->fd, cur_off, value_size_,
-        // rc);
+        // dump_pread_result(rdata, "benchf", thread->fd, cur_off,
+        // value_size_, rc);
       }
 #else
       rc = pread(thread->fd, rdata, value_size_, cur_off);
@@ -1773,8 +1785,8 @@ private:
     thread->stats.Start();
     for (int i = 0; i < numop_; i++) {
       // TODO filename construction should not be a part of the microbenchmark
-      // move it outside? Or have a separate function that only microbenchmarks
-      // this and deduct that timing.
+      // move it outside? Or have a separate function that only
+      // microbenchmarks this and deduct that timing.
       path = (basepath + std::to_string(i)).data();
 
 #ifndef CFS_USE_POSIX
@@ -1799,8 +1811,8 @@ private:
   // Stat a single existing file.
   // NOTE: to specify the argument for using this *stat1* expr, needs to only
   // relies on `--dir=` flag, that is, it needs to have the final file name
-  // E.g., `--dir=a/b/c/d/DIR/f0` is going to create all the directory hierarchy
-  // and
+  // E.g., `--dir=a/b/c/d/DIR/f0` is going to create all the directory
+  // hierarchy and
   //   then create the file *f0* in directory */ROOT/a/b/c/d/DIR/*
   //   In this case, the target of subsequent *stat()* is *f0*
   void BenchStatOne(ThreadState *thread) {
@@ -2329,8 +2341,8 @@ private:
     cc.notify_server_that_client_is_ready();
     cc.wait_till_server_says_start();
     if (!FLAGS_coordinator) {
-      // This is a hack that signal the client very early thus coordinator will
-      // exit
+      // This is a hack that signal the client very early thus coordinator
+      // will exit
       cc.notify_server_that_client_stopped();
     }
 
@@ -3390,7 +3402,8 @@ private:
   // must specify FLAGS_in_mem_file_size for hot range, prep phase fetch
   // data into server memory
   // FLAGS_num_files: if FLAGS_num_hot_file > 0, the disk read for each file
-  // will also use FLAGS_in_mem_file_size to specify size to read for each file
+  // will also use FLAGS_in_mem_file_size to specify size to read for each
+  // file
   void BenchDynamicReadLbIo(ThreadState *thread) {
     PinToCore(thread);
     initFsThreadLocal();
@@ -4012,8 +4025,8 @@ private:
       while (cur_off <= FLAGS_in_mem_file_size - warmup_read_size) {
         ret = fs_allocated_pread(cur_fd, prep_buf, warmup_read_size, cur_off);
         if (ret != warmup_read_size) {
-          // fprintf(stderr, "cur_off:%lu cur_fd:%d size:%d\n", cur_off, cur_fd,
-          // value_size_);
+          // fprintf(stderr, "cur_off:%lu cur_fd:%d size:%d\n", cur_off,
+          // cur_fd, value_size_);
           throw std::runtime_error("error in prep warmup\n");
         }
         cur_off += warmup_read_size;
@@ -4182,8 +4195,8 @@ private:
       while (cur_off <= FLAGS_in_mem_file_size - warmup_read_size) {
         ret = fs_allocated_pread(cur_fd, prep_buf, warmup_read_size, cur_off);
         if (ret != warmup_read_size) {
-          // fprintf(stderr, "cur_off:%lu cur_fd:%d size:%d\n", cur_off, cur_fd,
-          // value_size_);
+          // fprintf(stderr, "cur_off:%lu cur_fd:%d size:%d\n", cur_off,
+          // cur_fd, value_size_);
           throw std::runtime_error("error in prep warmup\n");
         }
         cur_off += warmup_read_size;
