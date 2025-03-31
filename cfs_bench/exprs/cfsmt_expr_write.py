@@ -277,7 +277,7 @@ def bench_rand_write(log_dir, num_app_proc=1, is_fsp=True,
             }
 
     # pin_cpu_list = [True, False]
-    pin_cpu_list = [True, False]
+    pin_cpu_list = [True]
     clear_pc_list = [True]
     if num_fsp_worker_list is None:
         num_fsp_worker_list = [1]
