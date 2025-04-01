@@ -259,12 +259,15 @@ def expr_read_mtfsp_multiapp(
 
     print(bench_app_cmd_dict)
 
-    # if bench_cfg_dict['--sync_numop='] > 1:
-    print("It is throughput benchmark!")
-    perf_output_path = os.path.join("/tmp/perf", f"Throughput-{bench_args['--benchmarks=']}-iosize{bench_args['--value_size=']}-{num_app_proc}")
-    proc = subprocess.Popen(f'sudo nice -n 0 perf record -a -o {perf_output_path} &',
-                                shell=True, preexec_fn=os.setpgrp)
-    perf_pid = proc.pid
+    if bench_cfg_dict['--sync_numop='] > 1:
+        print("It is throughput benchmark!")
+        perf_output_path = os.path.join("/tmp/perf",
+                                f"Throughput-{bench_args['--benchmarks=']}-iosize{bench_args['--value_size=']}-{num_app_proc}")
+        # Create /tmp/perf directory if it doesn't exist using sudo
+        subprocess.run("sudo mkdir -p /tmp/perf", shell=True, check=True)
+        proc = subprocess.Popen(f'sudo nice -n 0 perf record -a -o {perf_output_path} &',
+                                    shell=True, preexec_fn=os.setpgrp)
+        perf_pid = proc.pid
 
     # start benchmarking clients
     p_bench_r_dict = {}
