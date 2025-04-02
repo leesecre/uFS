@@ -17,7 +17,7 @@ function print_usage_and_exit() {
 
 if [ $# -lt 2 ]; then print_usage_and_exit; fi
 if [ ! "$1" = "varmail" ] && [ ! "$1" = "webserver" ]; then print_usage_and_exit; fi
-if [ ! "$2" = "ufs" ] && [ ! "$2" = "ext4" ]; then print_usage_and_exit; fi
+if [ ! "$2" = "ufs" ] && [ ! "$2" = "ext4" ]  && [ ! "$2" = "oxbow" ] ; then print_usage_and_exit; fi
 
 source "$AE_SCRIPT_DIR/common.sh"
 
@@ -72,4 +72,13 @@ elif [ "$2" = "ext4" ]; then
 
 	# umount ext4
 	reset-ext4
+
+elif [ "$2" = "oxbow" ]; then
+	# Ensure SSD is unbound from SPDK
+	# Run benchmark
+	if [ "$1" = "varmail" ]; then
+		sudo -E python3 scripts/run_varmail_oxbow.py "$data_dir"
+	elif [ "$1" = "webserver" ]; then
+		sudo -E python3 scripts/run_webserver_oxbow.py "$data_dir"
+	fi
 fi

@@ -426,7 +426,7 @@ function ae-run() {
 	sudo killall fsProcOfflineCheckpointer
 	sudo rm -rf /ufs-*
 	if [ ! "$2" = "oxbow" ]; then
-		sudo rm -rf /dev/shm/*
+		sudo find /dev/shm -mindepth 1 -name 'ox_*' -delete
 		sudo ipcrm --all
 	else
 		if [ -z "$OXBOW_ENV_SOURCED" ]; then
