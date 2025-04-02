@@ -545,7 +545,7 @@ public:
             seconds_ * 1e6 / done_, (extra.empty() ? "" : " "), extra.c_str());
     if (FLAGS_histogram) {
       fprintf(stdout, "Microseconds per op:\n%s\n", hist_.ToString().c_str());
-      if (FLAGS_sync_numop > 0)
+      if (FLAGS_sync_numop > 0 || FLAGS_sync_numop == -1)
         fprintf(stdout, "Microseconds per fsync:\n%s\n",
                 fsync_hist_.ToString().c_str());
     }
