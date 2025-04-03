@@ -71,6 +71,10 @@ if cur_is_append:
 else:
     sync_op_list = [1]
 
+# Throughput
+# sync_op_list = [131072]
+sync_op_list = [1]
+
 # if tc.use_exact_num_app():
 #     num_app_list = [cur_numapp]
 

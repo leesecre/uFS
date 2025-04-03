@@ -280,9 +280,9 @@ def expr_read_mtfsp_multiapp(
     for pr in p_bench_r_dict.values():
         pr.wait()
     
-    # if bench_cfg_dict['--sync_numop='] > 1:
-    os.killpg(os.getpgid(perf_pid), signal.SIGTERM)
-    print(f"Perf stat output saved to {perf_output_path}")
+    if bench_cfg_dict['--sync_numop='] > 1:
+        os.killpg(os.getpgid(perf_pid), signal.SIGTERM)
+        print(f"Perf stat output saved to {perf_output_path}")
 
     if dump_mpstat:
         end_cpu_pct = psutil.cpu_percent(interval=None, percpu=True)
