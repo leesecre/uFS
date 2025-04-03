@@ -11,6 +11,8 @@ dir_to_op = {
     'RDPR': 'random read',
     'RDPS': 'sequential read',
     'ADPS': 'append',
+    'WDPS': 'sequential write',
+    'WDPR': 'random write',
     # 필요한 경우 더 추가 가능
 }
 
@@ -38,7 +40,7 @@ def parse_throughput_from_log(filepath, operation, process_count):
 
 def find_and_parse_all_logs():
     for subdir in BASE_DIR.rglob('fsp_*_run_0'):
-        match_dir = re.search(r'fsp_(RDPR|RDPS|ADPS)_run_0', str(subdir))
+        match_dir = re.search(r'fsp_(RDPR|RDPS|ADPS|WDPS|WDPR)_run_0', str(subdir))
         if not match_dir:
             continue
 
