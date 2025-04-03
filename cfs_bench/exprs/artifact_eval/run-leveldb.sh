@@ -19,7 +19,7 @@ if [ ! "$1" = "ycsb-a" ] && [ ! "$1" = "ycsb-b" ] && [ ! "$1" = "ycsb-c" ] && \
 	[ ! "$1" = "ycsb-d" ] && [ ! "$1" = "ycsb-e" ] && [ ! "$1" = "ycsb-f" ] && \
 	[ ! "$1" = "all"  ]
 then print_usage_and_exit; fi
-if [ ! "$2" = "ufs" ] && [ ! "$2" = "ext4" ]; then print_usage_and_exit; fi
+if [ ! "$2" = "ufs" ] && [ ! "$2" = "ext4" ] && [ ! "$2" = "oxbow" ]; then print_usage_and_exit; fi
 
 # Finish checking, now execute
 source "$AE_SCRIPT_DIR/common.sh"
@@ -47,6 +47,14 @@ function run_one_workload_ext4() {
 function load_data_ext4() {
 	run_one_workload_ext4 fillseq --num-app-only 10
 }
+
+function run_one_workload_oxbow() {
+	workload=$1
+	data_dir="$(mk-data-dir leveldb_${workload}_oxbow)"
+	echo "Run LevelDB: $workload"
+	sudo -E python3 scripts/run_ldb_oxbow.py "$workload" "$data_dir" "${@:2}"
+}
+
 
 # Running YCSB workload requires an existing LevelDB image, so we need to load
 # the data into LevelDB first before running any YCSB workload
@@ -105,4 +113,14 @@ elif [ "$2" = "ext4" ]; then
 
 	# umount ext4
 	reset-ext4
+elif [ "$2" = "oxbow" ]; then
+	if [ "$1" = "all" ]; then
+		# for job in 'a' 'b' 'c' 'd' 'e' 'f'
+		for job in 'a'
+		do
+			run_one_workload_oxbow "ycsb-${job}"
+		done
+	else
+		run_one_workload_oxbow "$1"
+	fi
 fi

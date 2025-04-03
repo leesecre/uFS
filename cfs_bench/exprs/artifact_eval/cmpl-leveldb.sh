@@ -6,11 +6,12 @@ function print_usage_and_exit() {
 	echo "  Specify compile LevelDB for which filesystem"
 	echo "    ufs:  compile with uFS APIs"
 	echo "    ext4: compile with ext4 APIs"
+	echo "    oxbow: compile with ext4 APIs"
 	exit 1
 }
 
 if [ ! $# = "1" ]; then print_usage_and_exit; fi
-if [ ! "$1" = "ufs" ] && [ ! "$1" = "ext4" ]; then print_usage_and_exit; fi
+if [ ! "$1" = "ufs" ] && [ ! "$1" = "ext4" ] && [ ! "$1" = "oxbow" ]; then print_usage_and_exit; fi
 
 source "$AE_SCRIPT_DIR/common.sh"
 
@@ -18,11 +19,14 @@ if [ "$1" = "ufs" ]; then
 	cmpl-ufs '-DCFS_DISK_LAYOUT_LEVELDB=ON'
 	LDB_CMAKE_CFS_ARG="-DLEVELDB_JL_LIBCFS=ON"
 elif [ "$1" = "ext4" ]; then
-	LDB_CMAKE_CFS_ARG="-DLEVELDB_JL_LIBCFS=OFF"
+	LDB_CMAKE_CFS_ARG="-DLEVELDB_JL_LIBCFS=OFF -DLEVELDB_JL_OXBOW=OFF"
+elif [ "$1" = "oxbow" ]; then
+	LDB_CMAKE_CFS_ARG="-DLEVELDB_JL_LIBCFS=OFF -DLEVELDB_JL_OXBOW=ON"
+
 fi
 
-cd "$AE_REPO_DIR"
-git checkout "$AE_BRANCH"
+# cd "$AE_REPO_DIR"
+# git checkout "$AE_BRANCH"
 
 # compile leveldb
 cd "$AE_BENCH_REPO_DIR"
