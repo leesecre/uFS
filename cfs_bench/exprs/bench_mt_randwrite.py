@@ -63,16 +63,19 @@ print('is_share_file? - {}'.format(str(cur_is_share)))
 
 LOG_BASE = 'log_{}'.format(sys.argv[1])
 
-# num_app_list = [1, 2, 3, 4, 5, 6]
-# num_app_list = [10, 9, 8, 7, 6, 5, 4, 3, 2, 1]
-# num_app_list = [1]
+
 # num_app_list = [20 - i for i in range(20)]
 # if cur_numapp is not None:
 #     num_app_list = list(range(1, cur_numapp + 1))
 #     num_app_list.reverse()
 
-# 1 for Latency, 4 for default setting of uFS
-sync_op_list = [131072]
+# 1 for Latency, 4 for default setting of uFS -1 for fsync at the end
+# It will be adjusted if IO size is bigger than 4K
+sync_op_list = [1, 131072]  # it is max for append
+print("=========================================")
+print(f"BENCHMARK TYPE: Random overwrite")
+print(f"USING SYNC_OP_LIST: {sync_op_list}")
+print("=========================================")
 
 # if tc.use_exact_num_app():
 #     num_app_list = [cur_numapp]
@@ -120,8 +123,8 @@ for sync_op in sync_op_list:
             if sync_op == 1:
                 CUR_ARKV_DIR = '{}_randwrite_latency'.format(LOG_BASE)
             else:
-                CUR_ARKV_DIR = '{}_randwrite_throughput-{}'.format(
-                                    LOG_BASE, num_app)
+                CUR_ARKV_DIR = '{}_randwrite_syncop_{}_throughput_app_{}'.format(
+                                    LOG_BASE, sync_op, num_app)
             cur_is_no_overlap = True
             
         mte_wr.bench_rand_write(

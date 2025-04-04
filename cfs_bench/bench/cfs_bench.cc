@@ -123,8 +123,10 @@ static bool FLAGS_compute_crc = false;
 // If all the threads will share one file
 static bool FLAGS_share_mode = false;
 
+#define FSYNC_ON_CLOSE -1
+#define NO_SYNC_OPERATION -2
 // For writing, how many number of operations will be followed by a fsync()
-static int FLAGS_sync_numop = -2;
+static int FLAGS_sync_numop = NO_SYNC_OPERATION;
 
 // Dedicated access one single block that specified by this flag
 // If specified, will overwrite all the other random access patterns
@@ -545,7 +547,7 @@ public:
             seconds_ * 1e6 / done_, (extra.empty() ? "" : " "), extra.c_str());
     if (FLAGS_histogram) {
       fprintf(stdout, "Microseconds per op:\n%s\n", hist_.ToString().c_str());
-      if (FLAGS_sync_numop > 0 || FLAGS_sync_numop == -1)
+      if (FLAGS_sync_numop != NO_SYNC_OPERATION)
         fprintf(stdout, "Microseconds per fsync:\n%s\n",
                 fsync_hist_.ToString().c_str());
     }
@@ -1085,6 +1087,10 @@ private:
       char msg[100];
       snprintf(msg, sizeof(msg), "(%d ops then sync)", FLAGS_sync_numop);
       thread->stats.AddMessage(msg);
+    } else if (FLAGS_sync_numop == FSYNC_ON_CLOSE) {
+      char msg[100];
+      snprintf(msg, sizeof(msg), "(fsync at the end)");
+      thread->stats.AddMessage(msg);
     }
 
     if (compute_crc_) {
@@ -1200,7 +1206,7 @@ private:
     }
 
     /* sync at the end of all operations */
-    if (FLAGS_sync_numop == -1) {
+    if (FLAGS_sync_numop == FSYNC_ON_CLOSE) {
       int srt;
 
       fsync_start = PerfUtils::Cycles::toNanoseconds(g_env->NowCycles());
@@ -1222,13 +1228,13 @@ private:
     thread->stats.Stop();
     fprintf(stderr, "finish all ops\n");
 
+    SignalStopDumpLoad(thread);
+
 #ifndef CFS_USE_POSIX
     fs_fdatasync(thread->fd);
 #else
     fdatasync(thread->fd);
 #endif
-
-    SignalStopDumpLoad(thread);
 
 #ifndef CFS_USE_POSIX
     fs_free(wdata);

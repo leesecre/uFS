@@ -64,10 +64,9 @@ if cur_is_append:
 #     num_app_list = list(range(1, cur_numapp + 1))
 #     num_app_list.reverse()
 
-#sync_op_list = [4, 8, 16, 32, 64, 128]
-#sync_op_list = [1, 2, 4, 8, 16]
+# 1 for Latency, 4 for default setting of uFS, -1 for fsync at the end
+# It will be adjusted if IO size is bigger than 4K
 
-# 1 for Latency, 4 for default setting of uFS
 # Determine the benchmark type from command line arguments
 benchmark_type = "ADPS" if cur_is_append and not cur_is_share else "other"
 if "WDPS" in os.environ.get("BENCHMARK_TYPE", ""):
@@ -79,13 +78,13 @@ elif "ADSS" in os.environ.get("BENCHMARK_TYPE", ""):
 
 # Set sync_op_list based on benchmark type
 if benchmark_type == "ADPS":
-    sync_op_list = [131072]  # it is max for append
+    sync_op_list = [1, 131072]  # it is max for append
     print("=========================================")
     print(f"BENCHMARK TYPE: {benchmark_type}")
     print(f"USING SYNC_OP_LIST: {sync_op_list}")
     print("=========================================")
 else:
-    sync_op_list = [131072]  # default setting for other benchmarks
+    sync_op_list = [1, 131072]  # default setting for other benchmarks
     print("=========================================")
     print(f"BENCHMARK TYPE: {benchmark_type}")
     print(f"USING SYNC_OP_LIST: {sync_op_list}")
@@ -108,8 +107,8 @@ for sync_op in sync_op_list:
         if sync_op == 1:
             CUR_ARKV_DIR = '{}_{}_latency'.format(LOG_BASE, CUR_WK_TYPE)
         else:
-            CUR_ARKV_DIR = '{}_{}_throughput-{}'.format(
-                LOG_BASE, CUR_WK_TYPE, num_app)
+            CUR_ARKV_DIR = '{}_{}_syncop_{}_throughput_app_{}'.format(
+                LOG_BASE, CUR_WK_TYPE, sync_op, num_app)
 
         cur_num_fs_wk_list = [(num_app - i) for i in range(num_app)]
         if not cur_is_fsp:

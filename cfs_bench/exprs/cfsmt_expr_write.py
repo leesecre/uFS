@@ -170,9 +170,11 @@ def bench_seq_sync_write(log_dir, num_app_proc=1, is_fsp=True, is_oxbow=False,
     else:
         # Throughput benchmark
         value_sz_op_num_dict = {
-            # 4096: 250000, # first value
-            4096: 65536 * 8, # 2GB
-            # 16384: 60000, # Not work
+            # multi process test 2G
+            4096: int(2*1024*1024/4),
+            # 16384: int(2*1024*1024/16),
+            65536: int(2*1024*1024/64),
+            # 262144: int(2*1024*1024/256),
         }
 
     if '--share_mode=' in cfs_update_dict and '--o_append=' in cfs_update_dict:
@@ -199,6 +201,11 @@ def bench_seq_sync_write(log_dir, num_app_proc=1, is_fsp=True, is_oxbow=False,
                             str(nfswk))
                     bench_cfg_dict['--value_size='] = vs
                     bench_cfg_dict['--numop='] = nop
+                    if (vs > 4096) and (bench_cfg_dict['--sync_numop='] > 1) :
+                        adjust_sync_numop = int(bench_cfg_dict['--sync_numop='] / (vs/4096))
+                        if adjust_sync_numop == 0:
+                            adjust_sync_numop = 1
+                        bench_cfg_dict['--sync_numop='] = adjust_sync_numop
                     cfs_tc.mk_accessible_dir(cur_run_log_dir)
                     if is_append:
                         # mkfs
@@ -279,9 +286,11 @@ def bench_rand_write(log_dir, num_app_proc=1, is_fsp=True, is_oxbow=False,
         else:
             # Throughput benchmark
             value_sz_op_num_dict = {
-                # 4096: 250000, # first value
-                4096: 65536 * 8,  # 2G
-                #16384: 60000, # Not work
+                # multi process test (2GB)
+                4096: int(2*1024*1024/4),
+                # 16384: int(2*1024*1024/16),
+                65536: int(2*1024*1024/64),
+                # 262144: int(2*1024*1024/256),
             }
 
     if not is_fsp: # ext4 and oxbow case
@@ -302,6 +311,13 @@ def bench_rand_write(log_dir, num_app_proc=1, is_fsp=True, is_oxbow=False,
                             str(nfswk))
                     bench_cfg_dict['--value_size='] = vs
                     bench_cfg_dict['--numop='] = nop
+
+                    if (vs > 4096) and (bench_cfg_dict['--sync_numop='] > 1) :
+                        adjust_sync_numop = int(bench_cfg_dict['--sync_numop='] / (vs/4096))
+                        if adjust_sync_numop == 0:
+                            adjust_sync_numop = 1
+                        bench_cfg_dict['--sync_numop='] = adjust_sync_numop
+
                     cfs_tc.mk_accessible_dir(cur_run_log_dir)
                     if is_append:
                         # mkfs

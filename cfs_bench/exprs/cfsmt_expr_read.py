@@ -272,6 +272,7 @@ def expr_read_mtfsp_multiapp(
         env["LD_PRELOAD"] = f"{os.environ.get('LIBFS_BUILD', '')}/liboxbow_libfs.so"
         # for i in range(num_app_proc):
         #     bench_app_cmd_dict[i] = '{}'.format(bench_app_cmd_dict[i])
+
     if '--sync_numop=' not in bench_cfg_dict:
         bench_cfg_dict['--sync_numop='] = -2
 
@@ -281,7 +282,9 @@ def expr_read_mtfsp_multiapp(
     if bench_cfg_dict['--sync_numop='] > 1 or bench_cfg_dict['--sync_numop='] == -1:
         print("It is throughput benchmark!")
         perf_output_path = os.path.join("/tmp/perf",
-                                f"Throughput-{bench_args['--benchmarks=']}-iosize{bench_args['--value_size=']}-{num_app_proc}")
+                        f"perfthp_{bench_args['--benchmarks=']} \
+                        _syncop{bench_cfg_dict['--sync_numop=']} \
+                        _iosize{bench_args['--value_size=']}_{num_app_proc}")
         # Create /tmp/perf directory if it doesn't exist using sudo
         subprocess.run("sudo mkdir -p /tmp/perf", shell=True, check=True)
         proc = subprocess.Popen(f'sudo nice -n 0 perf record -a -o {perf_output_path} &',
