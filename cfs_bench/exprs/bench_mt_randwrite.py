@@ -92,7 +92,8 @@ for sync_op in sync_op_list:
         if not cur_is_fsp:
             cur_num_fs_wk_list = [1]
         else:
-            cur_num_fs_wk_list = list(set([1, num_app]))
+            # cur_num_fs_wk_list = list(set([1, num_app]))
+            cur_num_fs_wk_list = list(set([num_app]))
         if tc.use_single_worker():
             cur_num_fs_wk_list = [1]
         print(cur_num_fs_wk_list)
