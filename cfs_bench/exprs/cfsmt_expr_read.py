@@ -61,8 +61,7 @@ def expr_read_mtfsp_multiapp(
     # clear page cache
     if clear_pgcache:
         if is_oxbow:
-            if not is_append:
-                cfs_tc.clear_page_cache_oxbow()
+            cfs_tc.clear_page_cache_oxbow()
         else:
             cfs_tc.clear_page_cache(is_slient=False)
 
@@ -281,10 +280,11 @@ def expr_read_mtfsp_multiapp(
 
     if bench_cfg_dict['--sync_numop='] > 1 or bench_cfg_dict['--sync_numop='] == -1:
         print("It is throughput benchmark!")
+        perf_arg1 = bench_args['--benchmarks=']
+        perf_arg2 = bench_cfg_dict['--sync_numop=']
+        perf_arg3 = bench_args['--value_size=']
         perf_output_path = os.path.join("/tmp/perf",
-                        f"perfthp_{bench_args['--benchmarks=']} \
-                        _syncop{bench_cfg_dict['--sync_numop=']} \
-                        _iosize{bench_args['--value_size=']}_{num_app_proc}")
+            f"perfthp_{perf_arg1}_syncop{perf_arg2}_iosize{perf_arg3}_{num_app_proc}")
         # Create /tmp/perf directory if it doesn't exist using sudo
         subprocess.run("sudo mkdir -p /tmp/perf", shell=True, check=True)
         proc = subprocess.Popen(f'sudo nice -n 0 perf record -a -o {perf_output_path} &',
@@ -508,9 +508,9 @@ def bench_rand_read(
             # 2097152: 128 * 4 * 5 # 2M
             # multi process test
             4096: int(2*1024*1024/4),
-            16384: int(2*1024*1024/16),
+            # 16384: int(2*1024*1024/16),
             65536: int(2*1024*1024/64),
-            262144: int(2*1024*1024/256),
+            # 262144: int(2*1024*1024/256),
         }
 
     if is_share:
