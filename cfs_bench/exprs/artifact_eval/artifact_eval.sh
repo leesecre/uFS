@@ -425,13 +425,10 @@ function ae-run() {
 	sudo killall testRWFsUtil
 	sudo killall fsProcOfflineCheckpointer
 	sudo rm -rf /ufs-*
-	if [ ! "$2" = "oxbow" ]; then
-		sudo find /dev/shm -mindepth 1 -name 'ox_*' -delete
-		sudo ipcrm --all
-	else
-		if [ -z "$OXBOW_ENV_SOURCED" ]; then
-			echo "Do source set_env.sh first."
-			exit 1
+
+	if [ -z "$OXBOW_ENV_SOURCED" ]; then
+		echo "Do source set_env.sh first."
+		exit 1
 	 	fi
 	fi
 	set -e
