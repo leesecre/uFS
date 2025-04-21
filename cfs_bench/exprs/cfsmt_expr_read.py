@@ -32,6 +32,7 @@ def expr_read_mtfsp_multiapp(
         bench_cfg_dict,
         is_fsp=True,
         is_oxbow=False,
+        is_omnicache=False,
         is_append=False,
         clear_pgcache=False,
         pin_cpu=False,
@@ -60,11 +61,12 @@ def expr_read_mtfsp_multiapp(
 
     # clear page cache
     if clear_pgcache:
-        if is_oxbow:
-            if not is_append:
-                cfs_tc.clear_page_cache_oxbow()
-        else:
-            cfs_tc.clear_page_cache(is_slient=False)
+        if not is_omnicache:
+            if is_oxbow:
+                if not is_append:
+                    cfs_tc.clear_page_cache_oxbow()
+            else:
+                cfs_tc.clear_page_cache(is_slient=False)
 
     print(log_dir_name)
     bench_log_name = '{}/bench_log'.format(log_dir_name)
@@ -138,7 +140,7 @@ def expr_read_mtfsp_multiapp(
 
     # update parameters for kernel FS benchmarking
     if not is_fsp:
-        if not is_oxbow:
+        if not is_oxbow and not is_omnicache:
             if '--dir=' not in bench_args:
                 if per_app_dir_name is None:
                     bench_args['--dir='] = cfs_tc.get_kfs_data_dir()
@@ -167,9 +169,13 @@ def expr_read_mtfsp_multiapp(
         if '--dir=' not in bench_args:
             if per_app_dir_name is None:
                 bench_args['--dir='] = "/oxbow"
+    if is_omnicache:
+        if '--dir=' not in bench_args:
+            if per_app_dir_name is None:
+                bench_args['--dir='] = "/mnt/ram"
 
     # start coordinator here
-    if not is_fsp or is_oxbow:
+    if not is_fsp or is_oxbow or is_omnicache:
         start_bench_coordinator(num_app_proc=num_app_proc)
         print('cordinator started num_app_proc:{}'.format(num_app_proc))
 
@@ -265,11 +271,24 @@ def expr_read_mtfsp_multiapp(
                 bench_app_cmd_dict[i] = '{} --flist={}'.format(
                     bench_app_cmd_dict[i], per_app_flist[i]
                 )
+    
+    if is_omnicache:
+        for i in range(num_app_proc):    
+            bench_app_cmd_dict[i] = '{} --pid={}'.format(
+                bench_app_cmd_dict[i], i
+            )
+            # bench_args['--pid='] = "{}".format(i)
+            # print('--pid='+bench_args['--pid='])
 
     env = None
     if is_oxbow:
         env = os.environ.copy()
         env["LD_PRELOAD"] = f"{os.environ.get('LIBFS_BUILD', '')}/liboxbow_libfs.so"
+        # for i in range(num_app_proc):
+        #     bench_app_cmd_dict[i] = '{}'.format(bench_app_cmd_dict[i])
+    if is_omnicache:
+        env = os.environ.copy()
+        env["LD_PRELOAD"] = f"/home/koo/omnicache/omnicache-fast24-artifacts/libfs/libshim/shim_common.so"
         # for i in range(num_app_proc):
         #     bench_app_cmd_dict[i] = '{}'.format(bench_app_cmd_dict[i])
     if '--sync_numop=' not in bench_cfg_dict:
@@ -317,6 +336,8 @@ def expr_read_mtfsp_multiapp(
         disks_after = psutil.disk_io_counters(perdisk=True)
 
     time.sleep(2)
+    if is_omnicache:
+        time.sleep(20)
     print("Time to shutdown ...")
 
     if is_fsp:
@@ -397,6 +418,8 @@ def expr_read_mtfsp_multiapp(
     # collect benchmark output
     for k, v in p_bench_r_dict.items():
         cur_fname = '{}_{}'.format(bench_log_name, k)
+        # output_text = v.stdout.bytes.decode('utf-8', errors='replace')
+        # print(output_text)
         expr_write_one_log(str(bench_app_cmd_dict[k]), cur_fname,
                            v.stdout.text)
     cfs_tc.dump_expr_config(expr_cfg_name, bench_args)
@@ -416,6 +439,7 @@ def bench_rand_read(
         num_app_proc=1,
         is_fsp=True,
         is_oxbow=False,
+        is_omnicache=False,
         is_thp=False,
         is_seq=False,
         is_share=False,
@@ -484,13 +508,19 @@ def bench_rand_read(
             # 1048576: 256, # 1M
             # 2097152: 128, # 2M
 
-            # 1GB for latency
-            1024: 262144 * 4, # 1K
-            4096: 65536 * 4,  # 4K
-            16384: 16384 * 4, # 16K
-            65536: 4096 * 4, # 64K
-            262144: 1024 * 4, # 256K
-            524288: 512 * 4, # 512K
+            # 512MB for latency
+            #1024: 262144 * 1, # 1K # due to cache problem 256MB is only supproted
+            4096: 65536 * 2,  # 4K
+            16384: 16384 * 2, # 16K
+            65536: 4096 * 2, # 64K
+            262144: 1024 * 2, # 256K
+            524288: 512 * 2, # 512K
+            # 1024: 262144 * 4, # 1K
+            # 4096: 65536 * 4,  # 4K
+            # 16384: 16384 * 4, # 16K
+            # 65536: 4096 * 4, # 64K
+            # 262144: 1024 * 4, # 256K
+            # 524288: 512 * 4, # 512K
         }
     else:
         value_sz_op_num_dict = {
@@ -504,10 +534,14 @@ def bench_rand_read(
             # 1048576: 256 * 4 * 5, # 1M
             # 2097152: 128 * 4 * 5 # 2M
             # multi process test
-            4096: int(2*1024*1024/4),
-            16384: int(2*1024*1024/16),
-            65536: int(2*1024*1024/64),
-            262144: int(2*1024*1024/256),
+            4096: int(1024*1024/4),
+            16384: int(1024*1024/16),
+            65536: int(1024*1024/64),
+            262144: int(1024*1024/256),
+            # 4096: int(2*1024*1024/4),
+            # 16384: int(2*1024*1024/16),
+            # 65536: int(2*1024*1024/64),
+            # 262144: int(2*1024*1024/256),
         }
 
     if is_share:
@@ -547,6 +581,7 @@ def bench_rand_read(
                                              num_app_proc, bench_cfg_dict,
                                              is_fsp=is_fsp,
                                              is_oxbow=is_oxbow,
+                                             is_omnicache=is_omnicache,
                                              clear_pgcache=True,
                                              pin_cpu=pc,
                                              per_app_fname=per_app_fname,

@@ -9,11 +9,11 @@ BASE_DIR = Path('.')
 
 # 디렉토리명 → operation 이름 매핑
 dir_to_op = {
-    'RDPR': 'random read',
-    'RDPS': 'sequential read',
+    #'RDPR': 'random read',
+    #'RDPS': 'sequential read',
     'ADPS': 'append',
-    'WDPS': 'sequential write',
-    'WDPR': 'random write',
+    #'WDPS': 'sequential write',
+    #'WDPR': 'random write',
     # 필요한 경우 더 추가 가능
 }
 
@@ -40,23 +40,25 @@ def parse_throughput_from_log(filepath, operation, process_count):
                 throughput_results[key] += mbps
 
 def find_and_parse_all_logs():
-    for subdir in BASE_DIR.rglob('oxbow_*_run_0'):
-        match_dir = re.search(r'oxbow_(RDPR|RDPS|ADPS|WDPS|WDPR)_run_0', str(subdir))
-        if not match_dir:
-            continue
+    # for subdir in BASE_DIR.rglob('oxbow_*_run_0'):
+    #     match_dir = re.search(r'oxbow_(RDPR|RDPS|ADPS|WDPS|WDPR)_run_0', str(subdir))
+    #     if not match_dir:
+    #         continue
 
-        op_key = match_dir.group(1)
-        operation = dir_to_op.get(op_key)
+    #     op_key = match_dir.group(1)
+    #     operation = dir_to_op.get(op_key)
 
-        for app_dir in subdir.glob('log_oxbow_*_app_*'):
-            match_app = re.search(r'app_(\d+)', app_dir.name)
-            if not match_app:
-                continue
-            process_count = int(match_app.group(1))
+        # for app_dir in subdir.glob('log_omnicache_*_app_*'):
+        for app_dir in BASE_DIR.rglob('log_omnicache_*'):
+            # match_app = re.search(r'app_(\d+)', app_dir.name)
+            # if not match_app:
+            #     continue
+            # process_count = int(match_app.group(1))
+            process_count = 1
 
             for log_file in app_dir.rglob('bench_log_*'):
                 if log_file.is_file():
-                    parse_throughput_from_log(log_file, operation, process_count)
+                    parse_throughput_from_log(log_file, 'ADPS', process_count)
 
 def write_throughput_csv(filename='throughput_results.csv'):
     with open(filename, 'w', newline='') as f:

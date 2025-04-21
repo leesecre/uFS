@@ -127,7 +127,7 @@ def bench_seq_write(
 
 
 def bench_seq_sync_write(log_dir, num_app_proc=1, is_fsp=True, is_oxbow=False,
-                         is_append=False,
+                         is_omnicache=False, is_append=False,
                          num_fsp_worker_list=None, per_app_fname=None,
                          dump_mpstat=False, dump_iostat=False,
                          cfs_update_dict=None):
@@ -160,18 +160,22 @@ def bench_seq_sync_write(log_dir, num_app_proc=1, is_fsp=True, is_oxbow=False,
             # 524288: 512, # 512K
 
             # 1GB for latency
-            1024: 262144 * 4, # 1K
+            1024: 131072, # 1K 256MB for 1KB
             4096: 65536 * 4,  # 4K
-            16384: 16384 * 4, # 16K
-            65536: 4096 * 4, # 64K
-            262144: 1024 * 4, # 256K
-            524288: 512 * 4, # 512K
+            # 16384: 16384 * 4, # 16K
+            # 65536: 4096 * 4, # 64K
+            # 262144: 1024 * 4, # 256K
+            # 524288: 512 * 4, # 512K
         }
     else:
         # Throughput benchmark
         value_sz_op_num_dict = {
             # 4096: 250000, # first value
-            4096: 65536 * 8, # 2GB
+            #4096: 65536 * 8, # 2GB
+            4096: 65536 * 4, # 1GB
+            16384: 16384*4,
+            65536: 4096 * 4, # 64K
+            262144: 1024 * 4, # 256K
             # 16384: 60000, # Not work
         }
 
@@ -206,7 +210,7 @@ def bench_seq_sync_write(log_dir, num_app_proc=1, is_fsp=True, is_oxbow=False,
                             cfs_tc.expr_mkfs()
                         elif is_oxbow:
                             cfs_tc.expr_mkfs_oxbow()
-                        else:
+                        elif not is_omnicache:
                             cfs_tc.expr_mkfs_for_kfs()
                         # wait a bit after mkfs
                         time.sleep(1)
@@ -217,6 +221,7 @@ def bench_seq_sync_write(log_dir, num_app_proc=1, is_fsp=True, is_oxbow=False,
                         bench_cfg_dict,
                         is_fsp=is_fsp,
                         is_oxbow=is_oxbow,
+                        is_omnicache=is_omnicache,
                         is_append=is_append,
                         clear_pgcache=cp,
                         pin_cpu=pc,
@@ -227,6 +232,7 @@ def bench_seq_sync_write(log_dir, num_app_proc=1, is_fsp=True, is_oxbow=False,
 
 
 def bench_rand_write(log_dir, num_app_proc=1, is_fsp=True, is_oxbow=False,
+                     is_omnicache=False,
                      is_append=False, is_cached=True,
                      num_fsp_worker_list=None, per_app_fname=None,
                      dump_mpstat=False, dump_iostat=False,
@@ -309,7 +315,7 @@ def bench_rand_write(log_dir, num_app_proc=1, is_fsp=True, is_oxbow=False,
                             cfs_tc.expr_mkfs()
                         elif is_oxbow:
                             cfs_tc.expr_mkfs_oxbow()
-                        else:
+                        elif not is_omnicache:
                             cfs_tc.expr_mkfs_for_kfs()
                         # wait a bit after mkfs
                         time.sleep(1)
@@ -320,6 +326,7 @@ def bench_rand_write(log_dir, num_app_proc=1, is_fsp=True, is_oxbow=False,
                         bench_cfg_dict,
                         is_fsp=is_fsp,
                         is_oxbow=is_oxbow,
+                        is_omnicache=is_omnicache,
                         clear_pgcache=cp,
                         pin_cpu=pc,
                         per_app_fname=per_app_fname,

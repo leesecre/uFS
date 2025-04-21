@@ -21,6 +21,7 @@ if len(sys.argv) < 2:
 
 cur_is_fsp = None
 cur_is_oxbow = None
+cur_is_omnicache = None
 if 'ext4' in sys.argv[1]:
     cur_is_fsp = False
     cur_dev_name = tc.get_kfs_dev_name()
@@ -29,6 +30,10 @@ elif 'fsp' in sys.argv[1]:
 elif 'oxbow' in sys.argv[1]:
     cur_is_fsp = False
     cur_is_oxbow = True
+elif 'omnicache' in sys.argv[1]:
+    cur_is_fsp = False
+    cur_is_oxbow = False
+    cur_is_omnicache = True
 else:
     print_usage()
     sys.exit(1)
@@ -83,7 +88,8 @@ for sync_op in sync_op_list:
         num_app_list = [1] # for latency benchmark
     else:
         # num_app_list = [1,2,4,8,10] # uFS
-        num_app_list = [1,2,4,8,10,16] # oxbow, ext4
+        # num_app_list = [1,2,4,8,10,16] # oxbow, ext4
+        num_app_list = [1,2,4] # oxbow, omnicache
 
     for num_app in num_app_list:
         cur_num_fs_wk_list = [(i + 1) for i in range(num_app)]
@@ -102,8 +108,8 @@ for sync_op in sync_op_list:
                                         suffix=tc.get_ts_dir_name(),
                                         do_mkdir=True)
         cur_dump_io_stat = False
-        if not cur_is_fsp and not cur_is_oxbow:
-            cur_dump_io_stat = True
+        # if not cur_is_fsp and not cur_is_oxbow:
+        #     cur_dump_io_stat = True
 
         # stress sharing
         if cur_is_share:
@@ -129,6 +135,7 @@ for sync_op in sync_op_list:
             num_app_proc=num_app,
             is_fsp=cur_is_fsp,
             is_oxbow=cur_is_oxbow,
+            is_omnicache=cur_is_omnicache,
             is_cached=cur_is_cached,
             per_app_fname=per_app_fname,
             dump_iostat=cur_dump_io_stat,

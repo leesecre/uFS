@@ -3,7 +3,7 @@
 
 #include <string.h>
 #include <sys/time.h>
-
+#include <atomic>
 #include <functional>
 #include <iostream>
 #include <string>

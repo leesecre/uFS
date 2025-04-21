@@ -8,7 +8,7 @@ OBJ_FILES= FooConfiguration.o FallbackConfiguration.o main.o
 all:		demo$(EXE_EXT)
 
 FallbackConfiguration.cpp FallbackConfiguration.h: FallbackConfiguration.cfg
-		$(BIN_DIR)/config2cpp -cfg FallbackConfiguration.cfg \
+		$(BIN_DIR) -cfg FallbackConfiguration.cfg \
 			-class FallbackConfiguration -singleton
 
 FooConfiguration.o: FooConfiguration.h FooConfiguration.cpp \

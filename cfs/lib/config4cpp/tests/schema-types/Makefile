@@ -15,7 +15,7 @@ $(APP_NAME):	$(OBJ_FILES)
 	$(CXX) -o $(APP_NAME) $(OBJ_FILES) $(LINK_WITH_CONFIG4CPP)
 
 run-tests:	
-		$(APP_NAME) -cfg $(CFG_FILE)
+		./$(APP_NAME) -cfg $(CFG_FILE)
 
 valgrind:	
 		valgrind $(APP_NAME) -cfg $(CFG_FILE)

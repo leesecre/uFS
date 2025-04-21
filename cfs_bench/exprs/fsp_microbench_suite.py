@@ -10,8 +10,11 @@ import cfs_test_common as cfs_common
 
 # FSP whole set of microbenchmark
 
-DEV_NAME = "/dev/" + os.environ["AE_SSD_NAME"]
-PCIE_ADDR = os.environ["AE_SSD_PICE_ADDR"]
+# DEV_NAME = "/dev/" + os.environ["AE_SSD_NAME"]
+# PCIE_ADDR = os.environ["AE_SSD_PICE_ADDR"]
+
+DEV_NAME = "/dev/nvme1n1"
+PCIE_ADDR = "0000:86:00.0"
 
 def get_host_name():
     return os.uname().nodename
@@ -227,9 +230,9 @@ def get_default_benchmarks():
         # # ### Write benchmark
         'ADPS', # Appending with sequential
         #'ADSS',
-        'WDPS', # Sequential overwrite
+        #'WDPS', # Sequential overwrite
         #'WDSS',
-        'WDPR', # Random overwrite
+        #'WDPR', # Random overwrite
         #'WDSR',
 
 
@@ -354,6 +357,12 @@ def is_oxbow(fs_str):
     else:
         return False
 
+def is_omnicache(fs_str):
+    if 'omnicache' in fs_str:
+        return True
+    else:
+        return False
+
 class Benchmark(object):
     def __init__(self, fs, benchmarks, num_app):
         assert(isinstance(benchmarks, list))
@@ -368,6 +377,9 @@ class Benchmark(object):
 
     def is_oxbow(self):
         return 'oxbow' in self.fs
+    
+    def is_omnicache(self):
+        return 'omnicache' in self.fs
 
     def prep_data_file(self):
         if not self.data_file_prepared:
@@ -379,7 +391,7 @@ class Benchmark(object):
             # else:
             #     cfs_common.expr_mkfs_for_kfs()
             init_cmd = '{}/cfs_bench/exprs/init_mt_bench_file.py {} {}'. format(
-                cfs_common.get_cfs_root_dir(), self.fs, self.max_num_app)
+                cfs_common.get_cfs_root_dir(), self.fs, 4)
             print(init_cmd)
             ret = subprocess.call(init_cmd, shell=True)
             if ret == 0:
@@ -389,8 +401,10 @@ class Benchmark(object):
         script_name = get_benchmark_script(code)
         if script_name is None:
             raise RuntimeError("benchmark:{} not supported".format(code))
-        if bench_needs_dataprep(code):
-            self.prep_data_file()
+        
+        # KOO: No prep for now
+        # if bench_needs_dataprep(code):
+        #     self.prep_data_file()
 
         logging.info('-------{}-------'.format(code))
         cmd = script_name.format(self.fs)
@@ -538,6 +552,20 @@ def main(args, loglevel):
                     assert j in all_benchmarks
             logging.info(f"RUN jobs: {jobs}")
             b = Benchmark('oxbow', jobs, args.numapp)
+            b.run()
+    elif args.fs == 'omnicache':
+        if not args.devonly:
+            # KOO: Don't do this for now
+            #warmup_ssd()
+            if args.jobs is None:
+                jobs = get_default_benchmarks()
+            else:
+                jobs = args.jobs.split(',')
+                all_benchmarks = get_default_benchmarks()
+                for j in jobs:
+                    assert j in all_benchmarks
+            logging.info(f"RUN jobs: {jobs}")
+            b = Benchmark('omnicache', jobs, args.numapp)
             b.run()
     else:
         logging.error("fs not supported")

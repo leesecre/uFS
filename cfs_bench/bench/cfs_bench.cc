@@ -14,6 +14,7 @@
 #include <iostream>
 #include <sstream>
 #include <unordered_map>
+#include "crfslib.h"
 
 #include "perfutil/Cycles.h"
 
@@ -40,6 +41,8 @@ using namespace pcm;
 
 #define ALIGN_MASK(x, mask) (((x) + (mask)) & ~(mask))
 #define ALIGN(x, a) ALIGN_MASK((x), ((__typeof__(x))(a)-1))
+
+static int FLAGS_pid = 0;
 
 // Comma separated strings corresponding to benchmark names.
 // For example - crread,rwrite,seqwrite
@@ -839,6 +842,7 @@ public:
     if (benchmarks == nullptr) {
       benchmarks = Benchmark::all_benchmarks_.c_str();
     }
+    //fprintf(stderr, "koo\n");
 
     PrintHeader();
     ConnectFS();
@@ -1653,6 +1657,9 @@ private:
 #ifndef CFS_USE_POSIX
     fs_free(rdata);
 #endif
+
+  CloseFile(thread);
+  fprintf(stderr, "file closed\n");
 
     thread->stats.AddBytes(bytes);
     thread->stats.Stop();
@@ -5522,6 +5529,7 @@ private:
 } // namespace leveldb
 
 int main(int argc, char **argv) {
+  fprintf(stderr, "Koo cfs_bench.cc\n");
   for (int i = 1; i < argc; i++) {
     int n;
     uint64_t uln;
@@ -5669,11 +5677,16 @@ int main(int argc, char **argv) {
     } else if (strncmp(argv[i],
                        "--coordinator=", sizeof("--coordinator=") - 1) == 0) {
       FLAGS_coordinator_shm_fname = argv[i] + sizeof("--coordinator=") - 1;
+    } else if (sscanf(argv[i], "--pid=%d", &n) == 1){
+      FLAGS_pid = n;
     } else {
       fprintf(stderr, "Invalid flag '%s'\n", argv[i]);
       exit(1);
     }
   }
+
+  fprintf(stderr, "Koo ufs benchmark %d\n", FLAGS_pid);
+  crfsinit(1024, 4, 3, FLAGS_pid);
 
   if (FLAGS_coordinator_shm_fname == nullptr)
     FLAGS_coordinator_shm_fname = strdup("/coordinator");
@@ -5688,5 +5701,6 @@ int main(int argc, char **argv) {
   adgMod::Stats *instance = adgMod::Stats::GetInstance();
   instance->ReportTime();
 
+  crfsexit();
   return 0;
 }

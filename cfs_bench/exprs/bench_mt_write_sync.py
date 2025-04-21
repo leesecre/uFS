@@ -21,6 +21,7 @@ if len(sys.argv) < 2:
 
 cur_is_fsp = None
 cur_is_oxbow = None
+cur_is_omnicache = None
 if 'ext4' in sys.argv[1]:
     cur_is_fsp = False
     cur_dev_name = tc.get_kfs_dev_name()
@@ -29,6 +30,10 @@ elif 'fsp' in sys.argv[1]:
 elif 'oxbow' in sys.argv[1]:
     cur_is_fsp = False
     cur_is_oxbow = True
+elif 'omnicache' in sys.argv[1]:
+    cur_is_fsp = False
+    cur_is_oxbow = False
+    cur_is_omnicache = True
 else:
     print_usage()
     sys.exit(1)
@@ -79,7 +84,8 @@ elif "ADSS" in os.environ.get("BENCHMARK_TYPE", ""):
 
 # Set sync_op_list based on benchmark type
 if benchmark_type == "ADPS":
-    sync_op_list = [131072]  # it is max for append
+    #sync_op_list = [131072]  # it is max for append
+    sync_op_list = [1]  # for append
     print("=========================================")
     print(f"BENCHMARK TYPE: {benchmark_type}")
     print(f"USING SYNC_OP_LIST: {sync_op_list}")
@@ -99,7 +105,8 @@ for sync_op in sync_op_list:
         num_app_list = [1] # for latency benchmark
     else:
         # num_app_list = [1,2,4,8,10] # uFS
-        num_app_list = [1,2,4,8,10,16] # oxbow, ext4
+        #num_app_list = [1,2,4,8,10,16] # oxbow, ext4
+        num_app_list = [1,2,4] # omnicache
 
     for num_app in num_app_list:
         cur_cfs_update_dict = {
@@ -137,10 +144,11 @@ for sync_op in sync_op_list:
             num_app_proc=num_app,
             is_fsp=cur_is_fsp,
             is_oxbow=cur_is_oxbow,
+            is_omnicache=cur_is_omnicache,
             is_append=cur_is_append,
             per_app_fname=per_app_fname,
             dump_iostat=(
-                not cur_is_fsp and not cur_is_oxbow),
+                not cur_is_fsp and not cur_is_oxbow and not cur_is_omnicache),
             num_fsp_worker_list=cur_num_fs_wk_list,
             cfs_update_dict=cur_cfs_update_dict)
         os.mkdir(CUR_ARKV_DIR)

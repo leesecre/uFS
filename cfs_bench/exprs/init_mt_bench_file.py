@@ -38,15 +38,23 @@ if len(sys.argv) < 2:
 
 cur_is_fsp = None
 cur_is_oxbow = None
+cur_is_omnicache = None
 if 'ext4' in sys.argv[1]:
     cur_is_fsp = False
     cur_is_oxbow = False
+    cur_is_omnicache = False
 elif 'oxbow' in sys.argv[1]:
     cur_is_fsp = False
     cur_is_oxbow = True
+    cur_is_omnicache = False
 elif 'fsp' in sys.argv[1]:
     cur_is_fsp = True
     cur_is_oxbow = False
+    cur_is_omnicache = False
+elif 'omnicache' in sys.argv[1]:
+    cur_is_fsp = False
+    cur_is_oxbow = False
+    cur_is_omnicache = True
 else:
     print_usage()
     sys.exit(1)
@@ -71,7 +79,7 @@ if cur_is_fsp:
     common_expr.expr_mkfs()
 elif cur_is_oxbow:
     expr_mkfs_oxbow()
-else:
+elif not cur_is_omnicache:
     common_expr.expr_mkfs_for_kfs()
 
 common_expr.write_fsp_cfs_config_file(
@@ -90,6 +98,7 @@ for i in range(NUM_FILES):
         cur_value_size=4096,
         is_fsp=cur_is_fsp,
         is_oxbow=cur_is_oxbow,
+        is_omnicache=cur_is_omnicache,
         cfg_update_dict={
             '--fname=': 'bench_f_{}'.format(i),
             '--fs_worker_key_list=': 1})
@@ -98,6 +107,8 @@ for i in range(NUM_FILES):
     if cur_is_oxbow:
         time.sleep(5)
         expr_checkpoint_oxbow()
+    if cur_is_omnicache:
+        time.sleep(20)
 
     time.sleep(2)
 

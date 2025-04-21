@@ -1,0 +1,5 @@
+operation,io size (K),process,total throughput (MB/s)
+ADPS,4K,1,139.5
+ADPS,16K,1,194.9
+ADPS,64K,1,213.99999999999997
+ADPS,256K,1,233.60000000000002

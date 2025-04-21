@@ -21,6 +21,7 @@ if len(sys.argv) < 2:
 
 cur_is_fsp = None
 cur_is_oxbow = None
+cur_is_omnicache = None
 if 'ext4' in sys.argv[1]:
     cur_is_fsp = False
     cur_dev_name = tc.get_kfs_dev_name()
@@ -29,6 +30,10 @@ elif 'fsp' in sys.argv[1]:
 elif 'oxbow' in sys.argv[1]:
     cur_is_fsp = False
     cur_is_oxbow = True
+elif 'omnicache' in sys.argv[1]:
+    cur_is_fsp = False
+    cur_is_oxbow = False
+    cur_is_omnicache = True
 else:
     print_usage()
     sys.exit(1)
@@ -83,12 +88,14 @@ LOG_BASE = 'log_{}'.format(sys.argv[1])
 #     num_app_list = [cur_numapp]
 
 ## Select throughput or(and) latency benchmark
-throughput_bench=[False, True]
+# throughput_bench=[False, True]
+throughput_bench=[False]
 
 for thp in throughput_bench:
     if thp:
         # num_app_list = [1, 2, 4, 8, 10] # uFS
-        num_app_list = [1, 2, 4, 8, 10, 16] # oxbow, ext4
+        #num_app_list = [1, 2, 4, 8, 10, 16] # oxbow, ext4
+        num_app_list = [1, 2, 4] # omnicache
     else:
         num_app_list = [1]
 
@@ -146,6 +153,7 @@ for thp in throughput_bench:
                 num_app_proc=num_app,
                 is_fsp=cur_is_fsp,
                 is_oxbow=cur_is_oxbow,
+                is_omnicache=cur_is_omnicache,
                 is_thp=thp,
                 is_seq=True,
                 strict_no_overlap=cur_is_no_overlap,

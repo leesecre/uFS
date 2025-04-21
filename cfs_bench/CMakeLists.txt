@@ -39,6 +39,7 @@ set(LEVELDB_PLATFORM_NAME LEVELDB_PLATFORM_POSIX)
 
 include_directories(${CFS_INC})
 include_directories("${PROJECT_SOURCE_DIR}/include" "${PROJECT_SOURCE_DIR}")
+include_directories("/home/koo/omnicache/omnicache-fast24-artifacts/libfs")
 include_directories("${CFS_ROOT_DIR}/lib/config4cpp/include")
 include_directories("${CFS_ROOT_DIR}/lib/tbb/include")
 
@@ -111,17 +112,17 @@ if(ENABLE_PCM)
   target_compile_definitions(${BENCH_BIN_NAME} PRIVATE USE_PCM_COUNTER)
   target_link_libraries(
     ${BENCH_BIN_NAME} PRIVATE ${PCM_LIBRARY} libconfig4cpp.a libtbb.so.2
-                              pthread rt)
+                              pthread rt crfslib)
 else()
   target_link_libraries(${BENCH_BIN_NAME} PRIVATE libconfig4cpp.a libtbb.so.2
-                                                  pthread rt)
+                                                  pthread rt crfslib)
 endif()
 if(ENABLE_DUMPLOAD)
   target_compile_definitions(${BENCH_BIN_NAME} PRIVATE DO_DUMPLOAD)
 endif()
 target_link_libraries(
   ${BENCH_BIN_NAME} PRIVATE libconfig4cpp.a rt libtbb.so.2
-                            libtbbmalloc.so.2 pthread)
+                            libtbbmalloc.so.2 pthread crfslib)
 
 target_compile_definitions(
   "${BENCH_BIN_NAME}" PRIVATE # falcon@cs.wisc.edu is little endian
@@ -142,10 +143,10 @@ if(ENABLE_PCM)
   target_compile_definitions(${BENCH_POSIX_BIN_NAME} PRIVATE USE_PCM_COUNTER)
   target_link_libraries(
     ${BENCH_POSIX_BIN_NAME} PRIVATE ${PCM_LIBRARY} libconfig4cpp.a libtbb.so.2
-                                    pthread rt)
+                                    pthread rt crfslib)
 else()
   target_link_libraries(${BENCH_POSIX_BIN_NAME} PRIVATE libconfig4cpp.a
-                                                        libtbb.so.2 pthread rt)
+                                                        libtbb.so.2 pthread rt crfslib)
 endif()
 
 target_compile_definitions(
@@ -165,7 +166,7 @@ set_target_properties(
 set(BENCH_COORDINATOR_BIN_NAME cfs_bench_coordinator)
 add_executable(${BENCH_COORDINATOR_BIN_NAME} "bench/coordinator.cc"
                                              "${CFS_ROOT_DIR}/src/shmipc.c")
-target_link_libraries(${BENCH_COORDINATOR_BIN_NAME} rt pthread)
+target_link_libraries(${BENCH_COORDINATOR_BIN_NAME} rt pthread crfslib)
 # TODO : merge set_target_properties for all three of them. They are the same.
 set_target_properties(
   ${BENCH_COORDINATOR_BIN_NAME}

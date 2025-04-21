@@ -13,12 +13,14 @@ function print_usage_and_exit() {
 	echo "    ext4:       ext4 with journaling (default of ext4)"
 	echo "    ext4nj:     ext4 without journaling"
 	echo "    oxbow:	"
+	echo "	  omnicache:	"
 	exit 1
 }
 
 if [ $# -lt 1 ]; then print_usage_and_exit; fi
 if [ ! "$1" = "ufs" ] && [ ! "$1" = "ufs-single" ] && \
-	[ ! "$1" = "ext4" ] && [ ! "$1" = "ext4nj" ] && [ ! "$1" = "oxbow" ] && [ ! "$1" = "ext4dj" ]
+	[ ! "$1" = "ext4" ] && [ ! "$1" = "ext4nj" ] && \
+	[ ! "$1" = "oxbow" ] && [ ! "$1" = "ext4dj" ] && [ ! "$1" = "omnicache" ]
 then print_usage_and_exit; fi
 
 source "$AE_SCRIPT_DIR/common.sh"
@@ -66,4 +68,7 @@ elif [ "$1" = "ext4dj" ]; then
 elif [ "$1" = "oxbow" ]; then
 	sudo -E python3 fsp_microbench_suite.py --fs oxbow --numapp=16 "${@:2}"
 	sudo mv oxbow_*_run_0 "$data_dir"
+elif [ "$1" = "omnicache" ]; then
+	sudo -E python3 fsp_microbench_suite.py --fs omnicache --numapp=16 "${@:2}"
+	sudo mv omnicache_*_run_0 "$data_dir"
 fi

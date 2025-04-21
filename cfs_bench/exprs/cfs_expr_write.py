@@ -31,7 +31,7 @@ from cfs_test_common import mk_accessible_dir
 def expr_write_1fsp_1t(log_dir_name, clear_pgcache=False, pin_cpu=True,
                        is_seq=True, cur_numop=100, cur_value_size=4096,
                        is_value_random_size=False,
-                       is_fsp=True, is_oxbow=False, is_mkfs=False, cfg_update_dict=None):
+                       is_fsp=True, is_oxbow=False, is_omnicache=False, is_mkfs=False, cfg_update_dict=None):
     # is_mkfs is used to specify if file is pre-allocated or not
     if is_mkfs and is_fsp:
         expr_mkfs()
@@ -61,14 +61,17 @@ def expr_write_1fsp_1t(log_dir_name, clear_pgcache=False, pin_cpu=True,
         bench_args.update(cfg_update_dict)
 
     bench_args['--numop='] = cur_numop
+    #bench_args['--numop='] = 262145
     bench_args['--value_size='] = cur_value_size
     bench_args['--histogram='] = 1
     if is_value_random_size:
         bench_args['--value_random_size='] = 1
-    if not is_fsp and not is_oxbow:
+    if not is_fsp and not is_oxbow and not is_omnicache:
         bench_args['--dir='] = get_kfs_data_dir()
     if is_oxbow:
         bench_args['--dir='] = "/oxbow"
+    if is_omnicache:
+        bench_args['--dir='] = "/mnt/ram"
     if pin_cpu:
         bench_args['--core_ids='] = '3'
     bench_r_cmd = '{} {}'. \
@@ -85,6 +88,11 @@ def expr_write_1fsp_1t(log_dir_name, clear_pgcache=False, pin_cpu=True,
     if is_oxbow:
         env = os.environ.copy()
         env["LD_PRELOAD"] = f"{os.environ.get('LIBFS_BUILD', '')}/liboxbow_libfs.so"
+        p_bench_r = run(bench_r_cmd, stdout=Capture(), env=env)
+    elif is_omnicache:
+        env = os.environ.copy()
+        env["LD_PRELOAD"] = f"/home/koo/omnicache/omnicache-fast24-artifacts/libfs/libshim/shim_common.so"
+        print(env["LD_PRELOAD"])
         p_bench_r = run(bench_r_cmd, stdout=Capture(), env=env)
     else:
         # p_bench_r = run(bench_r_cmd)

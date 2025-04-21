@@ -48,6 +48,7 @@ if [ -z "$AE_EXT4_WAIT_AFTER_MOUNT" ]; then
 fi
 
 ## workspace
+export CFS_ROOT_DIR="${HOME}/workspace/uFS"
 export AE_WORK_DIR="$CFS_ROOT_DIR"
 export AE_REPO_DIR="$CFS_ROOT_DIR"
 export AE_BENCH_REPO_DIR="$AE_WORK_DIR/oxbow-uFS_bench"
@@ -428,6 +429,8 @@ function ae-run() {
 	if [ ! "$2" = "oxbow" ]; then
 		sudo find /dev/shm -mindepth 1 -name 'ox_*' -delete
 		sudo ipcrm --all
+	elif [ ! "$2" = "omnicache" ]; then
+		:
 	else
 		if [ -z "$OXBOW_ENV_SOURCED" ]; then
 			echo "Do source set_env.sh first."
