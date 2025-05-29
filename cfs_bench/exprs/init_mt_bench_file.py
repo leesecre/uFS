@@ -70,7 +70,8 @@ print('Init data files for benchmarking - BENCH_FSIZE(GB):{} NUM_FILES:{}'.
 if cur_is_fsp:
     common_expr.expr_mkfs()
 elif cur_is_oxbow:
-    expr_mkfs_oxbow()
+    print("OXBOW MKFS1")
+    expr_mkfs_oxbow() #################################### Init MKFS
 else:
     common_expr.expr_mkfs_for_kfs()
 

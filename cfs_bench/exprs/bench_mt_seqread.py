@@ -93,6 +93,16 @@ for thp in throughput_bench:
         num_app_list = [1]
 
     for num_app in num_app_list:
+        # Get benchmark type from environment variable or determine based on conditions
+        if "RDPS" in os.environ.get("BENCHMARK_TYPE", ""):
+            benchmark_type = "RDPS"
+
+        print("=========================================")
+        print(f"BENCHMARK: {benchmark_type}")
+        print(f"NUM_APP: {num_app}")
+        print(f"THROUGHPUT MODE: {thp}")
+        print("=========================================")
+
         # cur_num_fs_wk_list = [(i + 1) for i in range(num_app)]
         if not cur_is_fsp:
             print("not cur is fsp")

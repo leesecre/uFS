@@ -1,8 +1,8 @@
 #!/usr/bin/env python3
 # encoding: utf-8
 
-import sys
 import os
+import sys
 import time
 
 import cfs_test_common as cfs_tc
@@ -12,20 +12,21 @@ import cfsmt_expr_read as me_read
 # This assume files are initialized already is is_append is False (by default)
 # benchmark pre-allocated write (i.e., no block allocation)
 def bench_seq_write(
-        log_dir,
-        num_app_proc=1,
-        is_fsp=True,
-        is_append=False,
-        is_share=False,
-        num_fsp_worker_list=None,
-        per_app_fname=None,
-        dump_mpstat=False,
-        dump_iostat=False,
-        cfs_update_dict=None):
-    case_name = 'seqwrite'
-    case_log_dir = '{}/{}'.format(log_dir, case_name)
+    log_dir,
+    num_app_proc=1,
+    is_fsp=True,
+    is_append=False,
+    is_share=False,
+    num_fsp_worker_list=None,
+    per_app_fname=None,
+    dump_mpstat=False,
+    dump_iostat=False,
+    cfs_update_dict=None,
+):
+    case_name = "seqwrite"
+    case_log_dir = "{}/{}".format(log_dir, case_name)
     bench_cfg_dict = {
-        '--benchmarks=': 'seqwrite',
+        "--benchmarks=": "seqwrite",
     }
 
     if cfs_update_dict is not None:
@@ -36,17 +37,15 @@ def bench_seq_write(
         # 16384: int(2*1024*1024/16),
         # 32768: int(2*1024*1024/32),
         # 65536: int(2*1024*1024/64),
-        
         # # 5GB for throughput benchmark
-        1024: 262144 * 4 * 5, # 1K
+        1024: 262144 * 4 * 5,  # 1K
         4096: 65536 * 4 * 5,  # 4K
-        16384: 16384 * 4 * 5, # 16K
-        65536: 4096 * 4 * 5, # 64K
-        262144: 1024 * 4 * 5, # 256K
-        524288: 512 * 4 * 5, # 512K
+        16384: 16384 * 4 * 5,  # 16K
+        65536: 4096 * 4 * 5,  # 64K
+        262144: 1024 * 4 * 5,  # 256K
+        524288: 512 * 4 * 5,  # 512K
         # # 1048576: 256 * 4 * 5, # 1M
         # # 2097152: 128 * 4 * 5 # 2M
-        
         # multi process test
         # 4096: int(2*1024*1024/4),
         # 16384: int(2*1024*1024/16),
@@ -58,8 +57,8 @@ def bench_seq_write(
     #     # 4096: 1000000,  # 8G
     #     # 4096: 500000, #8G
     #     # 16384: 200000,
-    #     # 65536: 
-    #     # 1073741824: 
+    #     # 65536:
+    #     # 1073741824:
 
     #     # 5GB for throughput benchmark
     #     # 1024: 262144 * 4 * 5, # 1K
@@ -70,7 +69,7 @@ def bench_seq_write(
     #     # 524288: 512 * 4 * 5, # 512K
     #     # 1048576: 256 * 4 * 5, # 1M
     #     # 2097152: 128 * 4 * 5 # 2M
-        
+
     #     # multi process test
     #     4096: int(2*1024*1024/4),
     #     16384: int(2*1024*1024/16),
@@ -82,7 +81,7 @@ def bench_seq_write(
         keys = list(value_sz_op_num_dict.keys())
         keys.remove(4096)
         for k in keys:
-            del(value_sz_op_num_dict[k])
+            del value_sz_op_num_dict[k]
 
     pin_cpu_list = [True, False]
     clear_pc_list = [True]
@@ -92,12 +91,13 @@ def bench_seq_write(
         for pc in pin_cpu_list:
             for vs, nop in value_sz_op_num_dict.items():
                 for nfswk in num_fsp_worker_list:
-                    cur_run_log_dir = \
-                        '{}_isFsp-{}_clearPc-{}_pinCpu-{}-numFsWk-{}'.format(
-                            case_log_dir, str(is_fsp), str(cp), str(pc),
-                            str(nfswk))
-                    bench_cfg_dict['--value_size='] = vs
-                    bench_cfg_dict['--numop='] = nop
+                    cur_run_log_dir = (
+                        "{}_isFsp-{}_clearPc-{}_pinCpu-{}-numFsWk-{}".format(
+                            case_log_dir, str(is_fsp), str(cp), str(pc), str(nfswk)
+                        )
+                    )
+                    bench_cfg_dict["--value_size="] = vs
+                    bench_cfg_dict["--numop="] = nop
                     # if nop * num_app_proc > num_op_limit_dict[vs]:
                     #     bench_cfg_dict['--numop='] = int(
                     #         num_op_limit_dict[vs] / num_app_proc)
@@ -122,34 +122,42 @@ def bench_seq_write(
                         pin_cpu=pc,
                         per_app_fname=per_app_fname,
                         dump_mpstat=dump_mpstat,
-                        dump_iostat=dump_iostat)
+                        dump_iostat=dump_iostat,
+                    )
                     time.sleep(1)
 
 
-def bench_seq_sync_write(log_dir, num_app_proc=1, is_fsp=True, is_oxbow=False,
-                         is_append=False,
-                         num_fsp_worker_list=None, per_app_fname=None,
-                         dump_mpstat=False, dump_iostat=False,
-                         cfs_update_dict=None):
+def bench_seq_sync_write(
+    log_dir,
+    num_app_proc=1,
+    is_fsp=True,
+    is_oxbow=False,
+    is_append=False,
+    num_fsp_worker_list=None,
+    per_app_fname=None,
+    dump_mpstat=False,
+    dump_iostat=False,
+    cfs_update_dict=None,
+):
     if is_append:
-        case_name = 'append'
+        case_name = "append"
     else:
-        case_name = 'seqwrite'
-    case_log_dir = '{}/{}'.format(log_dir, case_name)
+        case_name = "seqwrite"
+    case_log_dir = "{}/{}".format(log_dir, case_name)
     if is_append:
         bench_cfg_dict = {
-            '--benchmarks=': 'append',
+            "--benchmarks=": "append",
         }
     else:
         bench_cfg_dict = {
-            '--benchmarks=': 'seqwrite',
+            "--benchmarks=": "seqwrite",
         }
 
     if cfs_update_dict is not None:
         bench_cfg_dict.update(cfs_update_dict)
-        
-    if cfs_update_dict['--sync_numop='] == 1:
-        
+
+    if cfs_update_dict["--sync_numop="] == 1:
+
         value_sz_op_num_dict = {
             # 256MB for latency benchmark
             # 1024: 262144, # 1K
@@ -158,32 +166,31 @@ def bench_seq_sync_write(log_dir, num_app_proc=1, is_fsp=True, is_oxbow=False,
             # 65536: 4096, # 64K
             # 262144: 1024, # 256K
             # 524288: 512, # 512K
-
             # 1GB for latency
-            1024: 262144 * 4, # 1K
+            1024: 262144 * 4,  # 1K
             4096: 65536 * 4,  # 4K
-            16384: 16384 * 4, # 16K
-            65536: 4096 * 4, # 64K
-            262144: 1024 * 4, # 256K
-            524288: 512 * 4, # 512K
+            16384: 16384 * 4,  # 16K
+            65536: 4096 * 4,  # 64K
+            262144: 1024 * 4,  # 256K
+            524288: 512 * 4,  # 512K
         }
     else:
         # Throughput benchmark
         value_sz_op_num_dict = {
             # multi process test 2G
-            4096: int(2*1024*1024/4),
+            # 4096: int(2 * 1024 * 1024 / 4),
             # 16384: int(2*1024*1024/16),
-            65536: int(2*1024*1024/64),
+            65536: int(2 * 1024 * 1024 / 64),
             # 262144: int(2*1024*1024/256),
         }
 
-    if '--share_mode=' in cfs_update_dict and '--o_append=' in cfs_update_dict:
-        MAX_FSIZE = 5*1024*1024*1024
+    if "--share_mode=" in cfs_update_dict and "--o_append=" in cfs_update_dict:
+        MAX_FSIZE = 5 * 1024 * 1024 * 1024
         PER_APP_SIZE = MAX_FSIZE / num_app_proc
         for vsz in value_sz_op_num_dict:
-            value_sz_op_num_dict[vsz] = int(PER_APP_SIZE/vsz)
+            value_sz_op_num_dict[vsz] = int(PER_APP_SIZE / vsz)
 
-    if not is_fsp: # ext4 and oxbow case
+    if not is_fsp:  # ext4 and oxbow case
         pin_cpu_list = [False]
     if is_fsp:
         pin_cpu_list = [True]
@@ -195,23 +202,26 @@ def bench_seq_sync_write(log_dir, num_app_proc=1, is_fsp=True, is_oxbow=False,
         for pc in pin_cpu_list:
             for vs, nop in value_sz_op_num_dict.items():
                 for nfswk in num_fsp_worker_list:
-                    cur_run_log_dir = \
-                        '{}_isFsp-{}_clearPc-{}_pinCpu-{}-numFsWk-{}'.format(
-                            case_log_dir, str(is_fsp), str(cp), str(pc),
-                            str(nfswk))
-                    bench_cfg_dict['--value_size='] = vs
-                    bench_cfg_dict['--numop='] = nop
-                    if (vs > 4096) and (bench_cfg_dict['--sync_numop='] > 1) :
-                        adjust_sync_numop = int(bench_cfg_dict['--sync_numop='] / (vs/4096))
+                    cur_run_log_dir = (
+                        "{}_isFsp-{}_clearPc-{}_pinCpu-{}-numFsWk-{}".format(
+                            case_log_dir, str(is_fsp), str(cp), str(pc), str(nfswk)
+                        )
+                    )
+                    bench_cfg_dict["--value_size="] = vs
+                    bench_cfg_dict["--numop="] = nop
+                    if (vs > 4096) and (bench_cfg_dict["--sync_numop="] > 1):
+                        adjust_sync_numop = int(
+                            bench_cfg_dict["--sync_numop="] / (vs / 4096)
+                        )
                         if adjust_sync_numop == 0:
                             adjust_sync_numop = 1
-                        bench_cfg_dict['--sync_numop='] = adjust_sync_numop
+                        bench_cfg_dict["--sync_numop="] = adjust_sync_numop
                     cfs_tc.mk_accessible_dir(cur_run_log_dir)
                     if is_append:
                         # mkfs
                         if is_fsp:
                             cfs_tc.expr_mkfs()
-                        elif is_oxbow:
+                        elif is_oxbow:  #################################### MKFS APPEND
                             cfs_tc.expr_mkfs_oxbow()
                         else:
                             cfs_tc.expr_mkfs_for_kfs()
@@ -229,22 +239,31 @@ def bench_seq_sync_write(log_dir, num_app_proc=1, is_fsp=True, is_oxbow=False,
                         pin_cpu=pc,
                         per_app_fname=per_app_fname,
                         dump_mpstat=dump_mpstat,
-                        dump_iostat=dump_iostat)
+                        dump_iostat=dump_iostat,
+                    )
                     time.sleep(1)
 
 
-def bench_rand_write(log_dir, num_app_proc=1, is_fsp=True, is_oxbow=False,
-                     is_append=False, is_cached=True,
-                     num_fsp_worker_list=None, per_app_fname=None,
-                     dump_mpstat=False, dump_iostat=False,
-                     cfs_update_dict=None):
+def bench_rand_write(
+    log_dir,
+    num_app_proc=1,
+    is_fsp=True,
+    is_oxbow=False,
+    is_append=False,
+    is_cached=True,
+    num_fsp_worker_list=None,
+    per_app_fname=None,
+    dump_mpstat=False,
+    dump_iostat=False,
+    cfs_update_dict=None,
+):
     # note currently only support random write for buffered workload
     # assert(is_cached)
 
-    case_name = 'rwrite'
-    case_log_dir = '{}/{}'.format(log_dir, case_name)
+    case_name = "rwrite"
+    case_log_dir = "{}/{}".format(log_dir, case_name)
     bench_cfg_dict = {
-        '--benchmarks=': 'rwrite',
+        "--benchmarks=": "rwrite",
         # random write to a 1M range
         # '--max_file_size=': (1024 * 1024),
     }
@@ -265,7 +284,7 @@ def bench_rand_write(log_dir, num_app_proc=1, is_fsp=True, is_oxbow=False,
             # 16384: 1000000,
         }
     else:
-        if cfs_update_dict['--sync_numop='] == 1:
+        if cfs_update_dict["--sync_numop="] == 1:
             value_sz_op_num_dict = {
                 # 256MB for latency benchmark
                 # 1024: 262144, # 1K
@@ -274,26 +293,25 @@ def bench_rand_write(log_dir, num_app_proc=1, is_fsp=True, is_oxbow=False,
                 # 65536: 4096, # 64K
                 # 262144: 1024, # 256K
                 # 524288: 512, # 512K
-                
                 # 1GB for latency
-                1024: 262144 * 4, # 1K
+                1024: 262144 * 4,  # 1K
                 4096: 65536 * 4,  # 4K
-                16384: 16384 * 4, # 16K
-                65536: 4096 * 4, # 64K
-                262144: 1024 * 4, # 256K
-                524288: 512 * 4, # 512K
+                16384: 16384 * 4,  # 16K
+                65536: 4096 * 4,  # 64K
+                262144: 1024 * 4,  # 256K
+                524288: 512 * 4,  # 512K
             }
         else:
             # Throughput benchmark
             value_sz_op_num_dict = {
                 # multi process test (2GB)
-                4096: int(2*1024*1024/4),
+                4096: int(2 * 1024 * 1024 / 4),
                 # 16384: int(2*1024*1024/16),
-                65536: int(2*1024*1024/64),
+                # 65536: int(2 * 1024 * 1024 / 64),
                 # 262144: int(2*1024*1024/256),
             }
 
-    if not is_fsp: # ext4 and oxbow case
+    if not is_fsp:  # ext4 and oxbow case
         pin_cpu_list = [False]
     if is_fsp:
         pin_cpu_list = [True]
@@ -303,20 +321,23 @@ def bench_rand_write(log_dir, num_app_proc=1, is_fsp=True, is_oxbow=False,
         num_fsp_worker_list = [1]
     for cp in clear_pc_list:
         for pc in pin_cpu_list:
-            for vs, nop in value_sz_op_num_dict.items():    
+            for vs, nop in value_sz_op_num_dict.items():
                 for nfswk in num_fsp_worker_list:
-                    cur_run_log_dir = \
-                        '{}_isFsp-{}_clearPc-{}_pinCpu-{}-numFsWk-{}'.format(
-                            case_log_dir, str(is_fsp), str(cp), str(pc),
-                            str(nfswk))
-                    bench_cfg_dict['--value_size='] = vs
-                    bench_cfg_dict['--numop='] = nop
+                    cur_run_log_dir = (
+                        "{}_isFsp-{}_clearPc-{}_pinCpu-{}-numFsWk-{}".format(
+                            case_log_dir, str(is_fsp), str(cp), str(pc), str(nfswk)
+                        )
+                    )
+                    bench_cfg_dict["--value_size="] = vs
+                    bench_cfg_dict["--numop="] = nop
 
-                    if (vs > 4096) and (bench_cfg_dict['--sync_numop='] > 1) :
-                        adjust_sync_numop = int(bench_cfg_dict['--sync_numop='] / (vs/4096))
+                    if (vs > 4096) and (bench_cfg_dict["--sync_numop="] > 1):
+                        adjust_sync_numop = int(
+                            bench_cfg_dict["--sync_numop="] / (vs / 4096)
+                        )
                         if adjust_sync_numop == 0:
                             adjust_sync_numop = 1
-                        bench_cfg_dict['--sync_numop='] = adjust_sync_numop
+                        bench_cfg_dict["--sync_numop="] = adjust_sync_numop
 
                     cfs_tc.mk_accessible_dir(cur_run_log_dir)
                     if is_append:
@@ -340,22 +361,30 @@ def bench_rand_write(log_dir, num_app_proc=1, is_fsp=True, is_oxbow=False,
                         pin_cpu=pc,
                         per_app_fname=per_app_fname,
                         dump_mpstat=dump_mpstat,
-                        dump_iostat=dump_iostat)
+                        dump_iostat=dump_iostat,
+                    )
                     time.sleep(1)
 
 
-def bench_cwcross(log_dir, num_app_proc=1, is_fsp=True,
-                  is_append=False, is_cached=True,
-                  num_fsp_worker_list=None, per_app_block_no=None,
-                  dump_mpstat=False, dump_iostat=False,
-                  cfs_update_dict=None):
+def bench_cwcross(
+    log_dir,
+    num_app_proc=1,
+    is_fsp=True,
+    is_append=False,
+    is_cached=True,
+    num_fsp_worker_list=None,
+    per_app_block_no=None,
+    dump_mpstat=False,
+    dump_iostat=False,
+    cfs_update_dict=None,
+):
     # note currently only support random write for buffered workload
-    assert(is_cached)
+    assert is_cached
 
-    case_name = 'cwcross'
-    case_log_dir = '{}/{}'.format(log_dir, case_name)
+    case_name = "cwcross"
+    case_log_dir = "{}/{}".format(log_dir, case_name)
     bench_cfg_dict = {
-        '--benchmarks=': 'crwritecross',
+        "--benchmarks=": "crwritecross",
     }
 
     if cfs_update_dict is not None:
@@ -375,12 +404,13 @@ def bench_cwcross(log_dir, num_app_proc=1, is_fsp=True,
         for pc in pin_cpu_list:
             for vs, nop in value_sz_op_num_dict.items():
                 for nfswk in num_fsp_worker_list:
-                    cur_run_log_dir = \
-                        '{}_isFsp-{}_clearPc-{}_pinCpu-{}-numFsWk-{}'.format(
-                            case_log_dir, str(is_fsp), str(cp), str(pc),
-                            str(nfswk))
-                    bench_cfg_dict['--value_size='] = vs
-                    bench_cfg_dict['--numop='] = nop
+                    cur_run_log_dir = (
+                        "{}_isFsp-{}_clearPc-{}_pinCpu-{}-numFsWk-{}".format(
+                            case_log_dir, str(is_fsp), str(cp), str(pc), str(nfswk)
+                        )
+                    )
+                    bench_cfg_dict["--value_size="] = vs
+                    bench_cfg_dict["--numop="] = nop
                     cfs_tc.mk_accessible_dir(cur_run_log_dir)
                     if is_append:
                         # mkfs
@@ -400,7 +430,8 @@ def bench_cwcross(log_dir, num_app_proc=1, is_fsp=True,
                         pin_cpu=pc,
                         per_app_block_no=per_app_block_no,
                         dump_mpstat=dump_mpstat,
-                        dump_iostat=dump_iostat)
+                        dump_iostat=dump_iostat,
+                    )
                     time.sleep(1)
 
 
@@ -419,9 +450,9 @@ def main():
     pass
 
 
-if __name__ == '__main__':
+if __name__ == "__main__":
     is_root = cfs_tc.check_root()
     if not is_root:
-        print('Run as root required!')
+        print("Run as root required!")
         exit(1)
     main()

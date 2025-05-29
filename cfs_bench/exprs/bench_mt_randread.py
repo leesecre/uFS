@@ -75,7 +75,7 @@ LOG_BASE = 'log_{}'.format(sys.argv[1])
 # num_app_list = [1, 2, 3, 4, 5, 6]  # @falcon
 # num_app_list = [10, 9, 8, 7, 6, 5, 4, 3, 2, 1]  # @bumble
 # num_app_list = [1]
-num_app_list = [1,2,4,8,10] # for multi process test
+# num_app_list = [1,2,4,8,10] # for multi process test
 #num_app_list = [20 - i for i in range(20)]
 
 # if cur_numapp is not None:
@@ -97,6 +97,16 @@ for thp in throughput_bench:
         num_app_list  = [1]
 
     for num_app in num_app_list:
+        # Get benchmark type from environment variable or determine based on conditions
+        if "RDPR" in os.environ.get("BENCHMARK_TYPE", ""):
+            benchmark_type = "RDPR"
+
+        print("=========================================")
+        print(f"BENCHMARK: {benchmark_type}")
+        print(f"NUM_APP: {num_app}")
+        print(f"THROUGHPUT MODE: {thp}")
+        print("=========================================")
+
         cur_num_fs_wk_list = [(i + 1) for i in range(num_app)]
         if not cur_is_fsp:
             cur_num_fs_wk_list = [1]

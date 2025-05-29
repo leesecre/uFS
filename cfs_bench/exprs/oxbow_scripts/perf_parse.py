@@ -5,60 +5,50 @@ from pathlib import Path
 
 # 설정
 base_dir = Path(".")
-perf_pattern = re.compile(r"Throughput-(\w+)-iosize(\d+)-(\d+)$")
+perf_pattern = re.compile(r"perfthp_(\w+)_syncop(-?\d+)_iosize(\w+)_([\d]+)$")
 
-# 우선순위 설정
-workload_priority = {"append": 0, "seqwrite": 1, "rwrite": 2, "seqread": 3, "rread": 4}
+# workload 우선순위
+workload_priority = {"append": 0, "seqwrite": 1, "rwrite": 2}
 
-# 시스템 정보 자동 감지
+# CPU 정보
 def get_cpu_freq_hz():
     with open("/proc/cpuinfo") as f:
         for line in f:
             if "cpu MHz" in line:
                 mhz = float(line.strip().split(":")[1])
-                return mhz * 1e6  # MHz → Hz
-    return 2.6e9  # fallback
+                return mhz * 1e6
+    return 2.6e9
 
 cpu_freq = get_cpu_freq_hz()
-core_count = os.cpu_count() or 8  # 논리 코어 수, 기본값 8
+core_count = os.cpu_count() or 8
 
-# 파일 리스트 정렬해서 수집
+# perf 파일 수집
 perf_files = []
-for perf_file in base_dir.glob("Throughput-*-iosize*-*"):
+for perf_file in base_dir.glob("perfthp_*_syncop*_iosize*_*"):
     match = perf_pattern.match(perf_file.name)
     if match:
-        workload, iosize, app = match.groups()
-        iosize_val = int(iosize)
-        app_val = int(app)
+        workload, syncop, iosize, app = match.groups()
+        syncop_val = int(syncop)
         workload_prio = workload_priority.get(workload, 99)
-        perf_files.append((workload_prio, iosize_val, app_val, perf_file))
+        iosize_val = 65536 if iosize.upper() == "64K" else int(iosize)
+        app_val = int(app)
+        perf_files.append((syncop_val, workload_prio, iosize_val, app_val, workload, iosize, app, perf_file))
 
-# 정렬
+# 정렬: syncop > workload > iosize > app 순
 perf_files.sort()
 
-# 결과 저장 리스트
 results = []
 
-# 전체 perf 파일 순회
-for _, _, _, perf_file in perf_files:
-    match = perf_pattern.match(perf_file.name)
-    if not match:
-        continue
-    workload, iosize, app = match.groups()
-    iosize = iosize
-    app = int(app)
-
-    # perf report 실행
+# perf 처리
+for syncop, _, _, _, workload, iosize, app, perf_file in perf_files:
     report_cmd = f"perf report -i {perf_file} --stdio --sort comm --percent-limit 0.1"
     report_output = os.popen(report_cmd).read()
 
-    # 총 사이클 수 추출
     event_match = re.search(r"Event count \(approx.\):\s*([\d]+)", report_output)
     if not event_match:
         continue
     total_cycles = int(event_match.group(1))
 
-    # 프로세스별 비율 추출 (1% 이상인 것만)
     process_usage = {}
     pattern = re.compile(r"^\s*([\d.]+)%\s+(\S+)")
     for line in report_output.splitlines():
@@ -69,7 +59,6 @@ for _, _, _, perf_file in perf_files:
                 process = match.group(2)
                 process_usage[process] = process_usage.get(process, 0) + percent
 
-    # perf script 실행해서 시간 추출
     script_cmd = f"perf script -i {perf_file}"
     script_output = os.popen(script_cmd).read().splitlines()
 
@@ -83,25 +72,25 @@ for _, _, _, perf_file in perf_files:
     if duration <= 0:
         continue
 
-    # 프로세스별 사이클 계산
     for process, percent in process_usage.items():
         process_cycles = total_cycles * (percent / 100)
         cps = process_cycles / duration
         results.append({
+            "syncop": syncop,
             "workload": workload,
             "iosize": iosize,
-            "process": process,
             "app": app,
+            "process": process,
             "duration_sec": round(duration, 2),
             "cycles_per_sec": round(cps, 2),
             "percent_of_total_cycles": round(percent, 2)
         })
 
-# CSV로 저장
+# CSV 저장
 with open("cpu_usage_results.csv", "w", newline="") as f:
     writer = csv.DictWriter(f, fieldnames=[
-        "workload", "iosize", "process", "app",
-        "duration_sec", "cycles_per_sec", "percent_of_total_cycles"
+        "syncop", "workload", "iosize", "app",
+        "process", "duration_sec", "cycles_per_sec", "percent_of_total_cycles"
     ])
     writer.writeheader()
     for row in results:

@@ -59,7 +59,7 @@ def expr_read_mtfsp_multiapp(
         return
 
     # clear page cache
-    if clear_pgcache:
+    if clear_pgcache and not is_append:
         if is_oxbow:
             cfs_tc.clear_page_cache_oxbow()
         else:
@@ -508,7 +508,7 @@ def bench_rand_read(
             # 2097152: 128 * 4 * 5 # 2M
             # multi process test
             4096: int(2*1024*1024/4),
-            # 16384: int(2*1024*1024/16),
+            16384: int(2*1024*1024/16),
             65536: int(2*1024*1024/64),
             # 262144: int(2*1024*1024/256),
         }
