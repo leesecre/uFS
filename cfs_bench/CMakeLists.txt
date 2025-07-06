@@ -82,6 +82,10 @@ if (ENABLE_DUMPLOAD)
   message(STATUS "Enable dump load stat")
 endif()
 
+option(ONLY_POSIX "Use POSIX backend only" OFF)
+if (ONLY_POSIX)
+  message(STATUS "Building cfs_bench without cfs")
+endif()
 # include(TestBigEndian) test_big_endian(LEVELDB_IS_BIG_ENDIAN)
 
 # build cfs_bench
@@ -106,6 +110,8 @@ set(BENCH_SRC
     ${CFS_ROOT_DIR}/src/shmipc.c
     ${CFS_ROOT_DIR}/src/FsPageCache.cc)
 
+# build cfs_bench with cfs, cfs must be built first
+if (NOT ONLY_POSIX)
 add_executable(${BENCH_BIN_NAME} ${BENCH_SRC} ${RDTSC_SRC})
 if(ENABLE_PCM)
   target_compile_definitions(${BENCH_BIN_NAME} PRIVATE USE_PCM_COUNTER)
@@ -119,10 +125,10 @@ endif()
 if(ENABLE_DUMPLOAD)
   target_compile_definitions(${BENCH_BIN_NAME} PRIVATE DO_DUMPLOAD)
 endif()
+
 target_link_libraries(
   ${BENCH_BIN_NAME} PRIVATE libconfig4cpp.a rt libtbb.so.2
                             libtbbmalloc.so.2 pthread)
-
 target_compile_definitions(
   "${BENCH_BIN_NAME}" PRIVATE # falcon@cs.wisc.edu is little endian
                               LEVELDB_IS_BIG_ENDIAN=0)
@@ -133,6 +139,7 @@ set_target_properties(
   PROPERTIES ARCHIVE_OUTPUT_DIRECTORY "${CMAKE_BINARY_DIR}/bins"
              LIBRARY_OUTPUT_DIRECTORY "${CMAKE_BINARY_DIR}/bins"
              RUNTIME_OUTPUT_DIRECTORY "${CMAKE_BINARY_DIR}/bins")
+endif()
 
 # build cfs_bench_posix
 set(BENCH_POSIX_BIN_NAME cfs_bench_posix)
@@ -141,11 +148,10 @@ add_executable(${BENCH_POSIX_BIN_NAME} ${BENCH_SRC} ${RDTSC_SRC})
 if(ENABLE_PCM)
   target_compile_definitions(${BENCH_POSIX_BIN_NAME} PRIVATE USE_PCM_COUNTER)
   target_link_libraries(
-    ${BENCH_POSIX_BIN_NAME} PRIVATE ${PCM_LIBRARY} libconfig4cpp.a libtbb.so.2
+    ${BENCH_POSIX_BIN_NAME} PRIVATE ${PCM_LIBRARY} libtbb.so.2
                                     pthread rt)
 else()
-  target_link_libraries(${BENCH_POSIX_BIN_NAME} PRIVATE libconfig4cpp.a
-                                                        libtbb.so.2 pthread rt)
+  target_link_libraries(${BENCH_POSIX_BIN_NAME} PRIVATE libtbb.so.2 pthread rt)
 endif()
 
 target_compile_definitions(

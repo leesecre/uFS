@@ -1,40 +1,27 @@
-# uFS-bench for oxbow
-
-Utilize microbench of uFS to evaluate oxbow file system.
-We don't require cfs to be build, only cfs_bench required.
-
 ## Get Started
 
-We have tested uFS on Ubuntu 20.04 LTS and Ubuntu 18.04 LTS (both with Linux 5.4). We use `c++20`, `gcc-10`, and `g++-10`. uFS relies on
-the user-level NVMe driver provided by SPDK and the version (18.04) is embeded in this repo.
+### uFS
+Build cfs first based on https://github.com/WiscADSL/uFS
+Most of evaluation is reproduced by upper repository.
+(TODO) uFS for oxbow workloads
 
-### Download and Build
+### oxbow
+Oxbow is compatible with POSIX, you can run ext4 also.
+Only levelDB has different methods but it is for loading data.
 
-Please check this [section](https://github.com/WiscADSL/uFS/tree/main/cfs_bench/exprs/artifact_eval#initialization) in artifact evalution document to *setup the environments* and *install necessary dependencies*.
+## BUILD
 DO NOT use artifcat_eval.sh directly in this BRANCH!
-You may install config4cpp as the script do, and tbb can be build by sudo apt-get install libtbb-dev
 
-Then to build uFS-bench, try these:
+Run the script below, depending on the file system you want.
+You can build each workload separately, but the default is to build the whole.
 ```
-# assume all the dependencies have been installed by artifact_eval.sh
-cd cfs_bench
-mkdir build && cd build
-cmake ..
-make -j $(proc)              # proc: set it according to core number
+./scripts/cmpl_bench.sh oxbow
+./scripts/cmpl_bench.sh ext4
+./scripts/cmpl_bench.sh ufs
 ```
 
-### Setting
-
-Checking set_env.sh in oxbow root directory and check env variables are proper.
-You may put some proper values for running the uFS-bench.
-
-### Running
-
-After you starting daemon and devfs, try these to run uFS-bench:
-```
-cd bench/uFS/cfs_bench/exprs/artifact_eval
-./artifact_eval.sh run microbench oxbow
-```
-
-You can change benchmark on fsp_microbench_suite.py.
-Check each benchmark related python file on get_benchmark_script().
+## HOW TO RUN
+TODO:
+### uFS
+### oxbow
+### ext4
