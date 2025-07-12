@@ -11,9 +11,9 @@ import cfs_test_common as cfs_common
 
 # FSP whole set of microbenchmark
 
-DEV_NAME = "/dev/" + os.environ["AE_SSD_NAME"]
-PCIE_ADDR = os.environ["AE_SSD_PICE_ADDR"]
-
+DEV_NAME = "/dev/" + os.environ["NVME_DEV_NAME"]
+PCIE_ADDR = os.environ["NVME_PCIE_ADDR"]
+BASE_DIR = os.environ.get("BENCH_UFS")
 
 def get_host_name():
     return os.uname().nodename
@@ -92,11 +92,13 @@ def reset_spdk():
 def setup_ext4(
     has_journal=True, data_journal=False, readahead_kb=None, delay_allocate=True
 ):
-    # cmd = 'mkfs -F -t ext4 {}'.format(DEV_NAME)
-    cmd = "mke2fs -t ext4 -J size=10000 -E lazy_itable_init=0,lazy_journal_init=0 -N 10000 -F -G 1 {}".format(
-        DEV_NAME
-    )
-    print(cmd)
+    if data_journal:
+        MKFS_OPTIONS = "-t ext4 -J size=10000 -E lazy_itable_init=0,lazy_journal_init=0 -F"
+    else:
+        MKFS_OPTIONS = "-t ext4 -F -E lazy_itable_init=0,lazy_journal_init=0 -F"
+
+    cmd = "mke2fs {} {}".format(MKFS_OPTIONS, DEV_NAME)
+    print("mkfs command: $", cmd)
     logging.debug(cmd)
     ret = subprocess.call(cmd, shell=True)
     if ret != 0:
@@ -132,15 +134,15 @@ def setup_ext4(
         logging.info("ext4 mounted")
 
     # warming up SSD
-    print(f"Warming up SSD in by {dir_name}/temp file ...")
-    cmd = "sudo dd if=/dev/zero of={}/temp bs=1G count=100 oflag=direct".format(
-        dir_name
-    )
-    ret = subprocess.call(cmd, shell=True)
-    if ret != 0:
-        logging.error("cannot warmup")
-        return
-    print("Warming up Done")
+    # print(f"Warming up SSD in by {dir_name}/temp file ...")
+    # cmd = "sudo dd if=/dev/zero of={}/temp bs=1G count=100 oflag=direct".format(
+    #     dir_name
+    # )
+    # ret = subprocess.call(cmd, shell=True)
+    # if ret != 0:
+    #     logging.error("cannot warmup")
+    #     return
+    # print("Warming up Done")
 
     # set readahead
     # if readahead_kb is not None:
@@ -179,12 +181,24 @@ def verify_dev_options():
 
 def get_benchmark_script(bench_code):
     bench_code_mappings = [
-        # (['RMPR'], 'bench_mt_randread.py {} cached'),
+        ### Throughput benchmarks
         (["RDPR"], "bench_mt_randread.py {}"),
+        (["RDPS"], "bench_mt_seqread.py {}"),
+        (["ADPS"], "bench_mt_write_sync.py {} append"),
+        (["WDPS"], "bench_mt_write_sync.py {} "),
+        (["WDPR"], "bench_mt_randwrite.py {}"),
+
+        ### Latency benchmarks
+        (["RDPR_L"], "bench_mt_randread.py {} latency"),
+        (["RDPS_L"], "bench_mt_seqread.py {} latency"),
+        (["ADPS_L"], "bench_mt_write_sync.py {} append"),
+        (["WDPS_L"], "bench_mt_write_sync.py {}"),
+        (["WDPR_L"], "bench_mt_randwrite.py {}"),
+
+        # (['RMPR'], 'bench_mt_randread.py {} cached'),
         # # (['RMSR'], 'bench_mt_randread.py {} cached share'),
         # (['RDSR'], 'bench_mt_randread.py {} share'),
         # # (['RMPS'], 'bench_mt_seqread.py {} cached'),
-        (["RDPS"], "bench_mt_seqread.py {}"),
         # # (['RMSS'], 'bench_mt_seqread.py {} share cached'),
         # (['RDSS'], 'bench_mt_seqread.py {} share'),
         # (['AMPS'], 'bench_mt_write_noflush.py {} append'),
@@ -194,11 +208,8 @@ def get_benchmark_script(bench_code):
         # (['WMSR'], 'bench_mt_randwrite.py {} cached share'),
         # (['WDSS'], 'bench_mt_write_noflush.py {} share'),
         # (['WDSR'], 'bench_mt_randwrite.py {} share'),
-        (["ADPS"], "bench_mt_write_sync.py {} append"),
         # (['ADSS'], 'bench_mt_write_sync.py {} append share'),
-        (["WDPS"], "bench_mt_write_sync.py {} "),
         # (['WDSS'], 'bench_mt_write_sync.py {} share'),
-        (["WDPR"], "bench_mt_randwrite.py {}"),
         # (['WDSR'], 'bench_mt_randwrite.py {} share'),
         # (['S1MS'], 'bench_mt_stat.py {} share'),
         # (['S1MP'], 'bench_mt_stat.py {}'),
@@ -221,6 +232,20 @@ def get_benchmark_script(bench_code):
 
 def get_default_benchmarks():
     benchmarks = [
+        ### OXBOW only activate these workloads
+        'RDPR',  # Random read
+        'RDPS', # Seqeuntial read
+        'ADPS',  # Appending with sequential
+        'WDPS', # Sequential overwrite
+        'WDPR', # Random overwrite
+
+        ### Latency benchmarks
+        'RDPR_L',  # Random read
+        'RDPS_L', # Seqeuntial read
+        'ADPS_L',  # Append writes
+        'WDPS_L', # Sequential overwrite
+        'WDPR_L', # Random overwrite
+
         # 'RMPR', 'RMSR',
         # 'RDSR',
         # 'RMPS', 'RMSS',
@@ -231,17 +256,10 @@ def get_default_benchmarks():
         # 'WDPS',
         # 'WDSS',
         # 'WDSR',
-        ### Read benchmark
-        "RDPR",  # Random read
         #'RDSR', # not working
-        # 'RDPS', # Seqeuntial read
         # #'RDSS',
-        # # ### Write benchmark
-        # "ADPS",  # Appending with sequential
         #'ADSS',
-        # 'WDPS', # Sequential overwrite
         #'WDSS',
-        # 'WDPR', # Random overwrite
         #'WDSR',
         # 'ADSS',
         # 'S1MP', 'S1MS',
@@ -296,6 +314,10 @@ def bench_needs_dataprep(bench_code):
         "WDSS",
         "WDPR",
         "WDSR",
+        "RDPR_L",
+        "RDPS_L",
+        "WDPS_L",
+        "WDPR_L",
         # 'WMPS', 'WMSS', 'WMPR', 'WMSR', 'WDPS', 'WDPR', 'WDSS', 'WDSR'
     ]
     if bench_code in need_prep_list:
@@ -405,6 +427,9 @@ class Benchmark(object):
             ret = subprocess.call(init_cmd, shell=True)
             if ret == 0:
                 self.data_file_prepared = True
+            else:
+                print(f"Error: Command failed with return code {ret}", file=sys.stderr)
+                sys.exit(1)
 
     def run_single_bench(self, code):
         script_name = get_benchmark_script(code)
@@ -460,28 +485,43 @@ class Benchmark(object):
         logging.info("----------------")
 
     def save_expr_result(self, code, rept_no):
-        save_dir = "{}_{}_run_{}".format(self.fs, code, rept_no)
+        save_dir = "{}/{}_{}_run_{}".format(BASE_DIR, self.fs, code, rept_no)
         if not os.path.exists(save_dir):
             os.mkdir(save_dir)
-        os.system("mv log_{}_* {}".format(self.fs, save_dir))
+        os.system("mv {}/log_{}_* {}".format(BASE_DIR, self.fs, save_dir))
 
     def run(self):
         # divide the benchmarks into two, and one needs prep data, the other
         # does not
         need_data_prep_list = []
         no_data_prep_list = []
-        print("benchmarks: {}", self.benchmarks)
-        for bench in self.benchmarks:
-            # no_data_prep_list.append(bench)  ### All no data prep
-            if bench_needs_dataprep(bench):
-                need_data_prep_list.append(bench)
-            else:
-                no_data_prep_list.append(bench)
+        prep_data_file = False
 
-        # run benchmarks
-        for bench in need_data_prep_list:
-            self.run_single_bench(bench)
+
+        if os.environ.get("PREPARE_DATA_ONLY_ONCE") is not None:
+            for bench in self.benchmarks:
+                if bench_needs_dataprep(bench):
+                    prep_data_file = True
+                    need_data_prep_list.append(bench)
+                else:
+                    no_data_prep_list.append(bench)
+        else:
+            print("\033[93m[WARNING]\033[0m This is not tested yet.")
+            for bench in self.benchmarks:
+                # no_data_prep_list.append(bench)  ### All no data prep
+                if bench_needs_dataprep(bench):
+                    need_data_prep_list.append(bench)
+                else:
+                    no_data_prep_list.append(bench)
+
+
         for bench in no_data_prep_list:
+            self.run_single_bench(bench)
+
+        if prep_data_file:
+            self.prep_data_file()
+
+        for bench in need_data_prep_list:
             self.run_single_bench(bench)
 
 
@@ -537,6 +577,7 @@ def main(args, loglevel):
                 readahead_kb=args.ra,
                 delay_allocate=(not args.nodalloc),
             )
+
         verify_dev_options()
         if not args.devonly:
             if args.jobs is None:

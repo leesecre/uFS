@@ -51,21 +51,19 @@ else:
     print_usage()
     sys.exit(1)
 
-# 4G file
-# BENCH_FSIZE = 4096 * 1024 * 1024
-LOG_BASE = 'log_{}'.format(sys.argv[1])
-BENCH_FSIZE = (5 * 1024 * 1024 * 1024)
-#BENCH_FSIZE = (6 * 1024 * 1000 * 1000)
-NUM_FILES = 1
-
+BASE_DIR = os.environ.get("BENCH_UFS")
+LOG_BASE = '{}/log_{}'.format(BASE_DIR, sys.argv[1])
+BENCH_FSIZE = int(os.environ.get("UFSBENCH_FILESIZE"))
 if len(sys.argv) == 3:
     NUM_FILES = int(sys.argv[2])
-        
+
+if None in (BENCH_FSIZE, NUM_FILES):
+    sys.exit(1, "Error: FILE_SIZE must be set.")
 
 cur_numop = int(BENCH_FSIZE / 4096)
 
 print('Init data files for benchmarking - BENCH_FSIZE(GB):{} NUM_FILES:{}'.
-      format(BENCH_FSIZE / (5 * 1024 * 1024 * 1024), NUM_FILES))
+      format(BENCH_FSIZE / (1024 * 1024 * 1024), NUM_FILES))
 
 if cur_is_fsp:
     common_expr.expr_mkfs()
@@ -84,6 +82,9 @@ for i in range(NUM_FILES):
     cur_log_dir = common_expr.get_proj_log_dir(
         common_expr.get_expr_user(),
         suffix=common_expr.get_ts_dir_name())
+    
+    # prepare file through appending, not using fallocate
+    # value_size may affect extents, but don't care for now
     write_expr.expr_write_1fsp_1t(
         cur_log_dir,
         is_seq=True,
@@ -96,9 +97,11 @@ for i in range(NUM_FILES):
             '--fs_worker_key_list=': 1})
     if cur_is_fsp:
         common_expr.fsp_do_offline_checkpoint()
-    if cur_is_oxbow:
+    elif cur_is_oxbow:
         time.sleep(5)
         expr_checkpoint_oxbow()
+    else:
+        os.system("sync {}".format(common_expr.get_kfs_data_dir()))
 
     time.sleep(2)
 
@@ -111,7 +114,7 @@ if cur_is_oxbow:
 if not os.path.exists(CUR_ARKV_DIR):
     os.mkdir(CUR_ARKV_DIR)
 
-os.system("mv log{}* {}".format(common_expr.get_year_str(), CUR_ARKV_DIR))
+os.system("mv {}/log{}* {}".format(BASE_DIR, common_expr.get_year_str(), CUR_ARKV_DIR))
 
 # clean the root-permissioned shms
 if cur_is_fsp:

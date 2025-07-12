@@ -472,46 +472,16 @@ def bench_rand_read(
     if cfs_update_dict is not None:
         bench_cfg_dict.update(cfs_update_dict)
 
-    # note for rand-read, one strict-no-overlap is set, 64 needs same size
-    # as 4K
-    if not is_thp:
-        value_sz_op_num_dict = {
-            # 256MB for latency benchmark
-            # 64: 4194304, # 64
-            # 1024: 262144, # 1K
-            # 4096: 65536,  # 4K
-            # 16384: 16384, # 16K
-            # 65536: 4096, # 64K
-            # 262144: 1024, # 256K
-            # 524288: 512, # 512K
-            # 1048576: 256, # 1M
-            # 2097152: 128, # 2M
+    iosize_str = os.environ.get("UFSBENCH_IOSIZE")
+    iosize_list = [s.strip() for s in iosize_str.split(',') if s.strip()]
+    iosize_bytes_list = [cfs_tc.parse_size_to_bytes(s) for s in iosize_list]
 
-            # 1GB for latency
-            1024: 262144 * 4, # 1K
-            4096: 65536 * 4,  # 4K
-            16384: 16384 * 4, # 16K
-            65536: 4096 * 4, # 64K
-            262144: 1024 * 4, # 256K
-            524288: 512 * 4, # 512K
-        }
+    if is_thp:
+        value_sz_op_num_dict = {
+            size: int(os.environ.get("UFSBENCH_FILESIZE")) // size for size in iosize_bytes_list}
     else:
         value_sz_op_num_dict = {
-            # 5GB for throughput benchmark
-            # 1024: 262144 * 4 * 5, # 1K
-            # 4096: 65536 * 4 * 5,  # 4K
-            # 16384: 16384 * 4 * 5, # 16K
-            # 65536: 4096 * 4 * 5, # 64K
-            # 262144: 1024 * 4 * 5, # 256K
-            # 524288: 512 * 4 * 5, # 512K
-            # 1048576: 256 * 4 * 5, # 1M
-            # 2097152: 128 * 4 * 5 # 2M
-            # multi process test
-            4096: int(2*1024*1024/4),
-            16384: int(2*1024*1024/16),
-            65536: int(2*1024*1024/64),
-            # 262144: int(2*1024*1024/256),
-        }
+            size: int(os.environ.get("UFSBENCH_LAT_TOTAL_SIZE")) // size for size in iosize_bytes_list}
 
     if is_share:
         # value_sz_op_num_dict = {

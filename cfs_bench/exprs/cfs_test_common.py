@@ -56,14 +56,16 @@ def get_year_str():
 
 
 def get_cfs_root_dir():
-    cfs_root_dir = os.environ.get("CFS_ROOT_DIR")
+    # cfs_root_dir = os.environ.get("CFS_ROOT_DIR")
+    cfs_root_dir = os.environ.get("BENCH_UFS")
     if cfs_root_dir is None:
         raise RuntimeError("CFS_ROOT_DIR not set")
     return cfs_root_dir
 
 
 def get_kfs_mount_dir():
-    kfs_mount_dir = os.environ.get("KFS_MOUNT_PATH")
+    # kfs_mount_dir = os.environ.get("KFS_MOUNT_PATH")
+    kfs_mount_dir = "/ssd-data"
     if kfs_mount_dir is None:
         raise RuntimeError("KFS_MOUNT_PATH not set")
     return kfs_mount_dir
@@ -73,14 +75,15 @@ def get_kfs_data_dir():
     """
     :return: the data directory for a kernel file system to R/W
     """
-    kfs_data_dir = os.environ.get("KFS_DATA_DIR")
+    # kfs_data_dir = os.environ.get("KFS_DATA_DIR")
+    kfs_data_dir = "/ssd-data/bench"
     if kfs_data_dir is None:
         raise RuntimeError("KFS_DATA_DIR not set")
     return kfs_data_dir
 
 
 def get_kfs_dev_name():
-    kfs_dev_name = os.environ.get("AE_SSD_NAME")
+    kfs_dev_name = os.environ.get("NVME_DEV_NAME")
     if kfs_dev_name is None:
         raise RuntimeError("SSD_NAME not set")
     return kfs_dev_name
@@ -157,7 +160,8 @@ def get_proj_log_dir(user=None, suffix=None, do_mkdir=True):
     rs = ""
     if suffix is not None:
         rs = suffix
-    log_dir = "{}/cfs_bench/exprs/log{}/".format(get_cfs_root_dir(), rs)
+    # log_dir = "{}/cfs_bench/exprs/log{}/".format(get_cfs_root_dir(), rs)
+    log_dir = "{}/log{}/".format(get_cfs_root_dir(), rs)
     if do_mkdir:
         mk_accessible_dir(log_dir)
     return log_dir
@@ -227,10 +231,15 @@ def expr_mkfs():
     else:
         print("must be run as root")
 
-
+# Note: This function not really do mkfs for that device
+# instead, delete whole files in the mounted directory.
+# Honestly, it is not same state of initial mkfs
+# I don't think the difference will be meaningful
+# but for minizing the difference, I added sync after rm.
 def expr_mkfs_for_kfs():
     print(get_div_str("mkfs for kernel fs"))
     os.system("rm -rf {}/*".format(get_kfs_data_dir()))
+    os.system("sync {}".format(get_kfs_data_dir()))
     print(get_div_str("kernel fs benchmark directory content:"))
     print(os.listdir(get_kfs_data_dir()))
 
@@ -633,6 +642,16 @@ def print_env_variables():
     for ev in env_var_list:
         print("${} is set to: {}".format(ev, os.environ.get(ev)))
 
+def parse_size_to_bytes(size_str):
+    size_str = size_str.strip().upper()
+    if size_str.endswith('K'):
+        return int(size_str[:-1]) * 1024
+    elif size_str.endswith('M'):
+        return int(size_str[:-1]) * 1024 * 1024
+    elif size_str.endswith('G'):
+        return int(size_str[:-1]) * 1024 * 1024 * 1024
+    else:
+        return int(size_str)
 
 if __name__ == "__main__":
     print_env_variables()
