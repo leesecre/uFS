@@ -184,16 +184,16 @@ def get_benchmark_script(bench_code):
         ### Throughput benchmarks
         (["RDPR"], "bench_mt_randread.py {}"),
         (["RDPS"], "bench_mt_seqread.py {}"),
-        (["ADPS"], "bench_mt_write_sync.py {} append"),
-        (["WDPS"], "bench_mt_write_sync.py {} "),
-        (["WDPR"], "bench_mt_randwrite.py {}"),
+        (["ADPS"], "bench_mt_write_all.py {} append"),
+        (["WDPS"], "bench_mt_write_all.py {} "),
+        (["WDPR"], "bench_mt_write_all.py {} random"),
 
         ### Latency benchmarks
         (["RDPR_L"], "bench_mt_randread.py {} latency"),
         (["RDPS_L"], "bench_mt_seqread.py {} latency"),
-        (["ADPS_L"], "bench_mt_write_sync.py {} append"),
-        (["WDPS_L"], "bench_mt_write_sync.py {}"),
-        (["WDPR_L"], "bench_mt_randwrite.py {}"),
+        (["ADPS_L"], "bench_mt_write_all.py {} append latency"),
+        (["WDPS_L"], "bench_mt_write_all.py {} latency"),
+        (["WDPR_L"], "bench_mt_write_all.py {} random latency"),
 
         # (['RMPR'], 'bench_mt_randread.py {} cached'),
         # # (['RMSR'], 'bench_mt_randread.py {} cached share'),

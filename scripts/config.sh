@@ -1,11 +1,16 @@
 #!/bin/bash
 # Microbenchmarks configurations
 
-export UFSBENCH_IOSIZE="4K,16K,64K,256K"
+
+export UFSBENCH_IOSIZE="4K,256K"
+# export UFSBENCH_IOSIZE="4K,16K,64K,256K"
 export UFSBENCH_NUMAPP=2 # nr of applications to run concurrently, uFS supports up to 10
 
 # export UFSBENCH_FILESIZE=$((5 * 1024 * 1024 * 1024)) # File size for microbenchmarks
 export UFSBENCH_FILESIZE=$((1 * 1024 * 1024 * 1024)) # 1GB
+
+# export UFSBENCH_SYNC_OP=131072
+export UFSBENCH_SYNC_OP=131072
 
 # export UFSBENCH_LAT_TOTAL_SIZE=$((1 * 1024 * 1024 * 1024)) # Latency benchmarks total size
 export UFSBENCH_LAT_TOTAL_SIZE=$((256 * 1024 * 1024)) # 256MB
@@ -18,7 +23,8 @@ export UFSBENCH_LAT_TOTAL_SIZE=$((256 * 1024 * 1024)) # 256MB
 ##   WDPS,WDPS_L   - Sequential overwrite
 ##   WDPR,WDPR_L   - Random overwrite
 
-export UFSBENCH_WORKLOADS="RDPR,RDPR_L,RDPS,RDPS_L"
+# export UFSBENCH_WORKLOADS="RDPR,RDPR_L,RDPS,RDPS_L"
+export UFSBENCH_WORKLOADS="ADPS,ADPS_L,WDPS,WDPS_L,WDPR,WDPR_L"
 # export UFSBENCH_WORKLOADS="RDPR,ADPS,WDPS,WDPR,RDPR_L,ADPS_L,WDPS_L,WDPR_L"
 
 

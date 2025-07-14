@@ -366,6 +366,103 @@ def bench_rand_write(
                     time.sleep(1)
 
 
+def bench_write_all(
+    log_dir,
+    num_app_proc=1,
+    is_fsp=True,
+    is_oxbow=False,
+    is_thp=False,
+    is_append=False,
+    is_random=False,
+    num_fsp_worker_list=None,
+    per_app_fname=None,
+    dump_mpstat=False,
+    dump_iostat=False,
+    cfs_update_dict=None,
+):
+    # note currently only support random write for buffered workload
+    # assert(is_cached)
+    if is_random:
+        case_name = "rwrite"
+        bench_cfg_dict = {"--benchmarks=": "rwrite", }
+    else:
+        if is_append:
+            case_name = "append"
+            bench_cfg_dict = {"--benchmarks=": "append", }
+        else:
+            case_name = "seqwrite"
+            bench_cfg_dict = {"--benchmarks=": "seqwrite", }
+
+    case_log_dir = "{}/{}".format(log_dir, case_name)
+
+    if cfs_update_dict is not None:
+        bench_cfg_dict.update(cfs_update_dict)
+
+    iosize_str = os.environ.get("UFSBENCH_IOSIZE")
+    iosize_list = [s.strip() for s in iosize_str.split(',') if s.strip()]
+    iosize_bytes_list = [cfs_tc.parse_size_to_bytes(s) for s in iosize_list]
+
+    if is_thp:
+        value_sz_op_num_dict = {
+            size: int(os.environ.get("UFSBENCH_FILESIZE")) // size for size in iosize_bytes_list}
+    else:
+        value_sz_op_num_dict = {
+            size: int(os.environ.get("UFSBENCH_LAT_TOTAL_SIZE")) // size for size in iosize_bytes_list}
+
+    if not is_fsp:  # ext4 and oxbow case
+        pin_cpu_list = [False]
+    if is_fsp:
+        pin_cpu_list = [True]
+
+    clear_pc_list = [True]
+    if num_fsp_worker_list is None:
+        num_fsp_worker_list = [1]
+    for cp in clear_pc_list:
+        for pc in pin_cpu_list:
+            for vs, nop in value_sz_op_num_dict.items():
+                for nfswk in num_fsp_worker_list:
+                    cur_run_log_dir = (
+                        "{}_isFsp-{}_clearPc-{}_pinCpu-{}-numFsWk-{}".format(
+                            case_log_dir, str(is_fsp), str(cp), str(pc), str(nfswk)
+                        )
+                    )
+                    bench_cfg_dict["--value_size="] = vs
+                    bench_cfg_dict["--numop="] = nop
+
+                    if (vs > 4096) and (bench_cfg_dict["--sync_numop="] > 1):
+                        adjust_sync_numop = int(
+                            bench_cfg_dict["--sync_numop="] / (vs / 4096)
+                        )
+                        if adjust_sync_numop == 0:
+                            adjust_sync_numop = 1
+                        bench_cfg_dict["--sync_numop="] = adjust_sync_numop
+
+                    cfs_tc.mk_accessible_dir(cur_run_log_dir)
+                    if is_append:
+                        # mkfs
+                        if is_fsp:
+                            cfs_tc.expr_mkfs()
+                        elif is_oxbow:
+                            cfs_tc.expr_mkfs_oxbow()
+                        else:
+                            cfs_tc.expr_mkfs_for_kfs()
+                        # wait a bit after mkfs
+                        time.sleep(1)
+                    me_read.expr_read_mtfsp_multiapp(
+                        cur_run_log_dir,
+                        nfswk,
+                        num_app_proc,
+                        bench_cfg_dict,
+                        is_fsp=is_fsp,
+                        is_oxbow=is_oxbow,
+                        clear_pgcache=cp,
+                        pin_cpu=pc,
+                        per_app_fname=per_app_fname,
+                        dump_mpstat=dump_mpstat,
+                        dump_iostat=dump_iostat,
+                    )
+                    time.sleep(1)
+
 def bench_cwcross(
     log_dir,
     num_app_proc=1,
