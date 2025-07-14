@@ -13,8 +13,10 @@ export UFSBENCH_FILESIZE=$((1 * 1024 * 1024 * 1024)) # 1GB
 export UFSBENCH_SYNC_OP=131072
 
 # export UFSBENCH_LAT_TOTAL_SIZE=$((1 * 1024 * 1024 * 1024)) # Latency benchmarks total size
-export UFSBENCH_LAT_TOTAL_SIZE=$((256 * 1024 * 1024)) # 256MB
+export UFSBENCH_LAT_TOTAL_SIZE=$((128 * 1024 * 1024)) # 128MB
 
+# Enable perf, latency benchmark automatically disable perf
+export UFSBENCH_ENBALE_PERF="1" # comment out to disable perf
 
 ## Workload definitions: (*_L means latency benchmarks)
 ##   RDPR,RDPR_L   - Random read
@@ -24,7 +26,7 @@ export UFSBENCH_LAT_TOTAL_SIZE=$((256 * 1024 * 1024)) # 256MB
 ##   WDPR,WDPR_L   - Random overwrite
 
 # export UFSBENCH_WORKLOADS="RDPR,RDPR_L,RDPS,RDPS_L"
-export UFSBENCH_WORKLOADS="ADPS,ADPS_L,WDPS,WDPS_L,WDPR,WDPR_L"
+export UFSBENCH_WORKLOADS="ADPS,ADPS_L"
 # export UFSBENCH_WORKLOADS="RDPR,ADPS,WDPS,WDPR,RDPR_L,ADPS_L,WDPS_L,WDPR_L"
 
 

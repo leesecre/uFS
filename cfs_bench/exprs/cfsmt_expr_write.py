@@ -455,6 +455,7 @@ def bench_write_all(
                         bench_cfg_dict,
                         is_fsp=is_fsp,
                         is_oxbow=is_oxbow,
+                        is_throughput=is_thp,
                         clear_pgcache=cp,
                         pin_cpu=pc,
                         per_app_fname=per_app_fname,

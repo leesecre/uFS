@@ -14,6 +14,8 @@ DO NOT use artifcat_eval.sh directly in this BRANCH!
 
 Run the script below, depending on the file system you want.
 You can build each workload separately, but the default is to build the whole.
+(If build errors with -ltbb -> $ sudo apt-get install libtbb-dev)
+
 ```
 ./scripts/cmpl_bench.sh oxbow
 ./scripts/cmpl_bench.sh ext4

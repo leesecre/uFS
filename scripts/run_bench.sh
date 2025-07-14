@@ -1,6 +1,8 @@
 #! /bin/bash
 set -e
 
+KFS_MOUNT_PATH="/ssd-data"
+
 if [ -z "$OXBOW_ENV_SOURCED" ]; then
 	echo "Do source set_env.sh first. in oxbow root directory"
 	exit
@@ -23,7 +25,6 @@ function reset-spdk() {
       echo "Please check if the device is busy or mounted elsewhere."
       exit 1
     fi
-		return
 	fi
 	sudo bash $BENCH_UFS/cfs/lib/spdk/scripts/setup.sh reset
 }
@@ -99,6 +100,7 @@ sudo killall cfs_bench_coordinator
 sudo killall testRWFsUtil
 sudo rm -rf "$BENCH_UFS"/log*
 sudo rm -rf "$BENCH_UFS"/*_run_*
+sudo rm -rf "/dev/shm/coordinator"
 
 if [[ "$BENCH" == "microbench" ]]; then
   run_microbench "$FS_TYPE"

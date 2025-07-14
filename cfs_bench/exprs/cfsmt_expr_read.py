@@ -33,6 +33,7 @@ def expr_read_mtfsp_multiapp(
         is_fsp=True,
         is_oxbow=False,
         is_append=False,
+        is_throughput=False,
         clear_pgcache=False,
         pin_cpu=False,
         per_app_fname=None,
@@ -272,25 +273,19 @@ def expr_read_mtfsp_multiapp(
         # for i in range(num_app_proc):
         #     bench_app_cmd_dict[i] = '{}'.format(bench_app_cmd_dict[i])
 
-    if '--sync_numop=' not in bench_cfg_dict:
-        bench_cfg_dict['--sync_numop='] = -2
+    do_perf=False
+    if os.environ.get("UFSBENCH_ENBALE_PERF") is not None and is_throughput:
+        perf_dir_name = '{}/perf'.format(log_dir_name)
+        subprocess.run("sudo mkdir -p {}".format(perf_dir_name), shell=True, check=True)
 
-    print(bench_app_cmd_dict)
-
-
-    if bench_cfg_dict['--sync_numop='] > 1 or bench_cfg_dict['--sync_numop='] == -1:
-        print("It is throughput benchmark!")
         perf_arg1 = bench_args['--benchmarks=']
-        perf_arg2 = bench_cfg_dict['--sync_numop=']
         perf_arg3 = bench_args['--value_size=']
-        perf_output_path = os.path.join("/tmp/perf",
-            f"perfthp_{perf_arg1}_syncop{perf_arg2}_iosize{perf_arg3}_{num_app_proc}")
-        # Create /tmp/perf directory if it doesn't exist using sudo
-        subprocess.run("sudo mkdir -p /tmp/perf", shell=True, check=True)
+        perf_output_path = os.path.join(perf_dir_name,
+            f"perfthp_{perf_arg1}_iosize{perf_arg3}_{num_app_proc}")
         proc = subprocess.Popen(f'sudo nice -n 0 perf record -a -o {perf_output_path} &',
                                     shell=True, preexec_fn=os.setpgrp)
         perf_pid = proc.pid
-
+        do_perf = True
 
     # start benchmarking clients
     p_bench_r_dict = {}
@@ -303,8 +298,8 @@ def expr_read_mtfsp_multiapp(
     # wait for clients finishing
     for pr in p_bench_r_dict.values():
         pr.wait()
-    
-    if bench_cfg_dict['--sync_numop='] > 1 or bench_cfg_dict['--sync_numop='] == -1:
+
+    if do_perf:
         os.killpg(os.getpgid(perf_pid), signal.SIGTERM)
         print(f"Perf stat output saved to {perf_output_path}")
 
@@ -520,6 +515,7 @@ def bench_rand_read(
                                              num_app_proc, bench_cfg_dict,
                                              is_fsp=is_fsp,
                                              is_oxbow=is_oxbow,
+                                             is_throughput=is_thp,
                                              clear_pgcache=True,
                                              pin_cpu=pc,
                                              per_app_fname=per_app_fname,
