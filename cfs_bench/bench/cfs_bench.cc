@@ -1544,7 +1544,8 @@ private:
                         "0\n");
         exit(1);
       }
-      max_req_num = FLAGS_max_file_size / FLAGS_rw_align_bytes;
+      // max_req_num = FLAGS_max_file_size / FLAGS_rw_align_bytes;
+      max_req_num = thread->fileSize / FLAGS_rw_align_bytes;
       if (numop_ > max_req_num) {
         fprintf(stderr,
                 "file size not enough to complete the aligned req max:%lu\n",
@@ -1563,7 +1564,8 @@ private:
     if (FLAGS_rw_align_bytes != 0) {
       off_vec.resize(max_req_num);
       for (uint64_t i = 0; i < max_req_num; i++) {
-        off_vec[i] = (FLAGS_rw_align_bytes * i) % FLAGS_max_file_size;
+        // off_vec[i] = (FLAGS_rw_align_bytes * i) % FLAGS_max_file_size;
+        off_vec[i] = (FLAGS_rw_align_bytes * i) % thread->fileSize;
       }
       std::random_shuffle(off_vec.begin(), off_vec.end());
     }
@@ -1618,7 +1620,8 @@ private:
           cur_off = off_vec[i];
         } else {
           // no alignment requirement, random choose
-          cur_off = thread->rand.Next() % FLAGS_max_file_size;
+          // cur_off = thread->rand.Next() % FLAGS_max_file_size;
+          cur_off = thread->rand.Next() % thread->fileSize;
         }
         if (FLAGS_block_no >= 0) {
           cur_off = FLAGS_numop * gBlockSize;
@@ -1632,10 +1635,18 @@ private:
       }
 
       if (rc != value_size_) {
+#ifndef CFS_USE_POSIX
         fprintf(stderr,
                 "ERROR:fs_allocated_[p]read. rc:%d value_size_:%d "
                 "offset:%lu opIdx(i):%d\n",
                 rc, value_size_, cur_off, i);
+#else
+        fprintf(stderr,
+                "ERROR:pread. rc:%d value_size_:%d "
+                "offset:%lu opIdx(i):%d\n",
+                rc, value_size_, cur_off, i);
+#endif
+        // if we cannot read the data, we should stop
         cc.notify_server_that_client_stopped();
         exit(1);
       }

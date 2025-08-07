@@ -435,6 +435,8 @@ class Benchmark(object):
         script_name = get_benchmark_script(code)
         if script_name is None:
             raise RuntimeError("benchmark:{} not supported".format(code))
+
+        # Do only when PREPARE_DATA_ONLY_ONCE is not set
         if bench_needs_dataprep(code):
             self.prep_data_file()
 
@@ -518,6 +520,7 @@ class Benchmark(object):
         for bench in no_data_prep_list:
             self.run_single_bench(bench)
 
+        # Do data preparation only once, if enabled
         if prep_data_file:
             self.prep_data_file()
 

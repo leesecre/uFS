@@ -8,7 +8,8 @@ import signal
 import subprocess
 import sys
 import time
-
+import mmap
+import struct
 import psutil
 from sarge import Capture, run
 
@@ -262,49 +263,94 @@ def expr_checkpoint_oxbow():
         # "send_ckpt_signal.sh")
 
         # Send remote checkpoint signal (from host to device)
-        script_path = os.path.join(oxbow_root, "scripts", "host", "remote_ckpt.sh")
+        if os.environ.get("OXBOW_HOST_JOURNALING") is not None:
+            script_path = os.path.join(oxbow_root, "scripts", "host", "host_journaling_ckpt.sh")
+        else:
+            script_path = os.path.join(oxbow_root, "scripts", "host", "remote_ckpt.sh")
         os.system(f"bash {script_path}")
+        input("Push enter when checkpoint is done. ")
     else:
         print("Check set_env.sh for OXBOW_ROOT")
-    print(
-        "Checkpoint oxbow. (wait for 20 seconds) ############ (CHECKPOINT) ############"
-    )
-    time.sleep(20)
 
+def is_oxbow_running(name) -> bool:
+    for proc in psutil.process_iter(attrs=["name"]):
+        if proc.info["name"] == name:
+            print("{} is running".format(name))
+            return True
+    print("{} is not running".format(name))
+    return False
+
+
+DAEMON_STATUS = "/dev/shm/oxbow_daemon"
+DEVFS_STATUS = "/dev/shm/oxbow_devfs"
+MODULE_INIT=1
+MODULE_UNINIT=0
+FLAG_SIZE = 4
+
+def read_status(process):
+    with open(process, "rb") as f:
+        with mmap.mmap(f.fileno(), FLAG_SIZE, access=mmap.ACCESS_READ) as mm:
+            mm.seek(0)
+            data = mm.read(FLAG_SIZE)
+            (flag,) = struct.unpack("i", data)
+            return flag
+
+def wait_oxbow_module(process, type):
+    print("Wait until {} {}".format(process, "init" if type == 1 else "exit"))
+    if type not in (0, 1):
+        raise ValueError("expected_value must be 0 (uninit) or 1 (init)")
+    while True:
+        time.sleep(1)
+        try:
+            status = read_status(process)
+            if status == type:
+                break
+        except Exception as e:
+            print(f"error: {e}")
 
 def expr_exit_oxbow_daemon():
-    print("Exit daemon (wait for 20 seconds).")
-    signal_to_process("secure_daemon", sig=signal.SIGINT)
-    time.sleep(15)
+    print("Exit secure daemon")
+    if is_oxbow_running("secure_daemon"):
+        signal_to_process("secure_daemon", sig=signal.SIGINT)
+        wait_oxbow_module(DAEMON_STATUS, MODULE_UNINIT)
+    time.sleep(1)
     mount_point = "/oxbow"
     result = os.system(f"umount {mount_point}")
     if result != 0:
         print("Failed to umount oxbow")
 
-
 def expr_start_oxbow_daemon():
-    print("Start daemon (wait for 20 seconds).")
-    tmux_daemon_pane = "oxbow:0.1"
+    print("Start daemon.")
+    tmux_daemon_pane = "oxbow:0.0"
     # cmd = "cd ~/codes/oxbow.code/oxbow/secure_daemon && ./run.sh"
     cmd = "cd $SECURE_DAEMON && ./run.sh"
     tmux_cmd = f'tmux send-keys -t {tmux_daemon_pane} "{cmd}" Enter'
     os.system(tmux_cmd)
-    # print("wait for daemon do initiating... ")
-    time.sleep(15)
-
+    wait_oxbow_module(DAEMON_STATUS, MODULE_INIT)
 
 def expr_start_oxbow_devfs():
-    print("Start devfs (wait for 5 seconds).")
+    print("Start devfs.")
     tmux_daemon_pane = "oxbow:0.3"
     # cmd = "cd ~/codes/oxbow.code/oxbow/devfs && ./run.sh"
     cmd = "cd $DEVFS && ./run.sh"
     tmux_cmd = f'tmux send-keys -t {tmux_daemon_pane} "{cmd}" Enter'
     os.system(tmux_cmd)
-    # print("wait for devfs do initiating... ")
-    time.sleep(5)
+    if os.environ.get("OXBOW_HOST_JOURNALING") is not None:
+        wait_oxbow_module(DEVFS_STATUS, MODULE_INIT)
+    else:
+        time.sleep(5)
+
+def exit_local_devfs():
+    print("Exit local devfs.")
+    if is_oxbow_running("devfs"):
+        signal_to_process("devfs", sig=signal.SIGINT)
+        wait_oxbow_module(DEVFS_STATUS, MODULE_UNINIT)
+    time.sleep(1)
 
 def expr_exit_oxbow_devfs():
-    print("Exit devfs (wait for 5 seconds).")
+    print("Exit devfs.")
+    if os.environ.get("OXBOW_HOST_JOURNALING") is not None:
+        return exit_local_devfs()
     tmux_daemon_pane = "oxbow:0.3"
     tmux_cmd = f"tmux send-keys -t {tmux_daemon_pane} C-c"
     os.system(tmux_cmd)
@@ -312,7 +358,7 @@ def expr_exit_oxbow_devfs():
     # Works for local devfs.
     # signal_to_process("devfs", sig=signal.SIGINT)
 
-    time.sleep(5)
+    time.sleep(1)
 
 
 def clear_page_cache_oxbow():
@@ -334,7 +380,10 @@ def expr_mkfs_oxbow():
     expr_exit_oxbow_daemon()
     # MKFS
     oxbow_root = os.environ.get("OXBOW_ROOT")
-    script_path = os.path.join(oxbow_root, "scripts", "host", "mkfs.sh")
+    if os.environ.get("OXBOW_USE_VM_ENV") is not None:
+        script_path = os.path.join(oxbow_root, "mkfs_qemu.sh")
+    else:
+        script_path = os.path.join(oxbow_root, "scripts", "host", "mkfs.sh")
     # os.system(f"bash {script_path} > /dev/null 2>&1")
     os.system(f"bash {script_path}")
     time.sleep(3)

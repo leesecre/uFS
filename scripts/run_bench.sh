@@ -52,21 +52,13 @@ function run_microbench() {
 
     cd $BENCH_UFS/cfs_bench/exprs
   
-    if [ "$1" = "ext4" ]; then
+    if [ "$1" = "ext4" ] || [ "$1" = "ext4nj" ] || [ "$1" = "ext4dj" ]; then
         reset-spdk
         sudo -E $cmd
         sudo mv $BENCH_UFS/ext4_*_run_0 "$data_dir"
-    # elif [ "$1" = "ext4nj" ]; then
-    #     reset-spdk
-    #     sudo -E python3 fsp_microbench_suite.py --fs ext4nj --numapp=16 "${@:2}"
-    #     sudo mv ext4_*_run_0 "$data_dir"
-    # elif [ "$1" = "ext4dj" ]; then
-    #     reset-spdk
-    #     sudo -E python3 fsp_microbench_suite.py --fs ext4dj --numapp=16 "${@:2}"
-    #     sudo mv ext4_*_run_0 "$data_dir"
     elif [ "$1" = "oxbow" ]; then
-        sudo -E python3 fsp_microbench_suite.py --fs oxbow --numapp=16 "${@:2}"
-        sudo mv oxbow_*_run_0 "$data_dir"
+        sudo -E $cmd
+        sudo mv $BENCH_UFS/oxbow_*_run_0 "$data_dir"
     fi
 
 }

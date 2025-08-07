@@ -98,8 +98,7 @@ for i in range(NUM_FILES):
     if cur_is_fsp:
         common_expr.fsp_do_offline_checkpoint()
     elif cur_is_oxbow:
-        time.sleep(5)
-        expr_checkpoint_oxbow()
+        continue
     else:
         os.system("sync {}".format(common_expr.get_kfs_data_dir()))
 
@@ -108,7 +107,7 @@ for i in range(NUM_FILES):
 CUR_ARKV_DIR = '{}_mt_dataprep'.format(LOG_BASE)
 
 if cur_is_oxbow:
-    time.sleep(10)
+    time.sleep(1)
     expr_checkpoint_oxbow()
 
 if not os.path.exists(CUR_ARKV_DIR):
