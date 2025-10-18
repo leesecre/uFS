@@ -87,7 +87,6 @@ def expr_read_mtfsp_multiapp(
         '--threads=': 1,
         '--histogram=': 1,
     }
-    bench_cfg_dict['--max_file_size='] = int(os.environ.get("UFSBENCH_FILESIZE"))
     if bench_cfg_dict is not None:
         bench_args.update(bench_cfg_dict)
 
