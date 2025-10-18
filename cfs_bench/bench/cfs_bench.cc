@@ -1544,8 +1544,8 @@ private:
                         "0\n");
         exit(1);
       }
-      // max_req_num = FLAGS_max_file_size / FLAGS_rw_align_bytes;
-      max_req_num = thread->fileSize / FLAGS_rw_align_bytes;
+      max_req_num = FLAGS_max_file_size / FLAGS_rw_align_bytes;
+      // max_req_num = thread->fileSize / FLAGS_rw_align_bytes;
       if (numop_ > max_req_num) {
         fprintf(stderr,
                 "file size not enough to complete the aligned req max:%lu\n",
@@ -1564,8 +1564,8 @@ private:
     if (FLAGS_rw_align_bytes != 0) {
       off_vec.resize(max_req_num);
       for (uint64_t i = 0; i < max_req_num; i++) {
-        // off_vec[i] = (FLAGS_rw_align_bytes * i) % FLAGS_max_file_size;
-        off_vec[i] = (FLAGS_rw_align_bytes * i) % thread->fileSize;
+        off_vec[i] = (FLAGS_rw_align_bytes * i) % FLAGS_max_file_size;
+        // off_vec[i] = (FLAGS_rw_align_bytes * i) % thread->fileSize;
       }
       std::random_shuffle(off_vec.begin(), off_vec.end());
     }
@@ -1620,8 +1620,8 @@ private:
           cur_off = off_vec[i];
         } else {
           // no alignment requirement, random choose
-          // cur_off = thread->rand.Next() % FLAGS_max_file_size;
-          cur_off = thread->rand.Next() % thread->fileSize;
+          cur_off = thread->rand.Next() % FLAGS_max_file_size;
+          // cur_off = thread->rand.Next() % thread->fileSize;
         }
         if (FLAGS_block_no >= 0) {
           cur_off = FLAGS_numop * gBlockSize;
@@ -1691,7 +1691,8 @@ private:
     if (rc == 0) {
       cur_flags = O_RDWR;
       thread->fileSize = statbuf.st_size;
-      fprintf(stdout, "open with O_RDWR aid:%d\n", thread->aid);
+      fprintf(stdout, "open with O_RDWR aid:%d size:%lu\n", 
+          thread->aid, thread->fileSize);
     } else {
       cur_flags = O_CREAT | O_RDWR;
       fprintf(stdout, "open with O_CREAT aid:%d\n", thread->aid);
@@ -5592,6 +5593,7 @@ int main(int argc, char **argv) {
       FLAGS_value_random_size = n;
     } else if (sscanf(argv[i], "--max_file_size=%lu%c", &uln, &junk) == 1) {
       FLAGS_max_file_size = uln;
+      fprintf(stdout, "FLAGS_max_file_size:%lu\n", FLAGS_max_file_size);
     } else if (sscanf(argv[i], "--in_mem_file_size=%lu%c", &uln, &junk) == 1) {
       FLAGS_in_mem_file_size = uln;
     } else if (sscanf(argv[i], "--think_nano=%lu%c", &uln, &junk) == 1) {
