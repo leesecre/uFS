@@ -564,6 +564,8 @@ def start_bench_coordinator(num_app_proc=1):
 
     coord_bin = get_coordinator_bin()
     coord_cmd = "{} -n {}".format(coord_bin, num_app_proc)
+    print("Coordinator command (Required for non uFS systems):")
+    print(coord_cmd)
     run(coord_cmd, async_=True, stdout=Capture())
 
 

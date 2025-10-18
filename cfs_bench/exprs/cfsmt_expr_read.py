@@ -290,7 +290,8 @@ def expr_read_mtfsp_multiapp(
     # start benchmarking clients
     p_bench_r_dict = {}
     for i in range(num_app_proc):
-        # print(bench_app_cmd_dict[i])
+        print("Command for gdb:")
+        print(bench_app_cmd_dict[i]) # Command for gdb.
         p_bench_r_dict[i] = run(bench_app_cmd_dict[i], stdout=Capture(),
                                 async_=True, env=env)
 
