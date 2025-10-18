@@ -1693,8 +1693,13 @@ private:
       thread->fileSize = statbuf.st_size;
       fprintf(stdout, "open with O_RDWR aid:%d\n", thread->aid);
     } else {
-      cur_flags = O_CREAT | O_RDWR;
-      fprintf(stdout, "open with O_CREAT aid:%d\n", thread->aid);
+      if (errno == ENOENT) {
+        cur_flags = O_CREAT | O_RDWR;
+        fprintf(stdout, "open with O_CREAT aid:%d\n", thread->aid);
+      } else {
+        fprintf(stdout, "[ERROR] stat failed with errno:%d\n", errno);
+        exit(1);
+      }
     }
     if (FLAGS_is_append) {
       fprintf(stdout, "open with O_APPEND aid:%d\n", thread->aid);
