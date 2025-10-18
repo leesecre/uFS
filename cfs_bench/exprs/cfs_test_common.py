@@ -8,8 +8,7 @@ import signal
 import subprocess
 import sys
 import time
-import mmap
-import struct
+
 import psutil
 from sarge import Capture, run
 
@@ -255,24 +254,7 @@ def signal_to_process(process_name, sig=signal.SIGINT):
     for pid in pids:
         os.system(f"kill -{sig.value} {pid}")
 
-def expr_checkpoint_oxbow():
-    oxbow_root = os.environ.get("OXBOW_ROOT")
-    if oxbow_root:
-        # Send local checkpoint signal (from host to host)
-        # script_path = os.path.join(oxbow_root, "scripts", "device",
-        # "send_ckpt_signal.sh")
-
-        # Send remote checkpoint signal (from host to device)
-        if os.environ.get("OXBOW_HOST_JOURNALING") is not None:
-            script_path = os.path.join(oxbow_root, "scripts", "host", "host_journaling_ckpt.sh")
-        else:
-            script_path = os.path.join(oxbow_root, "scripts", "host", "remote_ckpt.sh")
-        os.system(f"bash {script_path}")
-        input("Push enter when checkpoint is done. ")
-    else:
-        print("Check set_env.sh for OXBOW_ROOT")
-
-def is_oxbow_running(name) -> bool:
+def is_local_oxbow_proc_running(name) -> bool:
     for proc in psutil.process_iter(attrs=["name"]):
         if proc.info["name"] == name:
             print("{} is running".format(name))
@@ -280,39 +262,62 @@ def is_oxbow_running(name) -> bool:
     print("{} is not running".format(name))
     return False
 
+# Oxbow status directory path. Must be same with EXP_FLAG_DIR in oxbow/devfs/include/common/oxbow.h
+OXBOW_STATUS_PATH = "/mnt/oxbow_flag"
 
-DAEMON_STATUS = "/dev/shm/oxbow_daemon"
-DEVFS_STATUS = "/dev/shm/oxbow_devfs"
-MODULE_INIT=1
-MODULE_UNINIT=0
-FLAG_SIZE = 4
+DAEMON_STATUS = os.path.join(OXBOW_STATUS_PATH, "daemon_status")
+DEVFS_STATUS = os.path.join(OXBOW_STATUS_PATH, "devfs_status")
+CKPT_DONE_STATUS = os.path.join(OXBOW_STATUS_PATH, "ckpt_done")
+MODULE_INIT = 1
+MODULE_UNINIT = 0
 
-def read_status(process):
-    with open(process, "rb") as f:
-        with mmap.mmap(f.fileno(), FLAG_SIZE, access=mmap.ACCESS_READ) as mm:
-            mm.seek(0)
-            data = mm.read(FLAG_SIZE)
-            (flag,) = struct.unpack("i", data)
-            return flag
+def read_status(status_path):
+    with open(status_path, "r", encoding="utf-8") as f:
+        line = f.readline()
+    line = line.rstrip("\r\n")
+    if line == "":
+        raise ValueError("Empty status file")
+    try:
+        return int(line.strip())
+    except ValueError as exc:
+        raise ValueError(f"Invalid status value: {line!r}") from exc
 
-def wait_oxbow_module(process, type):
-    print("Wait until {} {}".format(process, "init" if type == 1 else "exit"))
-    if type not in (0, 1):
+def write_status(status_path, value):
+    if status_path is None:
+        raise ValueError("status_path must not be None")
+    try:
+        int_value = int(value)
+    except (TypeError, ValueError) as exc:
+        raise ValueError(f"Invalid status value: {value!r}") from exc
+    directory = os.path.dirname(status_path)
+    if directory and not os.path.exists(directory):
+        os.makedirs(directory, exist_ok=True)
+    with open(status_path, "w", encoding="utf-8") as f:
+        f.write(f"{int_value}\n")
+
+def wait_oxbow_status_flag(status_path, expected_value):
+    print(
+        "Wait until {} becomes {}".format(
+            status_path, "1" if expected_value == 1 else "0"
+        )
+    )
+    if expected_value not in (0, 1):
         raise ValueError("expected_value must be 0 (uninit) or 1 (init)")
+
     while True:
         time.sleep(1)
         try:
-            status = read_status(process)
-            if status == type:
+            status = read_status(status_path)
+            if status == expected_value:
                 break
         except Exception as e:
             print(f"error: {e}")
 
 def expr_exit_oxbow_daemon():
     print("Exit secure daemon")
-    if is_oxbow_running("secure_daemon"):
+    if is_local_oxbow_proc_running("secure_daemon"):
         signal_to_process("secure_daemon", sig=signal.SIGINT)
-        wait_oxbow_module(DAEMON_STATUS, MODULE_UNINIT)
+        wait_oxbow_status_flag(DAEMON_STATUS, MODULE_UNINIT)
     time.sleep(1)
     mount_point = "/oxbow"
     result = os.system(f"umount {mount_point}")
@@ -321,36 +326,45 @@ def expr_exit_oxbow_daemon():
 
 def expr_start_oxbow_daemon():
     print("Start daemon.")
+
+    # Reset status before starting daemon.
+    write_status(DAEMON_STATUS, MODULE_UNINIT)
+
     tmux_daemon_pane = "oxbow:0.0"
     # cmd = "cd ~/codes/oxbow.code/oxbow/secure_daemon && ./run.sh"
     cmd = "cd $SECURE_DAEMON && ./run.sh"
     tmux_cmd = f'tmux send-keys -t {tmux_daemon_pane} "{cmd}" Enter'
     os.system(tmux_cmd)
-    wait_oxbow_module(DAEMON_STATUS, MODULE_INIT)
+
+    # Wait until it is ready.
+    wait_oxbow_status_flag(DAEMON_STATUS, MODULE_INIT)
 
 def expr_start_oxbow_devfs():
     print("Start devfs.")
+
+    # Reset status before starting devfs.
+    write_status(DEVFS_STATUS, MODULE_UNINIT)
+
     tmux_daemon_pane = "oxbow:0.3"
     # cmd = "cd ~/codes/oxbow.code/oxbow/devfs && ./run.sh"
     cmd = "cd $DEVFS && ./run.sh"
     tmux_cmd = f'tmux send-keys -t {tmux_daemon_pane} "{cmd}" Enter'
     os.system(tmux_cmd)
-    if os.environ.get("OXBOW_HOST_JOURNALING") is not None:
-        wait_oxbow_module(DEVFS_STATUS, MODULE_INIT)
-    else:
-        time.sleep(5)
 
-def exit_local_devfs():
-    print("Exit local devfs.")
-    if is_oxbow_running("devfs"):
-        signal_to_process("devfs", sig=signal.SIGINT)
-        wait_oxbow_module(DEVFS_STATUS, MODULE_UNINIT)
-    time.sleep(1)
+    # Wait until it is ready.
+    wait_oxbow_status_flag(DEVFS_STATUS, MODULE_INIT)
+
+# def exit_local_devfs():
+#     print("Exit local devfs.")
+#     if is_local_oxbow_proc_running("devfs"):
+#         signal_to_process("devfs", sig=signal.SIGINT)
+#         wait_oxbow_module(DEVFS_STATUS, MODULE_UNINIT)
+#     time.sleep(1)
 
 def expr_exit_oxbow_devfs():
     print("Exit devfs.")
-    if os.environ.get("OXBOW_HOST_JOURNALING") is not None:
-        return exit_local_devfs()
+    # if os.environ.get("OXBOW_HOST_JOURNALING") is not None:
+    #     return exit_local_devfs()
     tmux_daemon_pane = "oxbow:0.3"
     tmux_cmd = f"tmux send-keys -t {tmux_daemon_pane} C-c"
     os.system(tmux_cmd)
@@ -359,6 +373,30 @@ def expr_exit_oxbow_devfs():
     # signal_to_process("devfs", sig=signal.SIGINT)
 
     time.sleep(1)
+
+def expr_checkpoint_oxbow():
+    oxbow_root = os.environ.get("OXBOW_ROOT")
+    if oxbow_root:
+        # Send local checkpoint signal (from host to host)
+        # script_path = os.path.join(oxbow_root, "scripts", "device",
+        # "send_ckpt_signal.sh")
+
+        # Clear checkpoint flag.
+        write_status(CKPT_DONE_STATUS, 0)
+
+        # Send remote checkpoint signal (from host to device)
+        if os.environ.get("OXBOW_HOST_JOURNALING") is not None:
+            script_path = os.path.join(oxbow_root, "scripts", "host", "host_journaling_ckpt.sh")
+        else:
+            script_path = os.path.join(oxbow_root, "scripts", "host", "remote_ckpt.sh")
+        os.system(f"bash {script_path}")
+
+        # Wait until checkpoint is done.
+        wait_oxbow_status_flag(CKPT_DONE_STATUS, 1)
+
+    else:
+        print("Check set_env.sh for OXBOW_ROOT")
+        exit(1)
 
 
 def clear_page_cache_oxbow():

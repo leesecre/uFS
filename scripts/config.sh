@@ -36,5 +36,5 @@ export UFSBENCH_WORKLOADS="WDPR"
 export PREPARE_DATA_ONLY_ONCE="1"
 
 # Oxbow setting
-export OXBOW_HOST_JOURNALING="1"
-export OXBOW_USE_VM_ENV="1"
+# export OXBOW_HOST_JOURNALING="1"
+# export OXBOW_USE_VM_ENV="1"
