@@ -1,13 +1,13 @@
+import csv
 import os
 import re
-import csv
-from pathlib import Path
 from collections import defaultdict
+from pathlib import Path
 
-# 작업 디렉토리 기준으로 실행
+# Execute relative to the working directory
 BASE_DIR = Path('.')
 
-# 디렉토리명 → operation 이름 매핑
+# Map directory name to operation name
 dir_to_op = {
     'ADPS': 'append',
     'WDPS': 'sequential write',
@@ -51,7 +51,7 @@ def find_and_parse_all_logs():
         op_key = match_dir.group(1)
         subdirs.append((op_key, subdir))
 
-    # op 순서대로 정렬
+    # Sort by operation order
     subdirs.sort(key=lambda x: op_order.index(dir_to_op.get(x[0], '')))
 
     for op_key, subdir in subdirs:
@@ -69,7 +69,7 @@ def find_and_parse_all_logs():
             syncop = int(match_syncop.group(1))
             app_dirs.append((syncop, process_count, app_dir))
 
-        # syncop → process 순 정렬
+        # Sort by (syncop, process)
         app_dirs.sort()
 
         for syncop, process_count, app_dir in app_dirs:
@@ -77,7 +77,7 @@ def find_and_parse_all_logs():
                 if log_file.is_file():
                     parse_throughput_from_log(log_file, syncop, operation, process_count)
 
-def write_throughput_csv(filename='throughput_results.csv'):
+def write_throughput_csv(filename='ufs_micro_tput_results.csv'):
     with open(filename, 'w', newline='') as f:
         writer = csv.writer(f)
         writer.writerow(["syncop", "operation", "io size (K)", "process", "total throughput (MB/s)"])

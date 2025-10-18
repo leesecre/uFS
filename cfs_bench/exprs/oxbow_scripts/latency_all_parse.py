@@ -3,10 +3,10 @@ import os
 import re
 from pathlib import Path
 
-# 작업 디렉토리 기준으로 실행
+# Execute relative to the working directory
 BASE_DIR = Path(".")
 
-# operation 이름 매핑
+# Operation ordering and mapping
 operation_order = [
     "append",
     "sequential write",
@@ -22,11 +22,11 @@ dir_to_op = {
     "RDPR": "random read",
 }
 
-# 결과 저장용 리스트
+# Container for parsed results
 results = []
 
 
-# bench_log_0 파싱 함수
+# Parse a single bench_log_0 file
 def parse_bench_log(filepath, operation):
     with open(filepath, "r") as f:
         lines = f.readlines()
@@ -89,7 +89,7 @@ def parse_bench_log(filepath, operation):
 
         i += 1
 
-    # 마지막 블록 처리
+    # Handle the last block
     if io_size and op_stats:
         row = [
             operation,
@@ -113,10 +113,10 @@ def parse_bench_log(filepath, operation):
         results.append(row)
 
 
-# 디렉토리 순회
+# Walk directories and parse matching logs
 def find_and_parse_logs():
-    for subdir in BASE_DIR.rglob("oxbow_*_run_0"):
-        match = re.search(r"oxbow_(ADPS|RDPR|RDPS|WDPR|WDPS)_run_0", str(subdir))
+    for subdir in BASE_DIR.rglob("oxbow_*_L_run_0"):
+        match = re.search(r"oxbow_(ADPS|RDPR|RDPS|WDPR|WDPS)_L_run_0", str(subdir))
         if match:
             key = match.group(1)
             operation = dir_to_op[key]
@@ -127,8 +127,8 @@ def find_and_parse_logs():
                             parse_bench_log(log_file, operation)
 
 
-# CSV 저장 함수
-def write_csv(filename="results.csv"):
+# Write results to CSV
+def write_csv(filename="ufs_micro_lat_results.csv"):
     header = [
         "operation",
         "io size (K)",

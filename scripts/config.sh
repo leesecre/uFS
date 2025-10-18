@@ -7,13 +7,15 @@ export UFSBENCH_IOSIZE="4K"
 export UFSBENCH_NUMAPP=1 # nr of applications to run concurrently, uFS supports up to 10
 
 # export UFSBENCH_FILESIZE=$((5 * 1024 * 1024 * 1024)) # File size for microbenchmarks
-export UFSBENCH_FILESIZE=$((1 * 1024 * 1024 * 1024)) # 1GB
+# export UFSBENCH_FILESIZE=$((1 * 1024 * 1024 * 1024)) # 1GB
+export UFSBENCH_FILESIZE=$((2 * 1024 * 1024 * 1024)) # 2GB
 
 # export UFSBENCH_SYNC_OP=131072
 export UFSBENCH_SYNC_OP=131072
 
 # export UFSBENCH_LAT_TOTAL_SIZE=$((1 * 1024 * 1024 * 1024)) # Latency benchmarks total size
-export UFSBENCH_LAT_TOTAL_SIZE=$((128 * 1024 * 1024)) # 128MB
+# export UFSBENCH_LAT_TOTAL_SIZE=$((128 * 1024 * 1024)) # 128MB
+export UFSBENCH_LAT_TOTAL_SIZE=$((1 * 1024 * 1024 * 1024)) # 1GB
 
 # Enable perf, latency benchmark automatically disable perf
 export UFSBENCH_ENBALE_PERF="1" # comment out to disable perf
@@ -26,8 +28,9 @@ export UFSBENCH_ENBALE_PERF="1" # comment out to disable perf
 ##   WDPR,WDPR_L   - Random overwrite
 
 # export UFSBENCH_WORKLOADS="RDPR,RDPR_L,RDPS,RDPS_L"
-export UFSBENCH_WORKLOADS="WDPR"
-# export UFSBENCH_WORKLOADS="RDPR,ADPS,WDPS,WDPR,RDPR_L,ADPS_L,WDPS_L,WDPR_L"
+# export UFSBENCH_WORKLOADS="WDPR"
+export UFSBENCH_WORKLOADS="ADPS,WDPS,WDPR,RDPR,RDPS,ADPS_L,WDPS_L,WDPR_L,RDPR_L,RDPS_L"
+# export UFSBENCH_WORKLOADS="RDPR,RDPS,RDPR_L,RDPS_L"
 
 
 # uFS make files on every running, which takes a long time.

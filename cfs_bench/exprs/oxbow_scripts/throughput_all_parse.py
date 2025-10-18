@@ -4,17 +4,17 @@ import re
 from collections import defaultdict
 from pathlib import Path
 
-# 작업 디렉토리 기준으로 실행
+# Execute relative to the working directory
 BASE_DIR = Path(".")
 
-# 디렉토리명 → operation 이름 매핑
+# Map directory name to operation name
 dir_to_op = {
     "ADPS": "append",
     "WDPS": "sequential write",
     "WDPR": "random write",
     "RDPS": "sequential read",
     "RDPR": "random read",
-    # 필요한 경우 더 추가 가능
+    # Add more if needed
 }
 
 op_order = ["ADPS", "WDPS", "WDPR", "RDPS", "RDPR"]
@@ -54,7 +54,7 @@ def find_and_parse_all_logs():
         op_key = match_dir.group(1)
         subdirs.append((op_key, subdir))
 
-    # 원하는 순서대로 정렬
+    # Sort in the desired order
     subdirs.sort(key=lambda x: op_order.index(x[0]))
 
     for op_key, subdir in subdirs:
@@ -64,16 +64,16 @@ def find_and_parse_all_logs():
 
         app_dirs = []
         for app_dir in subdir.glob("log_oxbow_*_throughput*"):
-            match_app = re.search(r"(\d+)$", app_dir.name)  # 디렉토리 이름 끝의 숫자
+            match_app = re.search(r"(\d+)$", app_dir.name)  # Trailing number in directory name
             if not match_app:
                 continue
             process_count = int(match_app.group(1))
             app_dirs.append((process_count, app_dir))
 
-        # 숫자 기준 오름차순 정렬
+        # Sort ascending by the numeric value
         app_dirs.sort(key=lambda x: x[0])
 
-        # 로그 파일 파싱
+        # Parse log files
         for process_count, app_dir in app_dirs:
             for log_file in app_dir.rglob("bench_log_*"):
                 if log_file.is_file():
@@ -95,10 +95,10 @@ def write_throughput_csv(filename="throughput_results.csv"):
             ["operation", "io size (K)", "process", "total throughput (MB/s)"]
         )
 
-        # 정렬: operation → io_size → process_count 순
+        # Sort by: operation → io_size → process_count
         sorted_keys = sorted(
             throughput_results.keys(),
-            key=lambda x: (op_order.index(x[0]), x[1], x[2]),  # io_size는 정수
+            key=lambda x: (op_order.index(x[0]), x[1], x[2]),  # io_size is an integer
         )
 
         for operation, io_size, process_count in sorted_keys:
