@@ -401,6 +401,7 @@ def bench_write_all(
     iosize_str = os.environ.get("UFSBENCH_IOSIZE")
     iosize_list = [s.strip() for s in iosize_str.split(',') if s.strip()]
     iosize_bytes_list = [cfs_tc.parse_size_to_bytes(s) for s in iosize_list]
+    sync_numop_4k = bench_cfg_dict["--sync_numop="]
 
     if is_thp:
         value_sz_op_num_dict = {
@@ -429,13 +430,15 @@ def bench_write_all(
                     bench_cfg_dict["--value_size="] = vs
                     bench_cfg_dict["--numop="] = nop
 
-                    if (vs > 4096) and (bench_cfg_dict["--sync_numop="] > 1):
-                        adjust_sync_numop = int(
-                            bench_cfg_dict["--sync_numop="] / (vs / 4096)
-                        )
+                    if (vs > 4096) and (sync_numop_4k > 1):
+                        adjust_sync_numop = int(sync_numop_4k / (vs / 4096))
                         if adjust_sync_numop == 0:
                             adjust_sync_numop = 1
                         bench_cfg_dict["--sync_numop="] = adjust_sync_numop
+
+                    # print(
+                    #     f"[CHECK] sync_numop: 4k({sync_numop_4k}) adjusted to {vs} bytes({bench_cfg_dict['--sync_numop=']})"
+                    # )
 
                     cfs_tc.mk_accessible_dir(cur_run_log_dir)
                     if is_append:
