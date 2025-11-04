@@ -430,6 +430,14 @@ def bench_write_all(
                     bench_cfg_dict["--value_size="] = vs
                     bench_cfg_dict["--numop="] = nop
 
+                    ### Align the write I/Os.
+                    # bench_cfg_dict['--rw_align_bytes='] = 4096
+                    if vs > 4096:
+                        bench_cfg_dict['--rw_align_bytes='] = 4096 * \
+                            (int((vs - 1) / 4096) + 1)
+                    else:
+                        bench_cfg_dict['--rw_align_bytes='] = vs
+
                     if (vs > 4096) and (sync_numop_4k > 1):
                         adjust_sync_numop = int(sync_numop_4k / (vs / 4096))
                         if adjust_sync_numop == 0:
