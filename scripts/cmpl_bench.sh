@@ -85,8 +85,8 @@ function cmpl_leveldb() {
     cd "$UFS_APP_BENCH/leveldb-1.22"
     sudo rm -rf build
     mkdir build && cd build
-    # cmake ${LDB_CMAKE_CFS_ARG} -DCMAKE_BUILD_TYPE=Release ..
-    cmake ${LDB_CMAKE_CFS_ARG} -DCMAKE_BUILD_TYPE=Debug ..
+    cmake ${LDB_CMAKE_CFS_ARG} -DCMAKE_BUILD_TYPE=Release ..
+    # cmake ${LDB_CMAKE_CFS_ARG} -DCMAKE_BUILD_TYPE=Debug ..
     make -j
 }
 

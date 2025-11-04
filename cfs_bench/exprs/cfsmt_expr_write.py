@@ -451,6 +451,13 @@ def bench_write_all(
                             cfs_tc.expr_mkfs_for_kfs()
                         # wait a bit after mkfs
                         time.sleep(1)
+
+                    if not is_append:
+                        if is_oxbow:
+                            # To reset the journal free space.
+                            print("To reset the journal free space:")
+                            cfs_tc.restart_oxbow_devfs()
+
                     me_read.expr_read_mtfsp_multiapp(
                         cur_run_log_dir,
                         nfswk,

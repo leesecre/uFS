@@ -435,6 +435,10 @@ def expr_mkfs_oxbow():
     expr_start_oxbow_devfs()
     expr_start_oxbow_daemon()
 
+def restart_oxbow_devfs():
+    print("Restart devfs.")
+    expr_exit_oxbow_devfs()
+    expr_start_oxbow_devfs()
 
 def fsp_do_clean_sock():
     os.system("rm -f /ufs-*")

@@ -1,12 +1,12 @@
 #!/usr/bin/env python3
 # encoding: utf-8
 
-import sys
 import os
+import sys
 import time
 
-import cfsmt_expr_read as mte_rd
 import cfs_test_common as tc
+import cfsmt_expr_read as mte_rd
 
 
 def print_usage():
@@ -77,7 +77,10 @@ if cur_numapp > 16:
     cur_numapp = 16
 
 if cur_is_throughput:
-    num_app_list = [x for x in [1, 2, 4, 8, 16] if x < cur_numapp]
+    if cur_is_fsp:
+        num_app_list = [x for x in [1, 2, 4, 8, 10] if x < cur_numapp]
+    else:
+        num_app_list = [x for x in [1, 2, 4, 8, 10, 16] if x < cur_numapp]
     num_app_list.append(cur_numapp)
     num_app_list = sorted(num_app_list)
 else:

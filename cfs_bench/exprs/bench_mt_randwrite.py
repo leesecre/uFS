@@ -1,12 +1,12 @@
 #!/usr/bin/env python3
 # encoding: utf-8
 
-import sys
 import os
+import sys
 import time
 
-import cfsmt_expr_write as mte_wr
 import cfs_test_common as tc
+import cfsmt_expr_write as mte_wr
 
 
 def print_usage():
@@ -85,8 +85,10 @@ for sync_op in sync_op_list:
     if sync_op == 1:
         num_app_list = [1] # for latency benchmark
     else:
-        # num_app_list = [1,2,4,8,10] # uFS
-        num_app_list = [1,2,4,8,10,16] # oxbow, ext4
+        if cur_is_fsp:
+            num_app_list = [1,2,4,8,10] # uFS
+        else:
+            num_app_list = [1,2,4,8,10,16] # oxbow, ext4
 
     for num_app in num_app_list:
         cur_num_fs_wk_list = [(i + 1) for i in range(num_app)]

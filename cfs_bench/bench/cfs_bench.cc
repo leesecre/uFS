@@ -1153,18 +1153,28 @@ private:
 #endif
       } else {
         cur_off = thread->rand.Next() % randWriteRange;
+        // fprintf(stderr,
+        //         "[cfs_bench] rand cur_off:%ld\n", cur_off);
         if (FLAGS_rw_align_bytes != 0) {
           cur_off = (cur_off / FLAGS_rw_align_bytes) * FLAGS_rw_align_bytes;
+          // fprintf(
+          //     stderr,
+          //     "[cfs_bench] FLAGS_rw_align_bytes:%d, rand aligned cur_off:%ld\n",
+          //     FLAGS_rw_align_bytes, cur_off);
         }
+
         if (FLAGS_block_no >= 0) {
+          fprintf(stderr,
+                  "[cfs_bench] FLAGS_block_no:%ld, block aligned cur_off:%ld\n",
+                  FLAGS_block_no, cur_off);
           cur_off = FLAGS_block_no * gBlockSize;
         }
 #ifndef CFS_USE_POSIX
         // rc = fs_pwrite(thread->fd, slice.data(), cur_value_size, cur_off);
         rc = fs_allocated_pwrite(thread->fd, wdata, cur_value_size, cur_off);
 #else
-        // fprintf(stdout, "cur_size:%d, cur_off:%ld\n", cur_value_size,
-        // cur_off);
+        // fprintf(stderr, "[cfs_bench] fd:%d, cur_size:%d, cur_off:%ld\n",
+        //         thread->fd, cur_value_size, cur_off);
         // rc = pwrite(thread->fd, slice.data(), cur_value_size, cur_off);
         rc = pwrite(thread->fd, wdata, cur_value_size, cur_off);
 #endif
@@ -1180,6 +1190,10 @@ private:
       if (curSyncCounter == FLAGS_sync_numop) {
         int srt;
 
+        // fprintf(stderr,
+        //         "fsync start aid:%d curSyncCounter:%d FLAGS_sync_numop:%d\n",
+        //         thread->aid, curSyncCounter, FLAGS_sync_numop);
+
         fsync_start = PerfUtils::Cycles::toNanoseconds(g_env->NowCycles());
 #ifndef CFS_USE_POSIX
         srt = fs_fdatasync(thread->fd);
@@ -1187,6 +1201,11 @@ private:
         srt = fdatasync(thread->fd);
 #endif
         fsync_end = PerfUtils::Cycles::toNanoseconds(g_env->NowCycles());
+
+        // fprintf(stderr,
+        //         "fsync end aid:%d curSyncCounter:%d FLAGS_sync_numop:%d\n",
+        //         thread->aid, curSyncCounter, FLAGS_sync_numop);
+
         if (srt < 0) {
           fprintf(stderr, "fdatasync error:%s i:%d srt:%d\n", strerror(errno),
                   i, srt);
@@ -1546,6 +1565,8 @@ private:
       }
       // max_req_num = FLAGS_max_file_size / FLAGS_rw_align_bytes;
       max_req_num = thread->fileSize / FLAGS_rw_align_bytes;
+      fprintf(stderr, "max_req_num: %lu fileSize: %lu rw_align_bytes: %d\n",
+              max_req_num, thread->fileSize, FLAGS_rw_align_bytes);
       if (numop_ > max_req_num) {
         fprintf(stderr,
                 "file size not enough to complete the aligned req max:%lu\n",
@@ -1692,6 +1713,8 @@ private:
       cur_flags = O_RDWR;
       thread->fileSize = statbuf.st_size;
       fprintf(stdout, "open with O_RDWR aid:%d\n", thread->aid);
+      fprintf(stderr, "fileSize: %lu (%lu MB)\n", thread->fileSize,
+              thread->fileSize / (1024 * 1024));
     } else {
       if (errno == ENOENT) {
         cur_flags = O_CREAT | O_RDWR;
@@ -1709,6 +1732,8 @@ private:
     fd = fs_open(thread->path.data(), cur_flags, 0644);
 #else
     fd = open(thread->path.data(), cur_flags, 0644);
+    fprintf(stderr, "[cfs_bench] open fd:%d, path:%s\n", fd,
+            thread->path.data());
 #endif
     if (fd < 0) {
       fprintf(stderr, "fs_open(%s) error, file cannot be created/opened\n",

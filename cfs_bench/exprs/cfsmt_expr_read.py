@@ -1,16 +1,16 @@
 #!/usr/bin/env python3
 # encoding: utf-8
 
-import sys
 import os
-import time
-import psutil
-import subprocess
 import signal
+import subprocess
+import sys
+import time
 
-from sarge import run, Capture
 import cfs_test_common as cfs_tc
+import psutil
 from cfs_test_common import start_bench_coordinator
+from sarge import Capture, run
 
 '''
 NOTE: assume data is initialized by "init_mt_bench_file.py*
@@ -67,9 +67,7 @@ def expr_read_mtfsp_multiapp(
             cfs_tc.clear_page_cache(is_slient=False)
 
     print(log_dir_name)
-    bench_log_name = '{}/bench_log'.format(log_dir_name)
     fsp_log_name = '{}/fsp_log'.format(log_dir_name)
-    expr_cfg_name = '{}/expr_cfg'.format(log_dir_name)
 
     # make sure essential fields are passed in via the dict
     cfg_essential_fields = [
@@ -89,6 +87,10 @@ def expr_read_mtfsp_multiapp(
     }
     if bench_cfg_dict is not None:
         bench_args.update(bench_cfg_dict)
+
+    expr_cfg_name = '{}/expr_cfg_iosize{}'.format(log_dir_name, bench_args['--value_size='])
+
+    bench_log_name = '{}/bench_log_iosize{}'.format(log_dir_name, bench_args['--value_size='])
 
     if per_app_name_prefix is not None:
         assert (bench_args['--benchmarks=']
@@ -506,9 +508,11 @@ def bench_rand_read(
                             case_log_dir, str(is_fsp), str(cp), str(pc),
                             str(nfswk),str(is_thp))
                     bench_cfg_dict['--value_size='] = vs
-                    # if vs > 4096:
-                    #     bench_cfg_dict['--rw_align_bytes='] = 4096 * \
-                    #         (int((vs - 1) / 4096) + 1)
+                    if vs > 4096:
+                        bench_cfg_dict['--rw_align_bytes='] = 4096 * \
+                            (int((vs - 1) / 4096) + 1)
+                    else:
+                        bench_cfg_dict['--rw_align_bytes='] = vs
 
                     bench_cfg_dict['--numop='] = nop
                     cfs_tc.mk_accessible_dir(cur_run_log_dir)
