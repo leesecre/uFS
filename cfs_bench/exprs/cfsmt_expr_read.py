@@ -589,6 +589,8 @@ def bench_cached_read(log_dir, num_app_proc=1, is_fsp=True,
                     else:
                         bench_cfg_dict['--rw_align_bytes='] = cur_align_bytes
 
+                    print(f"rw_align_bytes: {bench_cfg_dict['--rw_align_bytes=']} for iosize {vs} bytes")
+
                     cfs_tc.mk_accessible_dir(cur_run_log_dir)
                     expr_read_mtfsp_multiapp(cur_run_log_dir, nfswk,
                                              num_app_proc, bench_cfg_dict,
