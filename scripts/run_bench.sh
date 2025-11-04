@@ -11,7 +11,7 @@ fi
 function print_usage() {
   echo "Usage: $0 <bench> <filesystem>"
   echo "  <bench>       : microbench | filebench | leveldb"
-  echo "  <filesystem>  : ufs | oxbow | ext4"
+  echo "  <filesystem>  : ufs | oxbow | ext4 | ext4nj | ext4dj"
   exit 1
 }
 
@@ -42,25 +42,24 @@ function mk-data-dir() {
 }
 
 function run_microbench() {
-    data_dir="$(mk-data-dir microbench_$1)"
-    echo "${@:2} will be saved in $data_dir"
+  data_dir="$(mk-data-dir microbench_$1)"
+  echo "${@:3} will be saved in $data_dir"
 
-    cmd="python3 fsp_microbench_suite.py --fs "$1""
-    cmd+=" --numapp=$UFSBENCH_NUMAPP"
-    cmd+=" --jobs=$UFSBENCH_WORKLOADS"
-    cmd+=" ${@:2}"
+  cmd="python3 fsp_microbench_suite.py --fs "$1""
+  cmd+=" --numapp=$2"
+  cmd+=" --jobs=$UFSBENCH_WORKLOADS"
+  cmd+=" ${@:3}"
 
-    cd $BENCH_UFS/cfs_bench/exprs
-  
-    if [ "$1" = "ext4" ] || [ "$1" = "ext4nj" ] || [ "$1" = "ext4dj" ]; then
-        reset-spdk
-        sudo -E $cmd
-        sudo mv $BENCH_UFS/ext4_*_run_0 "$data_dir"
-    elif [ "$1" = "oxbow" ]; then
-        sudo -E $cmd
-        sudo mv $BENCH_UFS/oxbow_*_run_0 "$data_dir"
-    fi
+  cd $BENCH_UFS/cfs_bench/exprs
 
+  if [ "$1" = "ext4" ] || [ "$1" = "ext4nj" ] || [ "$1" = "ext4dj" ]; then
+      reset-spdk
+      sudo -E $cmd
+      sudo mv $BENCH_UFS/ext4_*_run_0 "$data_dir"
+  elif [ "$1" = "oxbow" ]; then
+      sudo -E $cmd
+      sudo mv $BENCH_UFS/oxbow_*_run_0 "$data_dir"
+  fi
 }
 
 if [ $# -lt 2 ]; then
@@ -76,7 +75,7 @@ if [[ "$BENCH" != "microbench" && "$BENCH" != "filebench" && "$BENCH" != "leveld
   print_usage
 fi
 
-if [[ "$FS_TYPE" != "oxbow" && "$FS_TYPE" != "ext4" ]]; then
+if [[ "$FS_TYPE" != "oxbow" && "$FS_TYPE" != "ext4" && "$FS_TYPE" != "ext4nj" && "$FS_TYPE" != "ext4dj" ]]; then
   echo "Error: Invalid filesystem name '$FS_TYPE'."
   print_usage
 fi
