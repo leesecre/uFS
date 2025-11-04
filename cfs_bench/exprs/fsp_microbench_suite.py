@@ -93,7 +93,7 @@ def setup_ext4(
     has_journal=True, data_journal=False, readahead_kb=None, delay_allocate=True
 ):
     if data_journal:
-        MKFS_OPTIONS = "-t ext4 -J size=10000 -E lazy_itable_init=0,lazy_journal_init=0 -F"
+        MKFS_OPTIONS = "-t ext4 -J size=40000 -E lazy_itable_init=0,lazy_journal_init=0 -F" # ~40GB journal size (max allowed by ext4, in MB)
     else:
         MKFS_OPTIONS = "-t ext4 -F -E lazy_itable_init=0,lazy_journal_init=0 -F"
 
