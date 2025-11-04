@@ -1,3 +1,4 @@
+import argparse
 import csv
 import os
 import re
@@ -28,7 +29,7 @@ results = []
 
 # Parse a single bench_log_0 file
 def parse_bench_log(filepath, operation):
-    with open(filepath, "r") as f:
+    with open(filepath, "r", encoding="utf-8") as f:
         lines = f.readlines()
 
     io_size = None
@@ -77,17 +78,26 @@ def parse_bench_log(filepath, operation):
             in_op = False
 
         elif in_op or in_fsync:
+            # print(f"in_op: {in_op}, in_fsync: {in_fsync} line: {line}")
             stats_line = line.strip()
             match = re.findall(
                 r"(Count|Average|StdDev|Min|Median|Max):\s*([\d.]+)", stats_line
             )
             for key, val in match:
                 if in_op:
+                    # print(f"in_op: {key.lower()} {val}")
                     op_stats[key.lower()] = float(val)
                 elif in_fsync:
+                    # print(f"in_fsync: {key.lower()} {val}")
                     fsync_stats[key.lower()] = float(val)
 
         i += 1
+    
+    # print(f"filepath: {filepath}")
+    # print(f"operation: {operation}")
+    # print(f"io_size: {io_size}")
+    # print(f"op_stats: {op_stats}")
+    # print(f"fsync_stats: {fsync_stats}\n")
 
     # Handle the last block
     if io_size and op_stats:
@@ -114,21 +124,23 @@ def parse_bench_log(filepath, operation):
 
 
 # Walk directories and parse matching logs
-def find_and_parse_logs():
-    for subdir in BASE_DIR.rglob("oxbow_*_L_run_0"):
-        match = re.search(r"oxbow_(ADPS|RDPR|RDPS|WDPR|WDPS)_L_run_0", str(subdir))
+def find_and_parse_logs(system_name):
+    pattern = f"{system_name}_*_L_run_0"
+    for subdir in BASE_DIR.rglob(pattern):
+        match = re.search(fr"{re.escape(system_name)}_(ADPS|RDPR|RDPS|WDPR|WDPS)_L_run_0", str(subdir))
         if match:
             key = match.group(1)
             operation = dir_to_op[key]
-            for latency_dir in subdir.rglob("*_latency"):
+            for latency_dir in subdir.rglob("*_latency*"):
                 if latency_dir.is_dir():
-                    for log_file in latency_dir.rglob("bench_log_0"):
+                    for log_file in latency_dir.rglob("bench_log_*_0"):
                         if log_file.is_file():
                             parse_bench_log(log_file, operation)
 
 
 # Write results to CSV
-def write_csv(filename="ufs_micro_lat_results.csv"):
+def write_latency_csv(system_name):
+    filename = f"{system_name}_micro_lat_results.csv"
     header = [
         "operation",
         "io size (K)",
@@ -143,7 +155,7 @@ def write_csv(filename="ufs_micro_lat_results.csv"):
         "fsync median",
         "fsync max",
     ]
-    with open(filename, "w", newline="") as f:
+    with open(filename, "w", newline="", encoding="utf-8") as f:
         writer = csv.writer(f)
         writer.writerow(header)
         for op in operation_order:
@@ -151,7 +163,14 @@ def write_csv(filename="ufs_micro_lat_results.csv"):
                 if row[0] == op:
                     writer.writerow(row)
 
+    print(f"Latency result is saved to {filename}.")
+    os.system(f"cat {filename}")
 
 if __name__ == "__main__":
-    find_and_parse_logs()
-    write_csv()
+    parser = argparse.ArgumentParser(description='Parse latency results from benchmark logs')
+    parser.add_argument('--system', '-s', required=True, choices=['oxbow', 'ext4'],
+                        help='System name (oxbow or ext4)')
+    args = parser.parse_args()
+
+    find_and_parse_logs(args.system)
+    write_latency_csv(args.system)
