@@ -125,6 +125,15 @@ def process_perf_files(perf_files):
             file_results_ready = future.result()
             if file_results_ready:
                 results.extend(file_results_ready)
+    
+    # Sort results to ensure deterministic output order
+    # Sort by: workload priority, iosize, app, process
+    results.sort(key=lambda x: (
+        workload_priority.get(x["workload"], 99),
+        x["iosize"],
+        x["app"],
+        x["process"]
+    ))
     return results
 
 # Save to CSV

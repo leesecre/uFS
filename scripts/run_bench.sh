@@ -1,7 +1,53 @@
 #! /bin/bash
 set -e
 
-KFS_MOUNT_PATH="/ssd-data"
+## Argument checking
+if [ $# -lt 2 ]; then
+  echo "Error: Missing required arguments."
+  print_usage
+fi
+
+BENCH=$1
+FS_TYPE=$2
+
+if [[ "$BENCH" != "microbench" && "$BENCH" != "filebench" && "$BENCH" != "leveldb" ]]; then
+  echo "Error: Invalid bench name '$BENCH'."
+  print_usage
+fi
+
+if [[ "$FS_TYPE" != "oxbow" && "$FS_TYPE" != "ext4" && "$FS_TYPE" != "ext4nj" && "$FS_TYPE" != "ext4dj" ]]; then
+  echo "Error: Invalid filesystem name '$FS_TYPE'."
+  print_usage
+fi
+
+if [[ "$FS_TYPE" == "ext4" || "$FS_TYPE" == "ext4nj" || "$FS_TYPE" == "ext4dj" ]]; then
+  export NVME_DEV_NAME="$NVME_DEV_NAME_EXT4"
+else
+  export NVME_DEV_NAME="$NVME_DEV_NAME"
+fi
+echo "NVMe device name: $NVME_DEV_NAME"
+
+export AE_SSD_NAME="$NVME_DEV_NAME"
+
+## Required for running microbench and leveldb.
+export KFS_MOUNT_PATH="/ssd-data"
+
+## Required for running leveldb.
+export CFS_ROOT_DIR="$BENCH_UFS"
+export AE_REPO_DIR="$BENCH_UFS"
+# export AE_WORK_DIR="$BENCH_UFS"
+export AE_SCRIPT_DIR="$BENCH_UFS/cfs_bench/exprs/artifact_eval"
+export AE_BENCH_REPO_DIR="$BENCH_UFS/oxbow-uFS_bench"
+export AE_EXT4_WAIT_AFTER_MOUNT='15'  # unit is second
+export AE_DATA_DIR="${BENCH_UFS}/DATA"
+export OXBOW_LEVELDB_SNAPSHOT_FILE_PATH="${BENCH_UFS}/leveldb_oxbow_snapshot.img"
+
+# Oxbow status directory path. Must be same with EXP_FLAG_DIR in oxbow/devfs/include/common/oxbow.h
+export EXP_FLAG_DIR="${EXP_FLAG_DIR:-/mnt/oxbow_flag}"
+
+# Do not set both at the same time. (Cf. run_ldb_oxbow.py)
+export LDB_OXB_CREATE_SNAP="${LDB_OXB_CREATE_SNAP:-0}" # Create a snapshot of db.
+export LDB_OXB_LOAD_SNAP="${LDB_OXB_LOAD_SNAP:-0}" # Use a snapshot instead of filling db.
 
 if [ -z "$OXBOW_ENV_SOURCED" ]; then
 	echo "Do source set_env.sh first. in oxbow root directory"
@@ -46,7 +92,7 @@ function run_microbench() {
   echo "${@:3} will be saved in $data_dir"
 
   cmd="python3 fsp_microbench_suite.py --fs "$1""
-  cmd+=" --numapp=$2"
+  cmd+=" --numapp=$UFSBENCH_NUMAPP"
   cmd+=" --jobs=$UFSBENCH_WORKLOADS"
   cmd+=" ${@:3}"
 
@@ -61,24 +107,6 @@ function run_microbench() {
       sudo mv $BENCH_UFS/oxbow_*_run_0 "$data_dir"
   fi
 }
-
-if [ $# -lt 2 ]; then
-  echo "Error: Missing required arguments."
-  print_usage
-fi
-
-BENCH=$1
-FS_TYPE=$2
-
-if [[ "$BENCH" != "microbench" && "$BENCH" != "filebench" && "$BENCH" != "leveldb" ]]; then
-  echo "Error: Invalid bench name '$BENCH'."
-  print_usage
-fi
-
-if [[ "$FS_TYPE" != "oxbow" && "$FS_TYPE" != "ext4" && "$FS_TYPE" != "ext4nj" && "$FS_TYPE" != "ext4dj" ]]; then
-  echo "Error: Invalid filesystem name '$FS_TYPE'."
-  print_usage
-fi
 
 echo "Running benchmark: $BENCH with filesystem: $FS_TYPE"
 source "$BENCH_UFS/scripts/config.sh"
@@ -95,11 +123,11 @@ sudo rm -rf "/dev/shm/coordinator"
 
 if [[ "$BENCH" == "microbench" ]]; then
   run_microbench "$FS_TYPE"
+
 elif [[ "$BENCH" == "leveldb" ]]; then
   # Ensure leveldb is compiled
-  source "$AE_SCRIPT_DIR/run-leveldb.sh"
-  # Run leveldb
-  run_leveldb "$FS_TYPE" "$BENCH"
+  sudo -E "$AE_SCRIPT_DIR/run-leveldb.sh $LEVELDB_WORKLOAD $FS_TYPE"
+
 else
   # Ensure microbench is compiled
   source "$AE_SCRIPT_DIR/run-microbench.sh"

@@ -262,9 +262,7 @@ def is_local_oxbow_proc_running(name) -> bool:
     print("{} is not running".format(name))
     return False
 
-# Oxbow status directory path. Must be same with EXP_FLAG_DIR in oxbow/devfs/include/common/oxbow.h
-OXBOW_STATUS_PATH = "/mnt/oxbow_flag"
-
+OXBOW_STATUS_PATH = os.environ.get("EXP_FLAG_DIR")
 DAEMON_STATUS = os.path.join(OXBOW_STATUS_PATH, "daemon_status")
 DEVFS_STATUS = os.path.join(OXBOW_STATUS_PATH, "devfs_status")
 CKPT_DONE_STATUS = os.path.join(OXBOW_STATUS_PATH, "ckpt_done")

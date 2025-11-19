@@ -119,8 +119,7 @@ elif [ "$2" = "ext4" ] || [ "$2" = "ext4dj" ]; then
 	reset-ext4
 elif [ "$2" = "oxbow" ]; then
 	if [ "$1" = "all" ]; then
-		# for job in 'a' 'b' 'c' 'd' 'e' 'f'
-		for job in 'a'
+		for job in 'a' 'b' 'c' 'd' 'e' 'f'
 		do
 			run_one_workload_oxbow "ycsb-${job}"
 		done
