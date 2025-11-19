@@ -52,10 +52,14 @@ if [ "$2" = "ufs" ]; then
 	# Clean up config files
 	cleanup-ufs-config
 
-elif [ "$2" = "ext4" ]; then
+elif [ "$2" = "ext4" ] || [ "$2" = "ext4dj" ]; then
 	# Ensure SSD is unbound from SPDK
 	reset-spdk
-	setup-ext4
+	if [ "$2" = "ext4dj" ]; then
+		setup-ext4 1
+	else
+		setup-ext4 0
+	fi
 
 	echo "===================================================================="
 	echo "Ext4 mount succeeds. However before further experiments, we will wait for $AE_EXT4_WAIT_AFTER_MOUNT seconds, because ext4's mount contains lazy operations, which would affect performance significantly. To ensure fair comparsion, we will resume experiments $AE_EXT4_WAIT_AFTER_MOUNT seconds later. Go grab a coffee!"

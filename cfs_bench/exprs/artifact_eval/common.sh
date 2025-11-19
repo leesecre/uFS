@@ -75,18 +75,23 @@ function reset-spdk() {
 }
 
 # Here is the recommended pattern of using ext4:
-# - setup-ext4
+# - setup-ext4 [data_journal]
 # - sleep 300
 # - do as many experiments as possible (batch)
 # - reset-ext4
 # This batching is to avoid redundant time spent on waiting ext4 to finish
 # lazy operations (see below)
+#
+# Usage: setup-ext4 [data_journal]
+#   data_journal: boolean (1/true/yes to enable data=journal mount option, default: 0)
 
 # NOTE: ext4 have many lazy operations in mount, so it is strongly recommended
 #       to wait for ~5 min before further experiments
 # Ref: https://askubuntu.com/questions/402785/writes-occurring-to-fresh-ext4-partition-every-second-endlessly-cause-and-solut
 # TODO: use non-lazy mount
 function setup-ext4() {
+	data_journal="${1:-0}"  # default to false if not provided
+	
 	DEV_NAME="/dev/$AE_SSD_NAME"
 	# check if already mount; if yes, umount first and print warning
 	if sudo grep -qF "$DEV_NAME $KFS_MOUNT_PATH" /proc/mounts ; then
@@ -94,12 +99,20 @@ function setup-ext4() {
 		echo "      Will umount first before setup ext4"
 		sudo umount "$KFS_MOUNT_PATH"
 	fi
-	sudo mke2fs -t ext4 -J size=10000 -E lazy_itable_init=0,lazy_journal_init=0 -N 10000 -F -G 1 "$DEV_NAME"
-	#sudo mount "$DEV_NAME" "$KFS_MOUNT_PATH"
-	sudo mount -o data=journal "$DEV_NAME" "$KFS_MOUNT_PATH"
-	echo "warming up SSD"
-	sudo dd if=/dev/zero of="$KFS_MOUNT_PATH"/temp bs=1G count=100 oflag=direct
-	# sudo mount -o data=journal "$DEV_NAME" "$KFS_MOUNT_PATH"
+	echo "sudo mke2fs -t ext4 -J size=40000 -E lazy_itable_init=0,lazy_journal_init=0 -F \"$DEV_NAME\""
+	sudo mke2fs -t ext4 -J size=40000 -E lazy_itable_init=0,lazy_journal_init=0 -F "$DEV_NAME"
+
+	if [ "$data_journal" = "1" ] || [ "$data_journal" = "true" ] || [ "$data_journal" = "yes" ]; then
+		echo "sudo mount -o data=journal \"$DEV_NAME\" \"$KFS_MOUNT_PATH\""
+		sudo mount -o data=journal "$DEV_NAME" "$KFS_MOUNT_PATH"
+	else
+		echo "sudo mount \"$DEV_NAME\" \"$KFS_MOUNT_PATH\""
+		sudo mount "$DEV_NAME" "$KFS_MOUNT_PATH"
+	fi
+
+	# echo "warming up SSD:"
+	# echo "sudo dd if=/dev/zero of=\"$KFS_MOUNT_PATH\"/temp bs=1G count=100 oflag=direct"
+	# sudo dd if=/dev/zero of="$KFS_MOUNT_PATH"/temp bs=1G count=100 oflag=direct
 }
 
 function reset-ext4() {

@@ -84,10 +84,14 @@ if [ "$2" = "ufs" ]; then
 	else
 		run_one_workload_ufs "$1"
 	fi
-elif [ "$2" = "ext4" ]; then
+elif [ "$2" = "ext4" ] || [ "$2" = "ext4dj" ]; then
 	# Make sure the device can be seen by the kernel
 	reset-spdk
-	setup-ext4
+	if [ "$2" = "ext4dj" ]; then
+		setup-ext4 1
+	else
+		setup-ext4 0
+	fi
 
 	sudo rm -rf "/ssd-data/0"
 	sudo rm -rf "$REUSE_DATA_DIR"
