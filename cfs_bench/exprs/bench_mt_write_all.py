@@ -151,6 +151,7 @@ for num_app in num_app_list:
         is_thp=cur_is_throughput,
         is_append=cur_is_append,
         is_random=cur_is_random,
+        strict_no_overlap=cur_is_no_overlap,
         per_app_fname=per_app_fname,
         dump_iostat=cur_dump_io_stat,
         cfs_update_dict=cur_cfs_update_dict,

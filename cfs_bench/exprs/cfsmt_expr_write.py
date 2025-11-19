@@ -375,6 +375,7 @@ def bench_write_all(
     is_append=False,
     is_random=False,
     num_fsp_worker_list=None,
+    strict_no_overlap=True,
     per_app_fname=None,
     dump_mpstat=False,
     dump_iostat=False,
@@ -385,6 +386,8 @@ def bench_write_all(
     if is_random:
         case_name = "rwrite"
         bench_cfg_dict = {"--benchmarks=": "rwrite", }
+        if strict_no_overlap:
+            bench_cfg_dict['--rand_no_overlap='] = 1
     else:
         if is_append:
             case_name = "append"

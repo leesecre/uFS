@@ -1111,6 +1111,48 @@ private:
     // assume will be *cached random write*
     uint64_t randWriteRange = std::min(FLAGS_max_file_size, thread->fileSize);
 
+    // prepare non-overlapping offsets for random write if requested
+    std::vector<off_t> off_vec;
+    uint64_t max_req_num = numop_;
+    if (!seq && FLAGS_rand_no_overlap) {
+      if (value_random_size_) {
+        fprintf(stderr, "rand_no_overlap=1 requires value_random_size=0 for writes\n");
+        exit(1);
+      }
+      if (FLAGS_rw_align_bytes == 0) {
+        fprintf(stderr, "random_no_overalap=1 => rw_align_bytes should not be 0\n");
+        exit(1);
+      }
+      if (value_size_ > (int)FLAGS_rw_align_bytes) {
+        fprintf(stderr,
+                "rand_no_overlap=1 requires value_size (%d) ≤ rw_align_bytes (%d) to avoid overlap; increase rw_align_bytes or reduce value_size.\n",
+                value_size_, (int)FLAGS_rw_align_bytes);
+        exit(1);
+      }
+      if (FLAGS_block_no >= 0) {
+        fprintf(stderr, "rand_no_overlap=1 conflicts with block_no; unset block_no\n");
+        exit(1);
+      }
+      if (randWriteRange == 0) {
+        fprintf(stderr, "random write range is 0; file too small or not initialized\n");
+        exit(1);
+      }
+      max_req_num = randWriteRange / FLAGS_rw_align_bytes;
+      fprintf(stderr, "max_req_num: %lu writeRange: %lu rw_align_bytes: %d\n",
+              max_req_num, randWriteRange, FLAGS_rw_align_bytes);
+      if (numop_ > max_req_num) {
+        fprintf(stderr,
+                "Insufficient write range for no-overlap random write: need %d ops * %uB stride, have only %lu slots (range=%lu). Increase file size/max_file_size or reduce numop.\n",
+                numop_, (unsigned)FLAGS_rw_align_bytes, max_req_num, (unsigned long)randWriteRange);
+        exit(1);
+      }
+      off_vec.resize(max_req_num);
+      for (uint64_t i = 0; i < max_req_num; i++) {
+        off_vec[i] = (FLAGS_rw_align_bytes * i) % randWriteRange;
+      }
+      std::random_shuffle(off_vec.begin(), off_vec.end());
+    }
+
     if (FLAGS_wid > 0 && (!FLAGS_share_mode)) {
 #ifndef CFS_USE_POSIX
       fprintf(stderr, "assign to:%d\n", FLAGS_wid);
@@ -1152,15 +1194,19 @@ private:
         rc = write(thread->fd, wdata, cur_value_size);
 #endif
       } else {
-        cur_off = thread->rand.Next() % randWriteRange;
-        // fprintf(stderr,
-        //         "[cfs_bench] rand cur_off:%ld\n", cur_off);
-        if (FLAGS_rw_align_bytes != 0) {
-          cur_off = (cur_off / FLAGS_rw_align_bytes) * FLAGS_rw_align_bytes;
-          // fprintf(
-          //     stderr,
-          //     "[cfs_bench] FLAGS_rw_align_bytes:%d, rand aligned cur_off:%ld\n",
-          //     FLAGS_rw_align_bytes, cur_off);
+        if (FLAGS_rand_no_overlap && FLAGS_rw_align_bytes != 0) {
+          cur_off = off_vec[i];
+        } else {
+          cur_off = thread->rand.Next() % randWriteRange;
+          // fprintf(stderr,
+          //         "[cfs_bench] rand cur_off:%ld\n", cur_off);
+          if (FLAGS_rw_align_bytes != 0) {
+            cur_off = (cur_off / FLAGS_rw_align_bytes) * FLAGS_rw_align_bytes;
+            // fprintf(
+            //     stderr,
+            //     "[cfs_bench] FLAGS_rw_align_bytes:%d, rand aligned cur_off:%ld\n",
+            //     FLAGS_rw_align_bytes, cur_off);
+          }
         }
 
         if (FLAGS_block_no >= 0) {
@@ -1557,20 +1603,34 @@ private:
     uint64_t max_req_num;
 
     if (FLAGS_rand_no_overlap) {
-      // this benchmark would like to make sure no IO is overlap
-      if (FLAGS_rand_no_overlap && FLAGS_rw_align_bytes == 0) {
-        fprintf(stderr, "random_no_overalap=1 => rw_align_bytes should not be"
-                        "0\n");
+      // require fixed request size and valid alignment
+      if (value_random_size_) {
+        fprintf(stderr, "rand_no_overlap=1 requires value_random_size=0\n");
         exit(1);
       }
-      // max_req_num = FLAGS_max_file_size / FLAGS_rw_align_bytes;
+      if (FLAGS_rw_align_bytes <= 0) {
+        fprintf(stderr, "rand_no_overlap=1 requires rw_align_bytes > 0\n");
+        exit(1);
+      }
+      if (value_size_ > (int)FLAGS_rw_align_bytes) {
+        fprintf(stderr,
+                "rand_no_overlap=1 requires value_size (%d) ≤ rw_align_bytes (%d) to avoid overlap; increase rw_align_bytes or reduce value_size.\n",
+                value_size_, (int)FLAGS_rw_align_bytes);
+        exit(1);
+      }
+      if (FLAGS_block_no >= 0) {
+        fprintf(stderr, "rand_no_overlap=1 conflicts with block_no; unset block_no\n");
+        exit(1);
+      }
+      // Number of non-overlapping aligned slots available in the file range
       max_req_num = thread->fileSize / FLAGS_rw_align_bytes;
       fprintf(stderr, "max_req_num: %lu fileSize: %lu rw_align_bytes: %d\n",
               max_req_num, thread->fileSize, FLAGS_rw_align_bytes);
       if (numop_ > max_req_num) {
         fprintf(stderr,
-                "file size not enough to complete the aligned req max:%lu\n",
-                max_req_num);
+                "Insufficient file size for no-overlap random read: need %d ops * %uB stride, have only %lu slots (fileSize=%lu). Increase file size or reduce numop.\n",
+                numop_, (unsigned)FLAGS_rw_align_bytes, max_req_num, (unsigned long)thread->fileSize);
+        exit(1);
       }
     } else {
       // it is okay to overlap
