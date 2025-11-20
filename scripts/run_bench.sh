@@ -21,7 +21,8 @@ if [[ "$FS_TYPE" != "oxbow" && "$FS_TYPE" != "ext4" && "$FS_TYPE" != "ext4nj" &&
 fi
 
 if [[ "$FS_TYPE" == "ext4" || "$FS_TYPE" == "ext4nj" || "$FS_TYPE" == "ext4dj" ]]; then
-  export NVME_DEV_NAME="$NVME_DEV_NAME_EXT4"
+  # Use NVME_DEV_NAME_EXT4 when available; otherwise keep existing NVME_DEV_NAME.
+  export NVME_DEV_NAME="${NVME_DEV_NAME_EXT4:-$NVME_DEV_NAME}"
 else
   export NVME_DEV_NAME="$NVME_DEV_NAME"
 fi
