@@ -121,8 +121,15 @@ elif [ "$2" = "ext4" ] || [ "$2" = "ext4dj" ]; then
 	# umount ext4
 	reset-ext4
 elif [ "$2" = "oxbow" ]; then
-	if [ "$1" = "all" ]; then
-		for job in 'a' 'b' 'c' 'd' 'e' 'f'
+	if [ "$LDB_OXB_CREATE_SNAP" = "1" ]; then
+		echo "Creating LevelDB snapshot..."
+
+		run_one_workload_oxbow "$1" # Parameter does not matter.
+
+		echo "LevelDB snapshot created. Done."
+		exit 0 # Exit after creating a snapshot.
+
+	elif [ "$1" = "all" ]; then for job in 'a' 'b' 'c' 'd' 'e' 'f'
 		do
 			run_one_workload_oxbow "ycsb-${job}"
 		done
