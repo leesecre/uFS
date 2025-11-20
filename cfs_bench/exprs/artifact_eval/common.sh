@@ -99,8 +99,10 @@ function setup-ext4() {
 		echo "      Will umount first before setup ext4"
 		sudo umount "$KFS_MOUNT_PATH"
 	fi
-	echo "sudo mke2fs -t ext4 -J size=40000 -E lazy_itable_init=0,lazy_journal_init=0 -F \"$DEV_NAME\""
-	sudo mke2fs -t ext4 -J size=40000 -E lazy_itable_init=0,lazy_journal_init=0 -F "$DEV_NAME"
+	# Use EXT4_JNL_SIZE from environment if set; default to 40000 (in MB).
+	local jnl_size="${EXT4_JNL_SIZE:-40000}"
+	echo "sudo mke2fs -t ext4 -J size=${jnl_size} -E lazy_itable_init=0,lazy_journal_init=0 -F \"$DEV_NAME\""
+	sudo mke2fs -t ext4 -J size="${jnl_size}" -E lazy_itable_init=0,lazy_journal_init=0 -F "$DEV_NAME"
 
 	if [ "$data_journal" = "1" ] || [ "$data_journal" = "true" ] || [ "$data_journal" = "yes" ]; then
 		echo "sudo mount -o data=journal \"$DEV_NAME\" \"$KFS_MOUNT_PATH\""

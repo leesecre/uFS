@@ -92,11 +92,20 @@ def reset_spdk():
 def setup_ext4(
     has_journal=True, data_journal=False, readahead_kb=None, delay_allocate=True
 ):
+    ext4_jnl_size = os.environ.get("EXT4_JNL_SIZE", "40000") # Max value.
+
     if data_journal:
-        MKFS_OPTIONS = "-t ext4 -J size=40000 -E lazy_itable_init=0,lazy_journal_init=0 -F" # ~40GB journal size (max allowed by ext4, in MB)
+        # Journal size comes from EXT4_JNL_SIZE env (in MB); default is 40000 if unset.
+        MKFS_OPTIONS = (
+            f"-t ext4 -J size={ext4_jnl_size} "
+            "-E lazy_itable_init=0,lazy_journal_init=0 -F"
+        )
     else:
         # MKFS_OPTIONS = "-t ext4 -F -E lazy_itable_init=0,lazy_journal_init=0 -F"
-        MKFS_OPTIONS = "-t ext4 -J size=40000 -E lazy_itable_init=0,lazy_journal_init=0 -F"
+        MKFS_OPTIONS = (
+            f"-t ext4 -J size={ext4_jnl_size} "
+            "-E lazy_itable_init=0,lazy_journal_init=0 -F"
+        )
 
     cmd = "mke2fs {} {}".format(MKFS_OPTIONS, DEV_NAME)
     print("mkfs command: $", cmd)
