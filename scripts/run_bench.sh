@@ -87,6 +87,68 @@ function mk-data-dir() {
 	echo "$data_dir"
 }
 
+function collect_leveldb_data() {
+	# Collect LevelDB experiment data for a given filesystem into a single
+	# timestamped directory under $AE_DATA_DIR.
+	local fs_system="$1"
+
+	# Artifact-eval scripts use "ufs", "ext4", "ext4dj", "oxbow" in
+	# DATA_leveldb_*_<fs> directory names.
+	local src_fs="$fs_system"
+	if [[ "$src_fs" == "ext4nj" ]]; then
+		src_fs="ext4"
+	fi
+
+	if [ -z "${AE_DATA_DIR:-}" ]; then
+		echo "AE_DATA_DIR is not set; skip LevelDB data collection."
+		return
+	fi
+
+	mkdir -p "$AE_DATA_DIR"
+
+	local ts
+	if [ -n "${LEVELDB_BENCH_TS:-}" ]; then
+		ts="$LEVELDB_BENCH_TS"
+	else
+		ts=$(date +%m-%d-%H-%M-%S)
+	fi
+	local dest_dir="$AE_DATA_DIR/leveldb_${src_fs}_${ts}"
+	mkdir -p "$dest_dir"
+
+	local found_any="false"
+
+	for src_link in "$AE_DATA_DIR"/DATA_leveldb_*_"$src_fs"; do
+		if [ ! -e "$src_link" ]; then
+			continue
+		fi
+
+		found_any="true"
+
+		local base
+		base=$(basename "$src_link")
+
+		# Resolve real path in case it is a symlink.
+		local real_path
+		real_path=$(readlink -f "$src_link" 2>/dev/null || echo "")
+		if [ -z "$real_path" ] || [ ! -d "$real_path" ]; then
+			continue
+		fi
+
+		local dst="$dest_dir/$base"
+		mkdir -p "$dst"
+
+		# Copy all contents from the real data directory.
+		cp -a "$real_path"/. "$dst"/
+	done
+
+	if [[ "$found_any" == "false" ]]; then
+		echo "No LevelDB data directories found for filesystem '$src_fs' under $AE_DATA_DIR."
+		rmdir "$dest_dir" 2>/dev/null || true
+	else
+		echo "LevelDB data collected under: $dest_dir"
+	fi
+}
+
 function run_microbench() {
   data_dir="$(mk-data-dir microbench_$1)"
   echo "${@:3} will be saved in $data_dir"
@@ -125,8 +187,15 @@ if [[ "$BENCH" == "microbench" ]]; then
   run_microbench "$FS_TYPE"
 
 elif [[ "$BENCH" == "leveldb" ]]; then
+
+  LEVELDB_BENCH_TS=$(date +%m-%d-%H-%M-%S)
+
   # Ensure leveldb is compiled
   sudo -E "$AE_SCRIPT_DIR/run-leveldb.sh" "$LEVELDB_WORKLOAD" "$FS_TYPE"
+
+  # After running LevelDB workloads, collect all DATA_leveldb_*_<fs> entries
+  # into a single timestamped directory for convenience.
+  collect_leveldb_data "$FS_TYPE"
 
 else
   # Ensure microbench is compiled

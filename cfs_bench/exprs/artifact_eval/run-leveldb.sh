@@ -6,11 +6,12 @@ set -e  # exit if any fails
 set -u  # all env vars must be set
 
 function print_usage_and_exit() {
-	echo "Usage: $0 [ ycsb-a | ycsb-b | ycsb-c | ycsb-d | ycsb-e | ycsb-f | all ] [ ufs | ext4 ]"
+	echo "Usage: $0 [ ycsb-a | ycsb-b | ycsb-c | ycsb-d | ycsb-e | ycsb-f | all ] [ ufs | ext4 | ext4dj | oxbow ]"
 	echo "  Specify which LevelDB workload to run on which filesystem"
 	echo "    workload: 6 workloads available (shown above) OR run them all"
 	echo "    ufs:  run uFS for given workload from 1 app to 10 apps"
 	echo "    ext4: run ext4 for given workload from 1 app to 10 apps"
+	echo "    ext4dj: run ext4dj for given workload from 1 app to 10 apps"
 	exit 1
 }
 
@@ -19,7 +20,7 @@ if [ ! "$1" = "ycsb-a" ] && [ ! "$1" = "ycsb-b" ] && [ ! "$1" = "ycsb-c" ] && \
 	[ ! "$1" = "ycsb-d" ] && [ ! "$1" = "ycsb-e" ] && [ ! "$1" = "ycsb-f" ] && \
 	[ ! "$1" = "all"  ]
 then print_usage_and_exit; fi
-if [ ! "$2" = "ufs" ] && [ ! "$2" = "ext4" ] && [ ! "$2" = "oxbow" ]; then print_usage_and_exit; fi
+if [ ! "$2" = "ufs" ] && [ ! "$2" = "ext4" ] && [ ! "$2" = "ext4dj" ] && [ ! "$2" = "oxbow" ]; then print_usage_and_exit; fi
 
 # Finish checking, now execute
 source "$AE_SCRIPT_DIR/common.sh"
@@ -39,13 +40,15 @@ function run_one_workload_ufs() {
 
 function run_one_workload_ext4() {
 	workload=$1
-	data_dir="$(mk-data-dir leveldb_${workload}_ext4)"
+	fs_type=$2
+	data_dir="$(mk-data-dir leveldb_${workload}_${fs_type})"
 	echo "Run LevelDB: $workload"
-	sudo -E python3 scripts/run_ldb_ext4.py --workload "$workload" --output-dir "$data_dir" --reuse-data-dir $REUSE_DATA_DIR "${@:2}"
+	sudo -E python3 scripts/run_ldb_ext4.py --workload "$workload" --output-dir "$data_dir" --reuse-data-dir $REUSE_DATA_DIR "${@:3}"
 }
 
 function load_data_ext4() {
-	run_one_workload_ext4 fillseq --num-app-only 10
+	fs_type=$1
+	run_one_workload_ext4 fillseq "$fs_type" --num-app-only 10
 }
 
 function run_one_workload_oxbow() {
@@ -105,14 +108,14 @@ elif [ "$2" = "ext4" ] || [ "$2" = "ext4dj" ]; then
 	echo "Now we resumes..."
 
 	if [ "$1" = "all" ]; then
-		load_data_ext4
+		load_data_ext4 "$2"
 		for job in 'a' 'b' 'c' 'd' 'e' 'f'
 		do
-			run_one_workload_ext4 "ycsb-${job}"
+			run_one_workload_ext4 "ycsb-${job}" "$2"
 		done
 	else
-		load_data_ext4
-		run_one_workload_ext4 "$1"
+		load_data_ext4 "$2"
+		run_one_workload_ext4 "$1" "$2"
 	fi
 
 	# umount ext4
