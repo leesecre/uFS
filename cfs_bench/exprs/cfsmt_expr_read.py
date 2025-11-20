@@ -275,8 +275,8 @@ def expr_read_mtfsp_multiapp(
         # for i in range(num_app_proc):
         #     bench_app_cmd_dict[i] = '{}'.format(bench_app_cmd_dict[i])
 
-    do_perf=False
-    if os.environ.get("UFSBENCH_ENBALE_PERF") is not None and is_throughput:
+    do_perf = False
+    if os.environ.get("UFSBENCH_ENABLE_PERF") is not None and is_throughput:
         perf_dir_name = '{}/perf'.format(log_dir_name)
         subprocess.run("sudo mkdir -p {}".format(perf_dir_name), shell=True, check=True)
 
