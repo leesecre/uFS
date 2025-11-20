@@ -126,7 +126,7 @@ if [[ "$BENCH" == "microbench" ]]; then
 
 elif [[ "$BENCH" == "leveldb" ]]; then
   # Ensure leveldb is compiled
-  sudo -E "$AE_SCRIPT_DIR/run-leveldb.sh $LEVELDB_WORKLOAD $FS_TYPE"
+  sudo -E "$AE_SCRIPT_DIR/run-leveldb.sh" "$LEVELDB_WORKLOAD" "$FS_TYPE"
 
 else
   # Ensure microbench is compiled
