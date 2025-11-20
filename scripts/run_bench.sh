@@ -146,7 +146,7 @@ function collect_leveldb_data() {
 		echo "No LevelDB data directories found for filesystem '$src_fs' under $AE_DATA_DIR."
 		rmdir "$dest_dir" 2>/dev/null || true
 	else
-		echo "LevelDB data collected under: $dest_dir"
+		echo "LevelDB results collected under: $dest_dir"
 	fi
 }
 

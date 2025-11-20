@@ -11,6 +11,13 @@ function mk-data-dir() {
 	fi
 	exper_name="$1"
 	latest_dir="$(pwd)/DATA_${exper_name}_latest"
+
+	if [ -z "${AE_DATA_DIR:-}" ]; then
+		echo "AE_DATA_DIR is not set; please export it before running mk-data-dir." >&2
+		exit 1
+	fi
+	sudo mkdir -p "$AE_DATA_DIR"
+
 	ae_data_dir="$AE_DATA_DIR/DATA_${exper_name}"
 	sudo rm -rf "$latest_dir"
 	sudo rm -rf "$ae_data_dir"
