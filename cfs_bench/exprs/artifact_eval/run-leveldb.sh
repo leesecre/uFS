@@ -124,7 +124,7 @@ elif [ "$2" = "oxbow" ]; then
 	if [ "$LDB_OXB_CREATE_SNAP" = "1" ]; then
 		echo "Creating LevelDB snapshot..."
 
-		run_one_workload_oxbow "$1" # Parameter does not matter.
+		run_one_workload_oxbow "ycsb-a" # Parameter does not matter.
 
 		echo "LevelDB snapshot created. Done."
 		exit 0 # Exit after creating a snapshot.
