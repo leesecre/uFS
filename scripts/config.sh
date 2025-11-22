@@ -64,7 +64,12 @@ export LEVELDB_WORKLOAD="all"
 
 # Do not set both at the same time. (Cf. run_ldb_oxbow.py)
 export LDB_OXB_CREATE_SNAP=0 # Create a snapshot of db.
-export LDB_OXB_LOAD_SNAP=1 # Use a snapshot instead of filling db.
+export LDB_OXB_LOAD_SNAP=0 # Use a snapshot instead of filling db.
+
+# LevelDB snapshot size in MB for dd (bs=1M, total size = LDB_OXB_SNAP_SIZE_MB
+# MB).
+# It should be matched with File system area size. (cf. ext4_mkfs.c)
+export LDB_OXB_SNAP_SIZE_MB=10240 # 10 GB.
 
 ### Ext4 Configuration ###
 export EXT4_JNL_SIZE=40000 # Around 40GB journal size (max allowed by ext4, in MB)
