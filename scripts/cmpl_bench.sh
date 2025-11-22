@@ -2,6 +2,8 @@
 # This script for compiling other benchmarks rather than uFS_bench; microbench.
 set -e
 
+SANITIZE=0 # Enable sanitizer for leveldb.
+
 if [ -z "$OXBOW_ENV_SOURCED" ]; then
 	echo "Do source set_env.sh first. in oxbow root directory"
 	exit
@@ -82,11 +84,23 @@ function cmpl_leveldb() {
         LDB_CMAKE_CFS_ARG="-DLEVELDB_JL_LIBCFS=OFF -DLEVELDB_JL_OXBOW=OFF"
     fi
 
+    # Optional sanitizer flags (enabled when SANITIZE=1)
+    local SAN_FLAGS=""
+    local BUILD_TYPE="Release"
+    # local BUILD_TYPE="Debug"
+    if [[ "$SANITIZE" == "1" ]]; then
+        SAN_FLAGS="-O1 -g -fsanitize=address,undefined -fno-omit-frame-pointer"
+    fi
+
     cd "$UFS_APP_BENCH/leveldb-1.22"
     sudo rm -rf build
     mkdir build && cd build
-    cmake ${LDB_CMAKE_CFS_ARG} -DCMAKE_BUILD_TYPE=Release ..
-    # cmake ${LDB_CMAKE_CFS_ARG} -DCMAKE_BUILD_TYPE=Debug ..
+    cmake ${LDB_CMAKE_CFS_ARG} \
+        -DCMAKE_BUILD_TYPE=${BUILD_TYPE} \
+        -DCMAKE_C_FLAGS="${SAN_FLAGS}" \
+        -DCMAKE_CXX_FLAGS="${SAN_FLAGS}" \
+        -DCMAKE_EXE_LINKER_FLAGS="${SAN_FLAGS}" \
+        ..
     make -j
 }
 

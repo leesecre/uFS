@@ -27,3 +27,11 @@ TODO:
 ### uFS
 ### oxbow
 ### ext4
+
+## LevelDB
+
+### How to enable sanitizer
+1. Build libfs with sanitizer flag. (`oxbow/libfs/meson.build`)
+2. Build leveldb with sanitizer flag. Set `SANITIZE=1` in `scripts/cmpl_bench.sh`.
+3. Run with env `ASAN_LIB`. Set `ASAN_LIB` in `scripts/config.sh`.
+

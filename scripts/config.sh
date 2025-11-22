@@ -53,6 +53,9 @@ export PREPARE_DATA_ONLY_ONCE="1"
 export LEVELDB_WORKLOAD="all"
 # export LEVELDB_WORKLOAD="a" # one of a,b,c,d,e,f
 
+# Address Sanitizer library path. (for leveldb)
+# export ASAN_LIB=$(gcc -print-file-name=libasan.so)
+
 ### Oxbow Configurations ###
 # export OXBOW_HOST_JOURNALING="1"
 # export OXBOW_USE_VM_ENV="1"
