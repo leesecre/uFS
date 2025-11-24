@@ -6,20 +6,66 @@ set -e  # exit if any fails
 set -u  # all env vars must be set
 
 function print_usage_and_exit() {
-	echo "Usage: $0 [ ycsb-a | ycsb-b | ycsb-c | ycsb-d | ycsb-e | ycsb-f | all ] [ ufs | ext4 | ext4dj | oxbow ]"
+	echo "Usage: $0 [ ycsb-a | ycsb-b | ycsb-c | ycsb-d | ycsb-e | ycsb-f | all | a,b,c | ycsb-a,ycsb-c ] [ ufs | ext4 | ext4dj | oxbow ]"
 	echo "  Specify which LevelDB workload to run on which filesystem"
-	echo "    workload: 6 workloads available (shown above) OR run them all"
+	echo "    workload: 6 workloads available (shown above), run them all, or specify a comma-separated subset"
 	echo "    ufs:  run uFS for given workload from 1 app to 10 apps"
 	echo "    ext4: run ext4 for given workload from 1 app to 10 apps"
 	echo "    ext4dj: run ext4dj for given workload from 1 app to 10 apps"
 	exit 1
 }
 
+WORKLOAD_LIST=()
+
+function parse_workloads() {
+	local arg="$1"
+	local IFS=','
+	local -a tokens=()
+
+	WORKLOAD_LIST=()
+
+	read -ra tokens <<< "$arg"
+
+	local token
+	for token in "${tokens[@]}"; do
+		local t="$token"
+
+		# Remove all whitespace characters
+		t="${t//[[:space:]]/}"
+		if [ -z "$t" ]; then
+			continue
+		fi
+
+		local workload
+		if [[ "$t" == ycsb-* ]]; then
+			workload="$t"
+		else
+			workload="ycsb-$t"
+		fi
+
+		case "$workload" in
+			ycsb-a|ycsb-b|ycsb-c|ycsb-d|ycsb-e|ycsb-f)
+				WORKLOAD_LIST+=("$workload")
+				;;
+			*)
+				return 1
+				;;
+		esac
+	done
+
+	if [ ${#WORKLOAD_LIST[@]} -eq 0 ]; then
+		return 1
+	fi
+
+	return 0
+}
+
 if [ ! $# = "2" ]; then print_usage_and_exit; fi
-if [ ! "$1" = "ycsb-a" ] && [ ! "$1" = "ycsb-b" ] && [ ! "$1" = "ycsb-c" ] && \
-	[ ! "$1" = "ycsb-d" ] && [ ! "$1" = "ycsb-e" ] && [ ! "$1" = "ycsb-f" ] && \
-	[ ! "$1" = "all"  ]
-then print_usage_and_exit; fi
+if [ "$1" != "all" ]; then
+	if ! parse_workloads "$1"; then
+		print_usage_and_exit
+	fi
+fi
 if [ ! "$2" = "ufs" ] && [ ! "$2" = "ext4" ] && [ ! "$2" = "ext4dj" ] && [ ! "$2" = "oxbow" ]; then print_usage_and_exit; fi
 
 # Finish checking, now execute
@@ -79,13 +125,15 @@ if [ "$2" = "ufs" ]; then
 
 	# run_ldb_ufs would do load itself everytime
 	if [ "$1" = "all" ]; then
-		# for job in 'a' 'b' 'c' 'd' 'e' 'f'
-		for job in 'a'
+		for job in 'a' 'b' 'c' 'd' 'e' 'f'
 		do
 			run_one_workload_ufs "ycsb-${job}"
 		done
 	else
-		run_one_workload_ufs "$1"
+		for workload in "${WORKLOAD_LIST[@]}"
+		do
+			run_one_workload_ufs "$workload"
+		done
 	fi
 elif [ "$2" = "ext4" ] || [ "$2" = "ext4dj" ]; then
 	# Make sure the device can be seen by the kernel
@@ -115,7 +163,10 @@ elif [ "$2" = "ext4" ] || [ "$2" = "ext4dj" ]; then
 		done
 	else
 		load_data_ext4 "$2"
-		run_one_workload_ext4 "$1" "$2"
+		for workload in "${WORKLOAD_LIST[@]}"
+		do
+			run_one_workload_ext4 "$workload" "$2"
+		done
 	fi
 
 	# umount ext4
@@ -129,11 +180,15 @@ elif [ "$2" = "oxbow" ]; then
 		echo "LevelDB snapshot created. Done."
 		exit 0 # Exit after creating a snapshot.
 
-	elif [ "$1" = "all" ]; then for job in 'a' 'b' 'c' 'd' 'e' 'f'
+	elif [ "$1" = "all" ]; then
+		for job in 'a' 'b' 'c' 'd' 'e' 'f'
 		do
 			run_one_workload_oxbow "ycsb-${job}"
 		done
 	else
-		run_one_workload_oxbow "$1"
+		for workload in "${WORKLOAD_LIST[@]}"
+		do
+			run_one_workload_oxbow "$workload"
+		done
 	fi
 fi

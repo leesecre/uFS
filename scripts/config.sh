@@ -51,7 +51,7 @@ export PREPARE_DATA_ONLY_ONCE="1"
 
 ### LevelDB configurations ###
 export LEVELDB_WORKLOAD="all"
-# export LEVELDB_WORKLOAD="a" # one of a,b,c,d,e,f
+# export LEVELDB_WORKLOAD="d,e,f" # pick some of a,b,c,d,e,f (comma separate)
 
 # Address Sanitizer library path. (for leveldb)
 # export ASAN_LIB=$(gcc -print-file-name=libasan.so)
