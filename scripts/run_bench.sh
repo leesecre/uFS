@@ -189,6 +189,23 @@ if [[ "$BENCH" == "microbench" ]]; then
 
 elif [[ "$BENCH" == "leveldb" ]]; then
 
+  # Clean up existing LevelDB latest links for this filesystem to avoid mixing
+  # data from previous runs. Artifact-eval scripts use "ufs", "ext4",
+  # "ext4dj", "oxbow" in DATA_leveldb_*_<fs> directory names.
+  if [ -n "${AE_DATA_DIR:-}" ]; then
+    src_fs="$FS_TYPE"
+    if [[ "$src_fs" == "ext4nj" ]]; then
+      src_fs="ext4"
+    fi
+
+    for old_link in "$AE_DATA_DIR"/DATA_leveldb_*_"$src_fs"; do
+      if [ ! -e "$old_link" ]; then
+        continue
+      fi
+      sudo rm -rf "$old_link"
+    done
+  fi
+
   LEVELDB_BENCH_TS=$(date +%m-%d-%H-%M-%S)
 
   # Ensure leveldb is compiled
