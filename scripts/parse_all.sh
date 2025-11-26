@@ -3,7 +3,7 @@
 function print_usage() {
 	echo "Usage: $0 <bench> <filesystem> <result_dir>"
 	echo "  <bench>       : micro | filebench | leveldb"
-	echo "  <filesystem>  : ufs | oxbow | ext4"
+	echo "  <filesystem>  : ufs | oxbow | ext4 | ext4dj"
 	echo "  <result_dir>  : result directory"
 	exit 1
 }
@@ -55,7 +55,85 @@ if [[ "$BENCH" == "micro" ]]; then
 	fi
 
 elif [[ "$BENCH" == "filebench" ]]; then
-	echo "TODO"
+	(
+		cd "$RESULT_DIR" || exit 1
+
+		# Result files may be owned by root.
+		sudo chown -R $USER:$USER .
+
+		if [[ "$FS_TYPE" == "ufs" ]]; then
+			# Original behavior: parse results in the current directory.
+			echo "################ FILEBENCH THROUGHPUT (uFS) ################"
+			python3 "$BENCH_UFS/oxbow-uFS_bench/filebench/scripts/parse_ufs_filebench_results.py"
+			echo "################ FILEBENCH PERF (CPU USAGE, uFS) ###########"
+			python3 "$BENCH_UFS/oxbow-uFS_bench/filebench/scripts/parse_ufs_filebench_perf.py"
+
+			# Print generated summary files with full paths and contents.
+			for f in "filebench_summary_all_sorted.csv" "cpu_usage_results.csv"; do
+				if [[ -f "$f" ]]; then
+					fullpath="$(readlink -f "$f")"
+					echo "Generated file: $fullpath"
+					echo "==================== $fullpath ===================="
+					cat "$f"
+					echo
+				fi
+			done
+		elif [[ "$FS_TYPE" == "ext4" || "$FS_TYPE" == "ext4dj" || "$FS_TYPE" == "oxbow" ]]; then
+			# New layout: RESULT_DIR may contain per-workload subdirectories such as
+			#   DATA_filebench_varmail_${FS_TYPE}
+			#   DATA_filebench_webserver_${FS_TYPE}
+			# Parse all available workloads.
+			workloads=("varmail" "webserver")
+			any_found=0
+
+			for wl in "${workloads[@]}"; do
+				subdir="DATA_filebench_${wl}_${FS_TYPE}"
+				if [[ -d "$subdir" ]]; then
+					any_found=1
+					echo "################ FILEBENCH THROUGHPUT (${FS_TYPE}, ${wl}) ################"
+					(
+						cd "$subdir" || exit 1
+						python3 "$BENCH_UFS/oxbow-uFS_bench/filebench/scripts/parse_ufs_filebench_results.py"
+						echo "################ FILEBENCH PERF (CPU USAGE, ${FS_TYPE}, ${wl}) ###########"
+						python3 "$BENCH_UFS/oxbow-uFS_bench/filebench/scripts/parse_ufs_filebench_perf.py"
+
+						# Print per-workload summary files with full paths and contents.
+						for f in "filebench_summary_all_sorted.csv" "cpu_usage_results.csv"; do
+							if [[ -f "$f" ]]; then
+								fullpath="$(readlink -f "$f")"
+								echo "Generated file: $fullpath"
+								echo "==================== $fullpath ===================="
+								cat "$f"
+								echo
+							fi
+						done
+					)
+				fi
+			done
+
+			# Backward compatibility: if no per-workload subdirectories are found,
+			# fall back to the original behavior of parsing the current directory.
+			if [[ "$any_found" -eq 0 ]]; then
+				echo "################ FILEBENCH THROUGHPUT (${FS_TYPE}) #####"
+				python3 "$BENCH_UFS/oxbow-uFS_bench/filebench/scripts/parse_ufs_filebench_results.py"
+				echo "################ FILEBENCH PERF (CPU USAGE, ${FS_TYPE}) #"
+				python3 "$BENCH_UFS/oxbow-uFS_bench/filebench/scripts/parse_ufs_filebench_perf.py"
+
+				for f in "filebench_summary_all_sorted.csv" "cpu_usage_results.csv"; do
+					if [[ -f "$f" ]]; then
+						fullpath="$(readlink -f "$f")"
+						echo "Generated file: $fullpath"
+						echo "==================== $fullpath ===================="
+						cat "$f"
+						echo
+					fi
+				done
+			fi
+		else
+			echo "Error: filebench parsing for filesystem '$FS_TYPE' is not implemented."
+			print_usage
+		fi
+	)
 elif [[ "$BENCH" == "leveldb" ]]; then
 	(
 		cd "$RESULT_DIR" || exit 1

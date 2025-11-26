@@ -1227,7 +1227,7 @@ private:
       }
 
       if (rc != cur_value_size) {
-        fprintf(stderr, "fs_allocated_write() error return:%d idx:%d\n", rc, i);
+        fprintf(stderr, "pwrite() error return:%d idx:%d\n", rc, i);
         cc.notify_server_that_client_stopped();
         exit(1);
       }

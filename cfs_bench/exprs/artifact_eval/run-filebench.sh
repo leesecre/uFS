@@ -6,18 +6,29 @@ set -e  # exit if any fails
 set -u  # all env vars must be set
 
 function print_usage_and_exit() {
-	echo "Usage: $0 [ varmail | webserver ] [ ufs | ext4 ]"
+	echo "Usage: $0 [ varmail | webserver ] [ ufs | ext4 | ext4dj | oxbow ]"
 	echo "  Specify which filebench to run for which filesystem"
 	echo "    varmail:   Varmail workload"
 	echo "    webserver: Webserver workload"
-	echo "    ufs:  run uFS (for varmail, run 1-10 threads; for webserver, run 0/50/75/100% cache hit rate)"
-	echo "    ext4: run ext4 for given workload"
+	echo "    ufs:      run uFS (for varmail, run 1-10 threads; for webserver, run 0/50/75/100% cache hit rate)"
+	echo "    ext4:     run ext4 for given workload"
+	echo "    ext4dj:   run ext4 with data journaling enabled"
+	echo "    oxbow:    run Oxbow for given workload"
 	exit 1
 }
 
 if [ $# -lt 2 ]; then print_usage_and_exit; fi
 if [ ! "$1" = "varmail" ] && [ ! "$1" = "webserver" ]; then print_usage_and_exit; fi
-if [ ! "$2" = "ufs" ] && [ ! "$2" = "ext4" ]  && [ ! "$2" = "oxbow" ] ; then print_usage_and_exit; fi
+if [ "$2" != "ufs" ] && [ "$2" != "ext4" ] && [ "$2" != "ext4dj" ] && [ "$2" != "oxbow" ]; then
+	print_usage_and_exit
+fi
+
+# Turn off ASLR if it is enabled.
+aslr_status=$(cat /proc/sys/kernel/randomize_va_space)
+if [ "$aslr_status" -ne 0 ]; then
+	echo "ASLR is enabled. Turning it off..."
+	echo 0 | sudo tee /proc/sys/kernel/randomize_va_space
+fi
 
 source "$AE_SCRIPT_DIR/common.sh"
 

@@ -37,9 +37,10 @@ else
 	export UFSBENCH_FILESIZE=$((2 * 1024 * 1024 * 1024)) # 2GB (Throughput)
 	# export UFSBENCH_FILESIZE=$((5 * 1024 * 1024 * 1024)) # uFS Default.
 
-	# Enable perf, latency benchmark automatically disable perf
-	export UFSBENCH_ENABLE_PERF="1" # comment out to disable perf
 fi
+
+# Enable perf, latency micro benchmark automatically disable perf
+export UFSBENCH_ENABLE_PERF="1" # comment out to disable perf
 
 export UFSBENCH_SYNC_OP=131072
 # export UFSBENCH_SYNC_OP=-1 # Only one fsync at the end.
@@ -48,6 +49,11 @@ export UFSBENCH_SYNC_OP=131072
 # This option only prepares data once, and reuses it for every run.
 # [WARN] uFS/oxbow is not tested with this option yet.
 export PREPARE_DATA_ONLY_ONCE="1"
+
+### Filebench configurations ###
+# Comma-separated list of workloads to run for filebench benchmark.
+# Example: "varmail,webserver"
+export FILEBENCH_WORKLOAD="webserver,varmail"
 
 ### LevelDB configurations ###
 export LEVELDB_WORKLOAD="all"
