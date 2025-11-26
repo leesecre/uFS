@@ -72,11 +72,13 @@ elif [ "$2" = "ext4" ] || [ "$2" = "ext4dj" ]; then
 		setup-ext4 0
 	fi
 
-	echo "===================================================================="
-	echo "Ext4 mount succeeds. However before further experiments, we will wait for $AE_EXT4_WAIT_AFTER_MOUNT seconds, because ext4's mount contains lazy operations, which would affect performance significantly. To ensure fair comparsion, we will resume experiments $AE_EXT4_WAIT_AFTER_MOUNT seconds later. Go grab a coffee!"
-	echo "===================================================================="
-	sleep $AE_EXT4_WAIT_AFTER_MOUNT
-	echo "Now we resumes..."
+	### We disable lazy operations in ext4 mount.
+	#
+	# echo "===================================================================="
+	# echo "Ext4 mount succeeds. However before further experiments, we will wait for $AE_EXT4_WAIT_AFTER_MOUNT seconds, because ext4's mount contains lazy operations, which would affect performance significantly. To ensure fair comparsion, we will resume experiments $AE_EXT4_WAIT_AFTER_MOUNT seconds later. Go grab a coffee!"
+	# echo "===================================================================="
+	# sleep $AE_EXT4_WAIT_AFTER_MOUNT
+	# echo "Now we resumes..."
 
 	# Run benchmark
 	if [ "$1" = "varmail" ]; then
