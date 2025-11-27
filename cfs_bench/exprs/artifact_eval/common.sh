@@ -115,7 +115,7 @@ function setup-ext4() {
 		echo "sudo mount -o data=journal \"$DEV_NAME\" \"$KFS_MOUNT_PATH\""
 		sudo mount -o data=journal "$DEV_NAME" "$KFS_MOUNT_PATH"
 	else
-		echo "sudo mount \"$DEV_NAME\" \"$KFS_MOUNT_PATH\""
+		echo "sudo mount -o data=ordered \"$DEV_NAME\" \"$KFS_MOUNT_PATH\""
 		sudo mount "$DEV_NAME" "$KFS_MOUNT_PATH"
 	fi
 
