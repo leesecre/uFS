@@ -249,6 +249,15 @@ function run_microbench() {
       sudo -E "${cmd[@]}"
       sudo mv "$BENCH_UFS"/oxbow_*_run_0 "$data_dir"
   fi
+
+  # Create a symbolic link in the same directory as the result directory that
+  # always points to the latest microbenchmark result for this system.
+  local parent_dir latest_link
+  parent_dir="$(dirname "$data_dir")"
+  latest_link="$parent_dir/DATA_microbench_${1}_latest"
+
+  rm -f "$latest_link"
+  ln -s "$data_dir" "$latest_link"
 }
 
 echo "Running benchmark: $BENCH with filesystem: $FS_TYPE"
