@@ -93,6 +93,11 @@ def setup_ext4(
     has_journal=True, data_journal=False, readahead_kb=None, delay_allocate=True
 ):
     ext4_jnl_size = os.environ.get("EXT4_JNL_SIZE", "40000") # Max value.
+    reuse_data = os.environ.get("MICROBENCH_REUSE_DATA", "").lower() in (
+        "1",
+        "true",
+        "yes",
+    )
 
     if data_journal:
         # Journal size comes from EXT4_JNL_SIZE env (in MB); default is 40000 if unset.
@@ -107,13 +112,18 @@ def setup_ext4(
             "-E lazy_itable_init=0,lazy_journal_init=0 -F"
         )
 
-    cmd = "mke2fs {} {}".format(MKFS_OPTIONS, DEV_NAME)
-    print("mkfs command: $", cmd)
-    logging.debug(cmd)
-    ret = subprocess.call(cmd, shell=True)
-    if ret != 0:
-        logging.error("cannot mkfs")
-        return
+    if reuse_data:
+        print(
+            "MICROBENCH_REUSE_DATA is set; skip mkfs and reuse existing ext4 filesystem"
+        )
+    else:
+        cmd = "mke2fs {} {}".format(MKFS_OPTIONS, DEV_NAME)
+        print("mkfs command: $", cmd)
+        logging.debug(cmd)
+        ret = subprocess.call(cmd, shell=True)
+        if ret != 0:
+            logging.error("cannot mkfs")
+            return
     dir_name = cfs_common.get_kfs_mount_dir()
     subprocess.call("sudo mkdir -p {}".format(dir_name), shell=True)
 
@@ -310,6 +320,16 @@ def get_meta_benchmarks():
 
 
 def bench_needs_dataprep(bench_code):
+    reuse_data = os.environ.get("MICROBENCH_REUSE_DATA", "").lower() in (
+        "1",
+        "true",
+        "yes",
+    )
+    if reuse_data and bench_code in ["RDPS", "RDPS_L"]:
+        # When MICROBENCH_REUSE_DATA is enabled, skip data preparation for
+        # sequential read benchmarks and reuse existing data files.
+        return False
+
     need_prep_list = [
         # all read
         "RDPR",
