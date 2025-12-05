@@ -220,8 +220,8 @@ def bench_seq_sync_write(log_dir, num_app_proc=1, is_fsp=True,
 
 def bench_rand_write(log_dir, num_app_proc=1, is_fsp=True,
                      is_append=False, is_cached=True,
-                     num_fsp_worker_list=None, per_app_fname=None,
-                     dump_mpstat=False, dump_iostat=False,
+                     num_fsp_worker_list=None, strict_no_overlap=True,
+                     per_app_fname=None, dump_mpstat=False, dump_iostat=False,
                      cfs_update_dict=None):
     # note currently only support random write for buffered workload
     # assert(is_cached)
@@ -291,6 +291,25 @@ def bench_rand_write(log_dir, num_app_proc=1, is_fsp=True,
                             str(nfswk))
                     bench_cfg_dict['--value_size='] = vs
                     bench_cfg_dict['--numop='] = nop
+
+                    if strict_no_overlap:
+                        bench_cfg_dict['--rand_no_overlap='] = 1
+                    else:
+                        bench_cfg_dict.pop('--rand_no_overlap=', None)
+
+                    # Align write IO size to the chosen request size.
+                    if vs > 4096:
+                        bench_cfg_dict['--rw_align_bytes='] = 4096 * \
+                            (int((vs - 1) / 4096) + 1)
+                    else:
+                        bench_cfg_dict['--rw_align_bytes='] = vs
+
+                    if (vs > 4096) and (bench_cfg_dict['--sync_numop='] > 1) :
+                        adjust_sync_numop = int(bench_cfg_dict['--sync_numop='] / (vs/4096))
+                        if adjust_sync_numop == 0:
+                            adjust_sync_numop = 1
+                        bench_cfg_dict['--sync_numop='] = adjust_sync_numop
+
                     cfs_tc.mk_accessible_dir(cur_run_log_dir)
                     if is_append:
                         # mkfs

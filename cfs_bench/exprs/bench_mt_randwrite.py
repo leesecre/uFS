@@ -127,6 +127,7 @@ for sync_op in sync_op_list:
             num_app_proc=num_app,
             is_fsp=cur_is_fsp,
             is_cached=cur_is_cached,
+            strict_no_overlap=cur_is_no_overlap,
             per_app_fname=per_app_fname,
             dump_iostat=cur_dump_io_stat,
             cfs_update_dict=cur_cfs_update_dict,
