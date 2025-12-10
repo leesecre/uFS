@@ -325,9 +325,9 @@ def bench_needs_dataprep(bench_code):
         "true",
         "yes",
     )
-    if reuse_data and bench_code in ["RDPS", "RDPS_L"]:
+    if reuse_data and bench_code in ["RDPS", "RDPS_L", "RDPR", "RDPR_L"]:
         # When MICROBENCH_REUSE_DATA is enabled, skip data preparation for
-        # sequential read benchmarks and reuse existing data files.
+        # read benchmarks (sequential and random) and reuse existing data files.
         return False
 
     need_prep_list = [

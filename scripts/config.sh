@@ -50,8 +50,8 @@ export UFSBENCH_SYNC_OP=131072
 # [WARN] uFS/oxbow is not tested with this option yet.
 export PREPARE_DATA_ONLY_ONCE="1"
 
-# When enabled (1/true/yes), reuse existing data for sequential read benchmarks
-# (RDPS/RDPS_L) and skip mkfs + data preparation for ext4 and oxbow.
+# When enabled (1/true/yes), reuse existing data for read benchmarks
+# (RDPS/RDPS_L/RDPR/RDPR_L) and skip mkfs + data preparation for ext4 and oxbow.
 export MICROBENCH_REUSE_DATA="1"
 
 ### Filebench configurations ###
