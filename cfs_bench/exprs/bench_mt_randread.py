@@ -1,12 +1,12 @@
 #!/usr/bin/env python3
 # encoding: utf-8
 
-import sys
 import os
+import sys
 import time
 
-import cfsmt_expr_read as mte_rd
 import cfs_test_common as tc
+import cfsmt_expr_read as mte_rd
 
 
 def print_usage():
@@ -48,6 +48,7 @@ cur_numapp = None
 cur_is_share = False
 #cur_perf_cmd = 'perf stat -d '
 cur_perf_cmd = None
+cur_is_throughput = True
 
 
 if len(sys.argv) >= 3:
@@ -63,117 +64,108 @@ if len(sys.argv) >= 3:
             cur_is_share = True
         if 'numapp=' in a:
             cur_numapp = int(a[a.index('=') + 1:])
+        if 'latency' in a:
+            cur_is_throughput = False
 
-
-print('is_cached? - {}'.format(str(cur_is_cached)))
-print('is_dump_mpstat? - {}'.format(str(cur_is_dump_mpstat)))
-print('block_no - {}'.format(cur_block_no))
-print('is_share_file? - {}'.format(str(cur_is_share)))
+# print('is_cached? - {}'.format(str(cur_is_cached)))
+# print('is_dump_mpstat? - {}'.format(str(cur_is_dump_mpstat)))
+# print('block_no - {}'.format(cur_block_no))
+# print('is_share_file? - {}'.format(str(cur_is_share)))
 
 # Once block number is fixed, it is definitely a cached workload
 if cur_block_no >= 0:
     assert(cur_is_cached)
 
+#BASE_DIR = os.environ.get("BENCH_UFS")
+BASE_DIR = "/home/koo/workspace/uFS/cfs_bench/exprs"
+LOG_BASE = '{}/log_{}'.format(BASE_DIR, sys.argv[1])
 
-LOG_BASE = 'log_{}'.format(sys.argv[1])
+if cur_numapp > 16:
+    print(f"Error: cur_numapp ({cur_numapp}) must not be greater than 16.")
+    cur_numapp = 16
+    
+num_app_list = [8]
 
-# num_app_list = [1, 2, 3, 4, 5, 6]  # @falcon
-# num_app_list = [10, 9, 8, 7, 6, 5, 4, 3, 2, 1]  # @bumble
-# num_app_list = [1]
-num_app_list = [1,2,4,8,10] # for multi process test
-#num_app_list = [20 - i for i in range(20)]
+# if cur_is_throughput:
+#     if cur_is_fsp:
+#         num_app_list = [x for x in [1, 2, 4, 8, 10] if x < cur_numapp]
+#     else:
+#         num_app_list = [x for x in [1, 2, 4, 8, 10, 16] if x < cur_numapp]
+#     num_app_list.append(cur_numapp)
+#     num_app_list = sorted(num_app_list)
+# else:
+#     num_app_list  = [1]
 
-# if cur_numapp is not None:
-#     num_app_list = list(range(1, cur_numapp + 1))
-#     num_app_list.reverse()
 
-# if tc.use_exact_num_app():
-#     num_app_list = [cur_numapp]
+for num_app in num_app_list:
+    # Get benchmark type from environment variable or determine based on conditions
+    if "RDPR" in os.environ.get("BENCHMARK_TYPE", ""):
+        benchmark_type = "RDPR"
 
-## Select throughput or(and) latency benchmark
-# throughput_bench=[False, True]
-throughput_bench=[False]
-
-for thp in throughput_bench:
-    if thp:
-        # num_app_list = [1, 2, 4, 8, 10] # uFS
-        #num_app_list = [1, 2, 4, 8, 10, 16] # oxbow, ext4
-        num_app_list = [1, 2, 4] # omnicache
+    print("=========================================")
+    print(f"BENCHMARK: {benchmark_type}")
+    print(f"NUM_APP: {num_app}")
+    if cur_is_throughput:
+        print(f"Random read throughput")
+        CUR_ARKV_DIR = '{}_randread_throughput_app_{}'.format(LOG_BASE, num_app)
     else:
-        num_app_list  = [1]
+        print(f"Random read latency")
+        CUR_ARKV_DIR = '{}_randread_latency_app_{}'.format(LOG_BASE, num_app)
+    print("=========================================")
 
-    for num_app in num_app_list:
-        cur_num_fs_wk_list = [(i + 1) for i in range(num_app)]
-        if not cur_is_fsp:
-            cur_num_fs_wk_list = [1]
-        else:
-            #cur_num_fs_wk_list = list(set([1, num_app]))
-            cur_num_fs_wk_list = [num_app]
-            pass
-        if tc.use_single_worker():
-            cur_num_fs_wk_list = [1]
-        print(cur_num_fs_wk_list)
-        cur_log_dir = tc.get_proj_log_dir(tc.get_expr_user(),
-                                        suffix=tc.get_ts_dir_name(),
-                                        do_mkdir=True)
-        # dump io stats for kernel fs
-        cur_dump_io_stat = False
-        # if not cur_is_fsp and not cur_is_oxbow:
-        #     cur_dump_io_stat = True
+    cur_num_fs_wk_list = [(i + 1) for i in range(num_app)]
+    if not cur_is_fsp:
+        cur_num_fs_wk_list = [1]
+    else:
+        #cur_num_fs_wk_list = list(set([1, num_app]))
+        cur_num_fs_wk_list = [num_app]
+        pass
+    if tc.use_single_worker():
+        cur_num_fs_wk_list = [1]
 
-        # stress sharing
-        if cur_is_share:
-            per_app_fname = {i: 'bench_f_{}'.format(0) for i in range(num_app)}
-            cur_num_fs_wk_list = [1]
-        else:
-            per_app_fname = {i: 'bench_f_{}'.format(i) for i in range(num_app)}
-        print(per_app_fname)
+    cur_log_dir = tc.get_proj_log_dir(tc.get_expr_user(),
+                                    suffix=tc.get_ts_dir_name(),
+                                    do_mkdir=True)
+    # dump io stats for kernel fs
+    cur_dump_io_stat = False
+    # if not cur_is_fsp and not cur_is_oxbow:
+    #     cur_dump_io_stat = True
 
-        if cur_is_cached:
-            # buffered random read
-            CUR_ARKV_DIR = '{}_crread_app_{}'.format(LOG_BASE, num_app)
-            mte_rd.bench_cached_read(
-                cur_log_dir,
-                num_app_proc=num_app,
-                is_fsp=cur_is_fsp,
-                block_no=cur_block_no,
-                per_app_fname=per_app_fname,
-                dump_iostat=cur_dump_io_stat,
-                dump_mpstat=cur_is_dump_mpstat,
-                perf_cmd=cur_perf_cmd,
-                cfs_update_dict={'--in_mem_file_size=': int(64 * 1024)},
-                #cfs_update_dict={'--in_mem_file_size=': int(16 * 1024 * 1024)},
-                num_fsp_worker_list=cur_num_fs_wk_list)
-        else:
-            # on-disk random read
-            if thp:
-                CUR_ARKV_DIR = '{}_randread_throughput_app_{}'.format(LOG_BASE, num_app)
-            else:
-                CUR_ARKV_DIR = '{}_randread_latency'.format(LOG_BASE)
-            cur_is_no_overlap = True
-            mte_rd.bench_rand_read(
-                cur_log_dir,
-                num_app_proc=num_app,
-                is_fsp=cur_is_fsp,
-                is_oxbow=cur_is_oxbow,
-                is_omnicache=cur_is_omnicache,
-                is_thp=thp,
-                is_share=cur_is_share,
-                strict_no_overlap=cur_is_no_overlap,
-                per_app_fname=per_app_fname,
-                dump_iostat=cur_dump_io_stat,
-                num_fsp_worker_list=cur_num_fs_wk_list)
+    # stress sharing
+    if cur_is_share:
+        per_app_fname = {i: 'bench_f_{}'.format(0) for i in range(num_app)}
+        cur_num_fs_wk_list = [1]
+    else:
+        per_app_fname = {i: 'bench_f_{}'.format(i) for i in range(num_app)}
 
-        os.mkdir(CUR_ARKV_DIR)
-        os.system("mv log{}* {}".format(tc.get_year_str(), CUR_ARKV_DIR))
-        # save the mount option for the device to check the kernel FS experiment
-        # config
+    if cur_is_cached:
+        print("not used in Oxbow")
+        sys.exit(1)
+    else:
+        cur_is_no_overlap = True
+        mte_rd.bench_rand_read(
+            cur_log_dir,
+            num_app_proc=num_app,
+            is_fsp=cur_is_fsp,
+            is_oxbow=cur_is_oxbow,
+            is_thp=cur_is_throughput,
+            is_share=cur_is_share,
+            is_omnicache=cur_is_omnicache,
+            strict_no_overlap=cur_is_no_overlap,
+            per_app_fname=per_app_fname,
+            dump_iostat=cur_dump_io_stat,
+            num_fsp_worker_list=cur_num_fs_wk_list)
 
-        # if not cur_is_fsp:
-        #     os.system("tune2fs -l /dev/{} > {}/kfs_mount_option".format(
-        #         cur_dev_name, CUR_ARKV_DIR))
-        #     tc.dump_kernel_dirty_flush_config(CUR_ARKV_DIR)
+    os.mkdir(CUR_ARKV_DIR)
+    os.system("mv {}/log{}* {}".format(BASE_DIR, tc.get_year_str(), CUR_ARKV_DIR))
+    # save the mount option for the device to check the kernel FS experiment
+    # config
 
-        time.sleep(1)
+    # if not cur_is_fsp:
+    #     os.system("tune2fs -l /dev/{} > {}/kfs_mount_option".format(
+    #         cur_dev_name, CUR_ARKV_DIR))
+    #     tc.dump_kernel_dirty_flush_config(CUR_ARKV_DIR)
+
+    time.sleep(1)
 
 tc.save_default_cfg_config(CUR_ARKV_DIR)

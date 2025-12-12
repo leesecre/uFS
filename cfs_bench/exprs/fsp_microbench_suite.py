@@ -164,12 +164,28 @@ def verify_dev_options():
 
 def get_benchmark_script(bench_code):
     bench_code_mappings = [
+        ### Throughput benchmarks
+        (["RDPR"], "bench_mt_randread.py {}"),
+        (["RDPS"], "bench_mt_seqread.py {}"),
+        (["ADPS"], "bench_mt_write_all.py {} append"),
+        (["WDPS"], "bench_mt_write_all.py {} "),
+        (["WDPR"], "bench_mt_write_all.py {} random"),
+        (["ADPS_LD"], "bench_mt_write_all.py {} append load"),
+
+        ### Latency benchmarks
+        (["RDPR_L"], "bench_mt_randread.py {} latency"),
+        (["RDPS_L"], "bench_mt_seqread.py {} latency"),
+        (["ADPS_L"], "bench_mt_write_all.py {} append latency"),
+        (["ADPS_L_L"], "bench_mt_write_all.py {} append latency load"),
+        (["WDPS_L"], "bench_mt_write_all.py {} latency"),
+        (["WDPR_L"], "bench_mt_write_all.py {} random latency"),
+        
         # (['RMPR'], 'bench_mt_randread.py {} cached'),
-        (['RDPR'], 'bench_mt_randread.py {}'),
+        # (['RDPR'], 'bench_mt_randread.py {}'),
         # # (['RMSR'], 'bench_mt_randread.py {} cached share'),
         #(['RDSR'], 'bench_mt_randread.py {} share'),
         # # (['RMPS'], 'bench_mt_seqread.py {} cached'),
-        (['RDPS'], 'bench_mt_seqread.py {}'),
+        # (['RDPS'], 'bench_mt_seqread.py {}'),
         # # (['RMSS'], 'bench_mt_seqread.py {} share cached'),
         #(['RDSS'], 'bench_mt_seqread.py {} share'),
     
@@ -181,11 +197,11 @@ def get_benchmark_script(bench_code):
         # (['WDSS'], 'bench_mt_write_noflush.py {} share'),
         # (['WDSR'], 'bench_mt_randwrite.py {} share'),
 
-        (['ADPS'], 'bench_mt_write_sync.py {} append'),
+        # (['ADPS'], 'bench_mt_write_sync.py {} append'),
         # (['ADSS'], 'bench_mt_write_sync.py {} append share'),
-        (['WDPS'], 'bench_mt_write_sync.py {} '),
+        # (['WDPS'], 'bench_mt_write_sync.py {} '),
         # (['WDSS'], 'bench_mt_write_sync.py {} share'),
-        (['WDPR'], 'bench_mt_randwrite.py {}'),
+        # (['WDPR'], 'bench_mt_randwrite.py {}'),
         # (['WDSR'], 'bench_mt_randwrite.py {} share'),
 
         # (['S1MS'], 'bench_mt_stat.py {} share'),
@@ -209,6 +225,24 @@ def get_benchmark_script(bench_code):
 
 def get_default_benchmarks():
     benchmarks = [
+        ### OXBOW only activate these workloads
+        ### Throughput
+        #'ADPS',  # Appending with sequential
+        'RDPS', # Seqeuntial read
+        #'RDPR',  # Random read
+        #'WDPS', # Sequential overwrite
+        #'WDPR', # Random overwrite
+        
+        ### Latency sequential
+        # 'ADPS_L',  # Append writes
+        # 'RDPS_L', # Seqeuntial read
+        # 'WDPS_L', # Sequential overwrite
+        
+        ### Latency random
+        # 'ADPS_L_L', # Append load
+        # 'RDPR_L',  # Random read
+        # 'WDPR_L', # Random overwrite
+        
         # 'RMPR', 'RMSR', 
         # 'RDSR',
         # 'RMPS', 'RMSS', 
@@ -228,11 +262,11 @@ def get_default_benchmarks():
         # #'RDSS',
 
         # # ### Write benchmark
-        'ADPS', # Appending with sequential
+        #'ADPS', # Appending with sequential
         #'ADSS',
         #'WDPS', # Sequential overwrite
         #'WDSS',
-        #'WDPR', # Random overwrite
+        #'WDPR', # Random overwrite 
         #'WDSR',
 
 
@@ -463,10 +497,10 @@ class Benchmark(object):
         no_data_prep_list = []
         print("benchmarks: {}", self.benchmarks)
         for bench in self.benchmarks:
-            if bench_needs_dataprep(bench):
-                need_data_prep_list.append(bench)
-            else:
-                no_data_prep_list.append(bench)
+            # if bench_needs_dataprep(bench):
+            need_data_prep_list.append(bench)
+            # else:
+            #     no_data_prep_list.append(bench)
 
         # run benchmarks
         for bench in need_data_prep_list:

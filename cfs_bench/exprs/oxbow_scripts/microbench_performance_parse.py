@@ -4,7 +4,7 @@ import csv
 from pathlib import Path
 
 # 설정
-base_dir = Path(".")
+base_dir = Path("/tmp/perf/")
 perf_pattern = re.compile(r"Throughput-(\w+)(?:-iosize(\d+))?-(\d+)$")
 
 # 우선순위 설정

@@ -584,6 +584,17 @@ def print_env_variables():
     env_var_list = ['USER', 'CFS_ROOT_DIR']
     for ev in env_var_list:
         print('${} is set to: {}'.format(ev, os.environ.get(ev)))
+        
+def parse_size_to_bytes(size_str):
+    size_str = size_str.strip().upper()
+    if size_str.endswith('K'):
+        return int(size_str[:-1]) * 1024
+    elif size_str.endswith('M'):
+        return int(size_str[:-1]) * 1024 * 1024
+    elif size_str.endswith('G'):
+        return int(size_str[:-1]) * 1024 * 1024 * 1024
+    else:
+        return int(size_str)
 
 
 if __name__ == '__main__':

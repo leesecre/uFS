@@ -32,6 +32,7 @@ def expr_read_mtfsp_multiapp(
         bench_cfg_dict,
         is_fsp=True,
         is_oxbow=False,
+        is_throughput=False,
         is_omnicache=False,
         is_append=False,
         clear_pgcache=False,
@@ -279,6 +280,8 @@ def expr_read_mtfsp_multiapp(
             )
             # bench_args['--pid='] = "{}".format(i)
             # print('--pid='+bench_args['--pid='])
+        
+    #asan_rt = "/usr/lib/gcc/x86_64-linux-gnu/9/libasan.so"
 
     env = None
     if is_oxbow:
@@ -288,6 +291,8 @@ def expr_read_mtfsp_multiapp(
         #     bench_app_cmd_dict[i] = '{}'.format(bench_app_cmd_dict[i])
     if is_omnicache:
         env = os.environ.copy()
+        #env["ASAN_OPTIONS"] = f"abort_on_error=1:detect_leaks=0"
+        #env["LD_PRELOAD"] = f"{asan_rt}:/home/koo/omnicache/omnicache-fast24-artifacts/libfs/libshim/shim_common.so"
         env["LD_PRELOAD"] = f"/home/koo/omnicache/omnicache-fast24-artifacts/libfs/libshim/shim_common.so"
         # for i in range(num_app_proc):
         #     bench_app_cmd_dict[i] = '{}'.format(bench_app_cmd_dict[i])
@@ -337,7 +342,7 @@ def expr_read_mtfsp_multiapp(
 
     time.sleep(2)
     if is_omnicache:
-        time.sleep(20)
+        time.sleep(10)
     print("Time to shutdown ...")
 
     if is_fsp:
@@ -509,11 +514,11 @@ def bench_rand_read(
             # 2097152: 128, # 2M
 
             # 512MB for latency
-            #1024: 262144 * 1, # 1K # due to cache problem 256MB is only supproted
-            4096: 65536 * 2,  # 4K
-            16384: 16384 * 2, # 16K
-            65536: 4096 * 2, # 64K
-            262144: 1024 * 2, # 256K
+            #1024: 262144 * 2, # 1K # due to cache problem 256MB is only supproted
+            #4096: 65536 * 2,  # 4K
+            #16384: 16384 * 2, # 16K
+            #65536: 4096 * 2, # 64K
+            #262144: 1024 * 2, # 256K
             524288: 512 * 2, # 512K
             # 1024: 262144 * 4, # 1K
             # 4096: 65536 * 4,  # 4K
@@ -525,19 +530,18 @@ def bench_rand_read(
     else:
         value_sz_op_num_dict = {
             # 5GB for throughput benchmark
-            # 1024: 262144 * 4 * 5, # 1K
-            # 4096: 65536 * 4 * 5,  # 4K
-            # 16384: 16384 * 4 * 5, # 16K
-            # 65536: 4096 * 4 * 5, # 64K
-            # 262144: 1024 * 4 * 5, # 256K
-            # 524288: 512 * 4 * 5, # 512K
-            # 1048576: 256 * 4 * 5, # 1M
-            # 2097152: 128 * 4 * 5 # 2M
+            
+            4096: 65536 * 4 * 2,  # 4K
+            #65536: 4096 * 4 * 2, # 64K
+            
+            #16384: 16384 * 4 * 2, # 16K
+            #262144: 1024 * 4 * 2, # 256K
+            
             # multi process test
-            4096: int(1024*1024/4),
-            16384: int(1024*1024/16),
-            65536: int(1024*1024/64),
-            262144: int(1024*1024/256),
+            #4096: int(1024*1024/4),
+            #16384: int(1024*1024/16),
+            #65536: int(1024*1024/64),
+            #262144: int(1024*1024/256),
             # 4096: int(2*1024*1024/4),
             # 16384: int(2*1024*1024/16),
             # 65536: int(2*1024*1024/64),
@@ -571,9 +575,11 @@ def bench_rand_read(
                             case_log_dir, str(is_fsp), str(cp), str(pc),
                             str(nfswk),str(is_thp))
                     bench_cfg_dict['--value_size='] = vs
-                    # if vs > 4096:
-                    #     bench_cfg_dict['--rw_align_bytes='] = 4096 * \
-                    #         (int((vs - 1) / 4096) + 1)
+                    if vs > 4096:
+                        bench_cfg_dict['--rw_align_bytes='] = 4096 * \
+                            (int((vs - 1) / 4096) + 1)
+                    else:
+                        bench_cfg_dict['--rw_align_bytes='] = 4096
 
                     bench_cfg_dict['--numop='] = nop
                     cfs_tc.mk_accessible_dir(cur_run_log_dir)
@@ -644,11 +650,11 @@ def bench_cached_read(log_dir, num_app_proc=1, is_fsp=True,
                             str(nfswk))
                     bench_cfg_dict['--value_size='] = vs
                     bench_cfg_dict['--numop='] = nop
-                    if vs > cur_align_bytes:
+                    if vs > 4096:
                         bench_cfg_dict['--rw_align_bytes='] = 4096 * \
                             (int((vs - 1) / 4096) + 1)
                     else:
-                        bench_cfg_dict['--rw_align_bytes='] = cur_align_bytes
+                        bench_cfg_dict['--rw_align_bytes='] = vs
 
                     cfs_tc.mk_accessible_dir(cur_run_log_dir)
                     expr_read_mtfsp_multiapp(cur_run_log_dir, nfswk,

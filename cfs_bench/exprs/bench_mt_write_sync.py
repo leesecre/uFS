@@ -84,8 +84,8 @@ elif "ADSS" in os.environ.get("BENCHMARK_TYPE", ""):
 
 # Set sync_op_list based on benchmark type
 if benchmark_type == "ADPS":
-    #sync_op_list = [131072]  # it is max for append
-    sync_op_list = [1]  # for append
+    sync_op_list = [131072]  # it is max for append 
+    #sync_op_list = [1]  # for append
     print("=========================================")
     print(f"BENCHMARK TYPE: {benchmark_type}")
     print(f"USING SYNC_OP_LIST: {sync_op_list}")
@@ -106,7 +106,8 @@ for sync_op in sync_op_list:
     else:
         # num_app_list = [1,2,4,8,10] # uFS
         #num_app_list = [1,2,4,8,10,16] # oxbow, ext4
-        num_app_list = [1,2,4] # omnicache
+        #num_app_list = [1,2,4] # omnicache
+        num_app_list = [1] # omnicache
 
     for num_app in num_app_list:
         cur_cfs_update_dict = {

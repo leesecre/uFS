@@ -1,0 +1,2 @@
+experiment,num_logs,total_throughput_MBps,avg_fsync_ms,min_fsync_ms,max_fsync_ms
+RDPS,8,59.4,0.0,0.0,0.0

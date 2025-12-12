@@ -126,8 +126,10 @@ static bool FLAGS_compute_crc = false;
 // If all the threads will share one file
 static bool FLAGS_share_mode = false;
 
+#define FSYNC_ON_CLOSE -1
+#define NO_SYNC_OPERATION -2
 // For writing, how many number of operations will be followed by a fsync()
-static int FLAGS_sync_numop = -2;
+static int FLAGS_sync_numop = NO_SYNC_OPERATION;
 
 // Dedicated access one single block that specified by this flag
 // If specified, will overwrite all the other random access patterns
@@ -548,7 +550,7 @@ public:
             seconds_ * 1e6 / done_, (extra.empty() ? "" : " "), extra.c_str());
     if (FLAGS_histogram) {
       fprintf(stdout, "Microseconds per op:\n%s\n", hist_.ToString().c_str());
-      if (FLAGS_sync_numop > 0 || FLAGS_sync_numop == -1)
+      if (FLAGS_sync_numop != NO_SYNC_OPERATION)
         fprintf(stdout, "Microseconds per fsync:\n%s\n",
                 fsync_hist_.ToString().c_str());
     }
@@ -842,7 +844,6 @@ public:
     if (benchmarks == nullptr) {
       benchmarks = Benchmark::all_benchmarks_.c_str();
     }
-    //fprintf(stderr, "koo\n");
 
     PrintHeader();
     ConnectFS();
@@ -1089,6 +1090,10 @@ private:
       char msg[100];
       snprintf(msg, sizeof(msg), "(%d ops then sync)", FLAGS_sync_numop);
       thread->stats.AddMessage(msg);
+    } else if (FLAGS_sync_numop == FSYNC_ON_CLOSE) {
+      char msg[100];
+      snprintf(msg, sizeof(msg), "(fsync at the end)");
+      thread->stats.AddMessage(msg);
     }
 
     if (compute_crc_) {
@@ -1110,7 +1115,50 @@ private:
 
     // once random write, if max_file_size is assigned by cmd argument
     // assume will be *cached random write*
-    uint64_t randWriteRange = std::min(FLAGS_max_file_size, thread->fileSize);
+    //uint64_t randWriteRange = std::min(FLAGS_max_file_size, thread->fileSize);
+    uint64_t randWriteRange = (uint64_t)2*1024*1024*1024;
+
+    // prepare non-overlapping offsets for random write if requested
+    std::vector<off_t> off_vec;
+    uint64_t max_req_num = numop_;
+    if (!seq && FLAGS_rand_no_overlap) {
+      if (value_random_size_) {
+        fprintf(stderr, "rand_no_overlap=1 requires value_random_size=0 for writes\n");
+        exit(1);
+      }
+      if (FLAGS_rw_align_bytes == 0) {
+        fprintf(stderr, "random_no_overalap=1 => rw_align_bytes should not be 0\n");
+        exit(1);
+      }
+      if (value_size_ > (int)FLAGS_rw_align_bytes) {
+        fprintf(stderr,
+                "rand_no_overlap=1 requires value_size (%d) ≤ rw_align_bytes (%d) to avoid overlap; increase rw_align_bytes or reduce value_size.\n",
+                value_size_, (int)FLAGS_rw_align_bytes);
+        exit(1);
+      }
+      if (FLAGS_block_no >= 0) {
+        fprintf(stderr, "rand_no_overlap=1 conflicts with block_no; unset block_no\n");
+        exit(1);
+      }
+      if (randWriteRange == 0) {
+        fprintf(stderr, "random write range is 0; file too small or not initialized\n");
+        exit(1);
+      }
+      max_req_num = randWriteRange / FLAGS_rw_align_bytes;
+      fprintf(stderr, "max_req_num: %lu writeRange: %lu rw_align_bytes: %d\n",
+              max_req_num, randWriteRange, FLAGS_rw_align_bytes);
+      if (numop_ > max_req_num) {
+        fprintf(stderr,
+                "Insufficient write range for no-overlap random write: need %d ops * %uB stride, have only %lu slots (range=%lu). Increase file size/max_file_size or reduce numop.\n",
+                numop_, (unsigned)FLAGS_rw_align_bytes, max_req_num, (unsigned long)randWriteRange);
+        exit(1);
+      }
+      off_vec.resize(max_req_num);
+      for (uint64_t i = 0; i < max_req_num; i++) {
+        off_vec[i] = (FLAGS_rw_align_bytes * i) % randWriteRange;
+      }
+      std::random_shuffle(off_vec.begin(), off_vec.end());
+    }
 
     if (FLAGS_wid > 0 && (!FLAGS_share_mode)) {
 #ifndef CFS_USE_POSIX
@@ -1153,26 +1201,40 @@ private:
         rc = write(thread->fd, wdata, cur_value_size);
 #endif
       } else {
-        cur_off = thread->rand.Next() % randWriteRange;
-        if (FLAGS_rw_align_bytes != 0) {
-          cur_off = (cur_off / FLAGS_rw_align_bytes) * FLAGS_rw_align_bytes;
+        if (FLAGS_rand_no_overlap && FLAGS_rw_align_bytes != 0) {
+          cur_off = off_vec[i];
+        } else {
+          cur_off = thread->rand.Next() % randWriteRange;
+          // fprintf(stderr,
+          //         "[cfs_bench] rand cur_off:%ld\n", cur_off);
+          if (FLAGS_rw_align_bytes != 0) {
+            cur_off = (cur_off / FLAGS_rw_align_bytes) * FLAGS_rw_align_bytes;
+            // fprintf(
+            //     stderr,
+            //     "[cfs_bench] FLAGS_rw_align_bytes:%d, rand aligned cur_off:%ld\n",
+            //     FLAGS_rw_align_bytes, cur_off);
+          }
         }
+
         if (FLAGS_block_no >= 0) {
+          fprintf(stderr,
+                  "[cfs_bench] FLAGS_block_no:%ld, block aligned cur_off:%ld\n",
+                  FLAGS_block_no, cur_off);
           cur_off = FLAGS_block_no * gBlockSize;
         }
 #ifndef CFS_USE_POSIX
         // rc = fs_pwrite(thread->fd, slice.data(), cur_value_size, cur_off);
         rc = fs_allocated_pwrite(thread->fd, wdata, cur_value_size, cur_off);
 #else
-        // fprintf(stdout, "cur_size:%d, cur_off:%ld\n", cur_value_size,
-        // cur_off);
+        // fprintf(stderr, "[cfs_bench] fd:%d, cur_size:%d, cur_off:%ld\n",
+        //         thread->fd, cur_value_size, cur_off);
         // rc = pwrite(thread->fd, slice.data(), cur_value_size, cur_off);
         rc = pwrite(thread->fd, wdata, cur_value_size, cur_off);
 #endif
       }
 
       if (rc != cur_value_size) {
-        fprintf(stderr, "fs_allocated_write() error return:%d idx:%d\n", rc, i);
+        fprintf(stderr, "pwrite() error return:%d idx:%d\n", rc, i);
         cc.notify_server_that_client_stopped();
         exit(1);
       }
@@ -1181,6 +1243,10 @@ private:
       if (curSyncCounter == FLAGS_sync_numop) {
         int srt;
 
+        // fprintf(stderr,
+        //         "fsync start aid:%d curSyncCounter:%d FLAGS_sync_numop:%d\n",
+        //         thread->aid, curSyncCounter, FLAGS_sync_numop);
+
         fsync_start = PerfUtils::Cycles::toNanoseconds(g_env->NowCycles());
 #ifndef CFS_USE_POSIX
         srt = fs_fdatasync(thread->fd);
@@ -1188,6 +1254,11 @@ private:
         srt = fdatasync(thread->fd);
 #endif
         fsync_end = PerfUtils::Cycles::toNanoseconds(g_env->NowCycles());
+
+        // fprintf(stderr,
+        //         "fsync end aid:%d curSyncCounter:%d FLAGS_sync_numop:%d\n",
+        //         thread->aid, curSyncCounter, FLAGS_sync_numop);
+
         if (srt < 0) {
           fprintf(stderr, "fdatasync error:%s i:%d srt:%d\n", strerror(errno),
                   i, srt);
@@ -1204,7 +1275,7 @@ private:
     }
 
     /* sync at the end of all operations */
-    if (FLAGS_sync_numop == -1) {
+    if (FLAGS_sync_numop == FSYNC_ON_CLOSE) {
       int srt;
 
       fsync_start = PerfUtils::Cycles::toNanoseconds(g_env->NowCycles());
@@ -1226,13 +1297,13 @@ private:
     thread->stats.Stop();
     fprintf(stderr, "finish all ops\n");
 
+    SignalStopDumpLoad(thread);
+
 #ifndef CFS_USE_POSIX
     fs_fdatasync(thread->fd);
 #else
     fdatasync(thread->fd);
 #endif
-
-    SignalStopDumpLoad(thread);
 
 #ifndef CFS_USE_POSIX
     fs_free(wdata);
@@ -1538,18 +1609,36 @@ private:
     }
     uint64_t max_req_num;
 
-    if (FLAGS_rand_no_overlap) {
-      // this benchmark would like to make sure no IO is overlap
-      if (FLAGS_rand_no_overlap && FLAGS_rw_align_bytes == 0) {
-        fprintf(stderr, "random_no_overalap=1 => rw_align_bytes should not be"
-                        "0\n");
+if (FLAGS_rand_no_overlap) {
+      // require fixed request size and valid alignment
+      if (value_random_size_) {
+        fprintf(stderr, "rand_no_overlap=1 requires value_random_size=0\n");
         exit(1);
       }
-      max_req_num = FLAGS_max_file_size / FLAGS_rw_align_bytes;
+      if (FLAGS_rw_align_bytes <= 0) {
+        fprintf(stderr, "rand_no_overlap=1 requires rw_align_bytes > 0\n");
+        exit(1);
+      }
+      if (value_size_ > (int)FLAGS_rw_align_bytes) {
+        fprintf(stderr,
+                "rand_no_overlap=1 requires value_size (%d) ≤ rw_align_bytes (%d) to avoid overlap; increase rw_align_bytes or reduce value_size.\n",
+                value_size_, (int)FLAGS_rw_align_bytes);
+        exit(1);
+      }
+      if (FLAGS_block_no >= 0) {
+        fprintf(stderr, "rand_no_overlap=1 conflicts with block_no; unset block_no\n");
+        exit(1);
+      }
+      // Number of non-overlapping aligned slots available in the file range
+      //max_req_num = (uint64_t)5*1024*1024*1024 / FLAGS_rw_align_bytes;
+      max_req_num = (uint64_t)2*1024*1024*1024 / FLAGS_rw_align_bytes;
+      fprintf(stderr, "max_req_num: %lu fileSize: %lu rw_align_bytes: %d\n",
+              max_req_num, thread->fileSize, FLAGS_rw_align_bytes);
       if (numop_ > max_req_num) {
         fprintf(stderr,
-                "file size not enough to complete the aligned req max:%lu\n",
-                max_req_num);
+                "Insufficient file size for no-overlap random read: need %d ops * %uB stride, have only %lu slots (fileSize=%lu). Increase file size or reduce numop.\n",
+                numop_, (unsigned)FLAGS_rw_align_bytes, max_req_num, (unsigned long)thread->fileSize);
+        exit(1);
       }
     } else {
       // it is okay to overlap
@@ -1564,7 +1653,11 @@ private:
     if (FLAGS_rw_align_bytes != 0) {
       off_vec.resize(max_req_num);
       for (uint64_t i = 0; i < max_req_num; i++) {
-        off_vec[i] = (FLAGS_rw_align_bytes * i) % FLAGS_max_file_size;
+        // off_vec[i] = (FLAGS_rw_align_bytes * i) % FLAGS_max_file_size;
+        //off_vec[i] = (FLAGS_rw_align_bytes * i) % thread->fileSize;
+        // KOO TODO: Set the file size accordingly
+        //off_vec[i] = (FLAGS_rw_align_bytes * i) % ((uint64_t)5*1024*1024*1024);
+        off_vec[i] = (FLAGS_rw_align_bytes * i) % ((uint64_t)2*1024*1024*1024);
       }
       std::random_shuffle(off_vec.begin(), off_vec.end());
     }
@@ -1619,7 +1712,8 @@ private:
           cur_off = off_vec[i];
         } else {
           // no alignment requirement, random choose
-          cur_off = thread->rand.Next() % FLAGS_max_file_size;
+          // cur_off = thread->rand.Next() % FLAGS_max_file_size;
+          cur_off = thread->rand.Next() % thread->fileSize;
         }
         if (FLAGS_block_no >= 0) {
           cur_off = FLAGS_numop * gBlockSize;
@@ -1633,10 +1727,18 @@ private:
       }
 
       if (rc != value_size_) {
+#ifndef CFS_USE_POSIX
         fprintf(stderr,
                 "ERROR:fs_allocated_[p]read. rc:%d value_size_:%d "
                 "offset:%lu opIdx(i):%d\n",
                 rc, value_size_, cur_off, i);
+#else
+        fprintf(stderr,
+                "ERROR:pread. rc:%d value_size_:%d "
+                "offset:%lu opIdx(i):%d\n",
+                rc, value_size_, cur_off, i);
+#endif
+        // if we cannot read the data, we should stop
         cc.notify_server_that_client_stopped();
         exit(1);
       }
@@ -1657,9 +1759,6 @@ private:
 #ifndef CFS_USE_POSIX
     fs_free(rdata);
 #endif
-
-  CloseFile(thread);
-  fprintf(stderr, "file closed\n");
 
     thread->stats.AddBytes(bytes);
     thread->stats.Stop();
@@ -1685,9 +1784,16 @@ private:
       cur_flags = O_RDWR;
       thread->fileSize = statbuf.st_size;
       fprintf(stdout, "open with O_RDWR aid:%d\n", thread->aid);
+      fprintf(stderr, "fileSize: %lu (%lu MB)\n", thread->fileSize,
+              thread->fileSize / (1024 * 1024));
     } else {
-      cur_flags = O_CREAT | O_RDWR;
-      fprintf(stdout, "open with O_CREAT aid:%d\n", thread->aid);
+      if (errno == ENOENT) {
+        cur_flags = O_CREAT | O_RDWR;
+        fprintf(stdout, "open with O_CREAT aid:%d\n", thread->aid);
+      } else {
+        fprintf(stdout, "[ERROR] stat failed with errno:%d\n", errno);
+        exit(1);
+      }
     }
     if (FLAGS_is_append) {
       fprintf(stdout, "open with O_APPEND aid:%d\n", thread->aid);
@@ -1697,6 +1803,8 @@ private:
     fd = fs_open(thread->path.data(), cur_flags, 0644);
 #else
     fd = open(thread->path.data(), cur_flags, 0644);
+    fprintf(stderr, "[cfs_bench] open fd:%d, path:%s\n", fd,
+            thread->path.data());
 #endif
     if (fd < 0) {
       fprintf(stderr, "fs_open(%s) error, file cannot be created/opened\n",
