@@ -407,11 +407,20 @@ def bench_write_all(
     sync_numop_4k = bench_cfg_dict["--sync_numop="]
 
     if is_thp:
+        # Throughput benchmark: total I/O size can be configured independently
+        # from the underlying file size.
+        total_size_env = os.environ.get("UFSBENCH_THR_TOTAL_SIZE")
+        if total_size_env is None:
+            # Backward compatibility: fall back to UFSBENCH_FILESIZE when
+            # UFSBENCH_THR_TOTAL_SIZE is not set.
+            total_size_env = os.environ.get("UFSBENCH_FILESIZE")
+        total_size_bytes = int(total_size_env)
         value_sz_op_num_dict = {
-            size: int(os.environ.get("UFSBENCH_FILESIZE")) // size for size in iosize_bytes_list}
+            size: total_size_bytes // size for size in iosize_bytes_list}
     else:
+        total_size_bytes = int(os.environ.get("UFSBENCH_LAT_TOTAL_SIZE"))
         value_sz_op_num_dict = {
-            size: int(os.environ.get("UFSBENCH_LAT_TOTAL_SIZE")) // size for size in iosize_bytes_list}
+            size: total_size_bytes // size for size in iosize_bytes_list}
 
     if not is_fsp:  # ext4 and oxbow case
         pin_cpu_list = [False]

@@ -33,9 +33,18 @@ else
 	# nr of applications to run concurrently, uFS supports up to 10
 	export UFSBENCH_NUMAPP="16"
 
-	# File size.
+	# File size (per file for throughput benchmarks).
 	export UFSBENCH_FILESIZE=$((2 * 1024 * 1024 * 1024)) # 2GB (Throughput)
 	# export UFSBENCH_FILESIZE=$((5 * 1024 * 1024 * 1024)) # uFS Default.
+
+	# Total I/O size for throughput benchmarks.
+	# This can be smaller than UFSBENCH_FILESIZE so that the benchmark
+	# reads/writes only part of the file (e.g., 512MB out of 2GB).
+	# export UFSBENCH_THR_TOTAL_SIZE=$((2 * 1024 * 1024 * 1024)) # 2GB
+	# export UFSBENCH_THR_TOTAL_SIZE=$((512 * 1024 * 1024)) # 512MB
+	# If you want to use the full file size as before, comment out the
+	# above line and uncomment the following one:
+	export UFSBENCH_THR_TOTAL_SIZE=$UFSBENCH_FILESIZE
 
 fi
 

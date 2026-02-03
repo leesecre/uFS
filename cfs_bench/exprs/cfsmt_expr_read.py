@@ -475,11 +475,20 @@ def bench_rand_read(
     iosize_bytes_list = [cfs_tc.parse_size_to_bytes(s) for s in iosize_list]
 
     if is_thp:
+        # Throughput benchmark: total I/O size can be configured independently
+        # from the underlying file size.
+        total_size_env = os.environ.get("UFSBENCH_THR_TOTAL_SIZE")
+        if total_size_env is None:
+            # Backward compatibility: fall back to UFSBENCH_FILESIZE when
+            # UFSBENCH_THR_TOTAL_SIZE is not set.
+            total_size_env = os.environ.get("UFSBENCH_FILESIZE")
+        total_size_bytes = int(total_size_env)
         value_sz_op_num_dict = {
-            size: int(os.environ.get("UFSBENCH_FILESIZE")) // size for size in iosize_bytes_list}
+            size: total_size_bytes // size for size in iosize_bytes_list}
     else:
+        total_size_bytes = int(os.environ.get("UFSBENCH_LAT_TOTAL_SIZE"))
         value_sz_op_num_dict = {
-            size: int(os.environ.get("UFSBENCH_LAT_TOTAL_SIZE")) // size for size in iosize_bytes_list}
+            size: total_size_bytes // size for size in iosize_bytes_list}
 
     if is_share:
         # value_sz_op_num_dict = {
