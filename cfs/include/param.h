@@ -79,7 +79,8 @@ static_assert((NINODES) <= (IMAPBLOCK_NUM) * (BSIZE * 8));
 ////#define NMEM_DATA_BLOCK (1024 * 32) // 128M
 ////#define NMEM_DATA_BLOCK (1024 * 256) // 1G
 ////#define NMEM_DATA_BLOCK (8 * 1024 * 256)  // 8G
-#define NMEM_DATA_BLOCK ((10 * 1024 * 256UL))  // 10G
+// #define NMEM_DATA_BLOCK ((10 * 1024 * 256UL))  // 10G
+#define NMEM_DATA_BLOCK ((12 * 1024 * 256UL))  // 16G
 ////#define NMEM_DATA_BLOCK (20)         // [for test]
 
 // statically partition the bmap and dataBlockBuffers

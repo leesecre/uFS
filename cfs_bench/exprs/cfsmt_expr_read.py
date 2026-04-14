@@ -1,16 +1,16 @@
 #!/usr/bin/env python3
 # encoding: utf-8
 
-import sys
 import os
-import time
-import psutil
-import subprocess
 import signal
+import subprocess
+import sys
+import time
 
-from sarge import run, Capture
 import cfs_test_common as cfs_tc
+import psutil
 from cfs_test_common import start_bench_coordinator
+from sarge import Capture, run
 
 '''
 NOTE: assume data is initialized by "init_mt_bench_file.py*
@@ -45,7 +45,8 @@ def expr_read_mtfsp_multiapp(
         log_no_save=False,
         is_share=False,
         per_app_cfg_dict=None,
-        bypass_exit_sync=False):
+        bypass_exit_sync=False,
+        is_append=False):
     """
     :per_app_name_prefix: only used for mkdir/create
     """
@@ -261,8 +262,13 @@ def expr_read_mtfsp_multiapp(
 
     if bench_cfg_dict['--sync_numop='] > 1:
         print("It is throughput benchmark!")
-        perf_output_path = os.path.join("/tmp/perf",
-                                f"Throughput-{bench_args['--benchmarks=']}-iosize{bench_args['--value_size=']}-{num_app_proc}")
+        if is_append:
+            perf_output_path = os.path.join("/tmp/perf",
+                                    f"Throughput-append-iosize{bench_args['--value_size=']}-{num_app_proc}")
+        else:
+            perf_output_path = os.path.join("/tmp/perf",
+                                    f"Throughput-{bench_args['--benchmarks=']}-iosize{bench_args['--value_size=']}-{num_app_proc}")
+        
         # Create /tmp/perf directory if it doesn't exist using sudo
         subprocess.run("sudo mkdir -p /tmp/perf", shell=True, check=True)
         proc = subprocess.Popen(f'sudo nice -n 0 perf record -a -o {perf_output_path} &',

@@ -287,7 +287,7 @@ def bench_split_policy_no(bench_code):
 
 
 def is_bench_stress_bg_flush(bench_code):
-    if bench_code in ['WDPS', 'WDPR', 'WDSS', 'WDSR']:
+    if bench_code in ['ADPS', 'WDPS', 'WDPR', 'WDSS', 'WDSR']:
         return True
     return False
 
@@ -295,7 +295,8 @@ def is_bench_stress_bg_flush(bench_code):
 def bench_fs_dirty_flush_ratio(bench_code):
     if is_bench_stress_bg_flush(bench_code):
         # invoke after 26 blocks dirty (1G buffer)
-        return 0.00005
+        # return 0.00005
+        return 0.1
     else:
         return 0.9
 
@@ -428,9 +429,9 @@ class Benchmark(object):
                 no_data_prep_list.append(bench)
 
         # run benchmarks
-        for bench in need_data_prep_list:
-            self.run_single_bench(bench)
         for bench in no_data_prep_list:
+            self.run_single_bench(bench)
+        for bench in need_data_prep_list:
             self.run_single_bench(bench)
 
 

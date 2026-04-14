@@ -71,9 +71,10 @@ if cur_is_append:
 else:
     sync_op_list = [1]
 
-# Throughput
-# sync_op_list = [131072]
-sync_op_list = [1]
+# XXX: Configure sync_op to run tput or lat bench.
+#
+sync_op_list = [131072] # Tput
+# sync_op_list = [1] # Lat
 
 # if tc.use_exact_num_app():
 #     num_app_list = [cur_numapp]

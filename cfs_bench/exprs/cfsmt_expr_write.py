@@ -131,7 +131,11 @@ def bench_seq_sync_write(log_dir, num_app_proc=1, is_fsp=True,
                          num_fsp_worker_list=None, per_app_fname=None,
                          dump_mpstat=False, dump_iostat=False,
                          cfs_update_dict=None):
-    case_name = 'seqwrite'
+    if is_append:
+        case_name = 'append'
+    else:
+        case_name = 'seqwrite'
+
     case_log_dir = '{}/{}'.format(log_dir, case_name)
     bench_cfg_dict = {
         '--benchmarks=': 'seqwrite',
@@ -163,7 +167,8 @@ def bench_seq_sync_write(log_dir, num_app_proc=1, is_fsp=True,
         # Throughput benchmark
         value_sz_op_num_dict = {
             # 4096: 250000, # first value
-            4096: 65536 * 8, # 2GB
+            4096: int(2*1024*1024/4), # 2GB
+            65536: int(2*1024*1024/64),
             # 16384: 60000, # Not work
         }
 
@@ -195,6 +200,13 @@ def bench_seq_sync_write(log_dir, num_app_proc=1, is_fsp=True,
                             str(nfswk))
                     bench_cfg_dict['--value_size='] = vs
                     bench_cfg_dict['--numop='] = nop
+
+                    if (vs > 4096) and (bench_cfg_dict['--sync_numop='] > 1) :
+                        adjust_sync_numop = int(bench_cfg_dict['--sync_numop='] / (vs/4096))
+                        if adjust_sync_numop == 0:
+                            adjust_sync_numop = 1
+                        bench_cfg_dict['--sync_numop='] = adjust_sync_numop
+
                     cfs_tc.mk_accessible_dir(cur_run_log_dir)
                     if is_append:
                         # mkfs
@@ -214,7 +226,8 @@ def bench_seq_sync_write(log_dir, num_app_proc=1, is_fsp=True,
                         pin_cpu=pc,
                         per_app_fname=per_app_fname,
                         dump_mpstat=dump_mpstat,
-                        dump_iostat=dump_iostat)
+                        dump_iostat=dump_iostat,
+                        is_append=is_append)
                     time.sleep(1)
 
 
@@ -272,7 +285,8 @@ def bench_rand_write(log_dir, num_app_proc=1, is_fsp=True,
             # Throughput benchmark
             value_sz_op_num_dict = {
                 # 4096: 250000, # first value
-                4096: 65536 * 8,  # 2G
+                4096: int(2*1024*1024/4), # 2GB
+                65536: int(2*1024*1024/64),
                 #16384: 60000, # Not work
             }
 

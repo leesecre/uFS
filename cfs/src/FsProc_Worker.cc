@@ -2715,7 +2715,7 @@ void FsProcWorkerMaster::workerRunLoop() {
   // master need to do flush
   auto flushStartTs = tap_ustime();
   dev->initWorker(getWid());
-  blockingFlushBufferOnExit();
+  blockingFlushBufferOnExit(); // Last flush before exit.
   auto flushEndTs = tap_ustime();
   SPDLOG_INFO("Flushing cached buffer time(us):{}", flushEndTs - flushStartTs);
   SPDLOG_INFO("wid: {} processed {} messages when alive", getWid(),

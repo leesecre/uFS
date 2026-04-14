@@ -67,11 +67,14 @@ LOG_BASE = 'log_{}'.format(sys.argv[1])
 #     num_app_list = list(range(1, cur_numapp + 1))
 #     num_app_list.reverse()
 
-# 1 for Latency, 4 for default setting of uFS
+# XXX: Configure sync_op to run tput or lat bench.
+#
+# 1 for Latency, 4 for default setting of uFS, 131072 is used for oxbow experiment.
 # sync_op_list = [32, 64, 128, 256, -1]
 # sync_op_list = [-1]
-sync_op_list = [1]
-# sync_op_list = [131072]
+# sync_op_list = [1] # Latency.
+sync_op_list = [131072] # Tput.
+# sync_op_list = [4]
 
 # if tc.use_exact_num_app():
 #     num_app_list = [cur_numapp]
