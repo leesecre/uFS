@@ -86,12 +86,19 @@ if cur_is_append:
 if cur_is_random:
     CUR_WK_TYPE = "randwrite"
 
-if cur_numapp > 16:
-    print(f"Error: cur_numapp ({cur_numapp}) must not be greater than 16.")
-    cur_numapp = 16
+max_numapp = 10 if cur_is_fsp else 64
+if cur_numapp > max_numapp:
+    print(
+        f"Error: cur_numapp ({cur_numapp}) must not be greater than {max_numapp}."
+    )
+    cur_numapp = max_numapp
 
 if cur_is_throughput:
-    num_app_list = [x for x in [1, 2, 4, 8, 10, 16] if x < cur_numapp]
+    if cur_is_fsp:
+        throughput_num_app_list = [1, 2, 4, 8, 10]
+    else:
+        throughput_num_app_list = [1, 2, 4, 8, 10, 16, 32, 64]
+    num_app_list = [x for x in throughput_num_app_list if x < cur_numapp]
     num_app_list.append(cur_numapp)
     num_app_list = sorted(num_app_list)
 else:

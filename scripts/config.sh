@@ -30,8 +30,8 @@ else
 
 	export UFSBENCH_IOSIZE="4K,16K,64K,256K"
 
-	# nr of applications to run concurrently, uFS supports up to 10
-	export UFSBENCH_NUMAPP="16"
+	# Maximum number of concurrent benchmark applications. (uFS supports up to 10, oxbow/ext4 support up to 64)
+	export UFSBENCH_NUMAPP="64"
 
 	# File size (per file for throughput benchmarks).
 	export UFSBENCH_FILESIZE=$((2 * 1024 * 1024 * 1024)) # 2GB (Throughput)

@@ -74,15 +74,19 @@ if cur_block_no >= 0:
 BASE_DIR = os.environ.get("BENCH_UFS")
 LOG_BASE = '{}/log_{}'.format(BASE_DIR, sys.argv[1])
 
-if cur_numapp > 16:
-    print(f"Error: cur_numapp ({cur_numapp}) must not be greater than 16.")
-    cur_numapp = 16
+max_numapp = 10 if cur_is_fsp else 64
+if cur_numapp > max_numapp:
+    print(
+        f"Error: cur_numapp ({cur_numapp}) must not be greater than {max_numapp}."
+    )
+    cur_numapp = max_numapp
 
 if cur_is_throughput:
     if cur_is_fsp:
-        num_app_list = [x for x in [1, 2, 4, 8, 10] if x < cur_numapp]
+        throughput_num_app_list = [1, 2, 4, 8, 10]
     else:
-        num_app_list = [x for x in [1, 2, 4, 8, 10, 16] if x < cur_numapp]
+        throughput_num_app_list = [1, 2, 4, 8, 10, 16, 32, 64]
+    num_app_list = [x for x in throughput_num_app_list if x < cur_numapp]
     num_app_list.append(cur_numapp)
     num_app_list = sorted(num_app_list)
 else:
