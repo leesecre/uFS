@@ -14,6 +14,7 @@ import cfs_test_common as cfs_common
 DEV_NAME = "/dev/" + os.environ["NVME_DEV_NAME"]
 PCIE_ADDR = os.environ["NVME_PCIE_ADDR"]
 BASE_DIR = os.environ.get("BENCH_UFS")
+APPEND_BENCHMARKS = {"ADPS", "ADPS_L", "ADSS", "AMPS", "AMSS"}
 
 def get_host_name():
     return os.uname().nodename
@@ -37,6 +38,28 @@ def get_spdk_setup_bin():
         cfs_common.get_cfs_root_dir(), "cfs/lib/spdk/scripts/setup.sh"
     )
     return setup_bin
+
+
+def is_env_true(env_name):
+    return os.environ.get(env_name, "").lower() in ("1", "true", "yes")
+
+
+def parse_benchmarks(jobs_arg):
+    if jobs_arg is None:
+        return get_default_benchmarks()
+
+    jobs = jobs_arg.split(",")
+    all_benchmarks = get_default_benchmarks()
+    for job in jobs:
+        assert job in all_benchmarks
+    return jobs
+
+
+def should_reuse_data():
+    if not is_env_true("MICROBENCH_REUSE_DATA"):
+        return False
+
+    return True
 
 
 # This way to get NUMA number is not very clean... `lscpu` is really for human,
@@ -90,14 +113,13 @@ def reset_spdk():
 
 
 def setup_ext4(
-    has_journal=True, data_journal=False, readahead_kb=None, delay_allocate=True
+    has_journal=True,
+    data_journal=False,
+    readahead_kb=None,
+    delay_allocate=True,
+    reuse_data=False,
 ):
     ext4_jnl_size = os.environ.get("EXT4_JNL_SIZE", "40000") # Max value.
-    reuse_data = os.environ.get("MICROBENCH_REUSE_DATA", "").lower() in (
-        "1",
-        "true",
-        "yes",
-    )
 
     if data_journal:
         # Journal size comes from EXT4_JNL_SIZE env (in MB); default is 40000 if unset.
@@ -142,6 +164,7 @@ def setup_ext4(
 
     if data_journal:
         default_opt = "-o data=journal"
+        # default_opt = "-o data=journal,commit=1" # commit=5 is default: commit every 5 seconds
     else:
         default_opt = ""
 
@@ -319,15 +342,10 @@ def get_meta_benchmarks():
     return jobs
 
 
-def bench_needs_dataprep(bench_code):
-    reuse_data = os.environ.get("MICROBENCH_REUSE_DATA", "").lower() in (
-        "1",
-        "true",
-        "yes",
-    )
-    if reuse_data and bench_code in ["RDPS", "RDPS_L", "RDPR", "RDPR_L"]:
+def bench_needs_dataprep(bench_code, reuse_data=False):
+    if reuse_data and bench_code not in APPEND_BENCHMARKS:
         # When MICROBENCH_REUSE_DATA is enabled, skip data preparation for
-        # read benchmarks (sequential and random) and reuse existing data files.
+        # non-append benchmarks and reuse existing data files.
         return False
 
     need_prep_list = [
@@ -426,13 +444,14 @@ def is_oxbow(fs_str):
 
 
 class Benchmark(object):
-    def __init__(self, fs, benchmarks, num_app):
+    def __init__(self, fs, benchmarks, num_app, reuse_data=False):
         assert isinstance(benchmarks, list)
         self.fs = fs
         self.data_file_prepared = False
         self.benchmarks = benchmarks
         self.max_num_app = num_app
         self.repeat_num = 1
+        self.reuse_data = reuse_data
 
     def is_fsp(self):
         return "fsp" in self.fs
@@ -467,7 +486,7 @@ class Benchmark(object):
             raise RuntimeError("benchmark:{} not supported".format(code))
 
         # Do only when PREPARE_DATA_ONLY_ONCE is not set
-        if bench_needs_dataprep(code):
+        if bench_needs_dataprep(code, reuse_data=self.reuse_data):
             self.prep_data_file()
 
         logging.info("-------{}-------".format(code))
@@ -584,19 +603,16 @@ def main(args, loglevel):
     else:
         os.environ["CFS_BENCH_USE_SINGLE_WORKER"] = "false"
     logging.info("Use single worker: {}".format(cfs_common.use_single_worker()))
+    jobs = parse_benchmarks(args.jobs)
+    reuse_data = should_reuse_data()
+    logging.info(f"RUN jobs: {jobs}")
+    logging.info("Reuse benchmark data: {}".format(reuse_data))
+
     if str(args.fs) == "fsp":
         if not args.nomount:
             setup_spdk()
         if not args.devonly:
-            if args.jobs is None:
-                jobs = get_default_benchmarks()
-            else:
-                jobs = args.jobs.split(",")
-                all_benchmarks = get_default_benchmarks()
-                for j in jobs:
-                    assert j in all_benchmarks
-            logging.info(f"RUN jobs: {jobs}")
-            b = Benchmark("fsp", jobs, args.numapp)
+            b = Benchmark("fsp", jobs, args.numapp, reuse_data=reuse_data)
             b.run()
         if not args.nomount and not args.devonly:
             reset_spdk()
@@ -609,34 +625,19 @@ def main(args, loglevel):
                 data_journal=cur_data_journal,
                 readahead_kb=args.ra,
                 delay_allocate=(not args.nodalloc),
+                reuse_data=reuse_data,
             )
 
         verify_dev_options()
         if not args.devonly:
-            if args.jobs is None:
-                jobs = get_default_benchmarks()
-            else:
-                jobs = args.jobs.split(",")
-                all_benchmarks = get_default_benchmarks()
-                for j in jobs:
-                    assert j in all_benchmarks
-            logging.info(f"RUN jobs: {jobs}")
-            b = Benchmark("ext4", jobs, args.numapp)
+            b = Benchmark("ext4", jobs, args.numapp, reuse_data=reuse_data)
             b.run()
         if not args.nomount and not args.devonly:
             reset_ext4()
     elif args.fs == "oxbow":
         if not args.devonly:
             # warmup_ssd()
-            if args.jobs is None:
-                jobs = get_default_benchmarks()
-            else:
-                jobs = args.jobs.split(",")
-                all_benchmarks = get_default_benchmarks()
-                for j in jobs:
-                    assert j in all_benchmarks
-            logging.info(f"RUN jobs: {jobs}")
-            b = Benchmark("oxbow", jobs, args.numapp)
+            b = Benchmark("oxbow", jobs, args.numapp, reuse_data=reuse_data)
             b.run()
     else:
         logging.error("fs not supported")
