@@ -20,15 +20,21 @@ if len(sys.argv) < 2:
     sys.exit(1)
 
 cur_is_fsp = None
+cur_is_oxbow = False
+cur_dev_name = None
 if 'ext4' in sys.argv[1]:
     cur_is_fsp = False
     cur_dev_name = tc.get_kfs_dev_name()
+elif 'oxbow' in sys.argv[1]:
+    cur_is_fsp = False
+    cur_is_oxbow = True
 elif 'fsp' in sys.argv[1]:
     cur_is_fsp = True
 else:
     print_usage()
     sys.exit(1)
 print('is_fsp? - {}'.format(str(cur_is_fsp)))
+print('is_oxbow? - {}'.format(str(cur_is_oxbow)))
 
 cur_is_share = False
 cur_is_dynamic_benchmark = False
@@ -52,13 +58,13 @@ print('is_dynamic_benchmark? - {}'.format(str(cur_is_dynamic_benchmark)))
 
 LOG_BASE = 'log_{}'.format(sys.argv[1])
 CUR_WK_TYPE = 'stat1'
-CUR_NUM_OP = 1000000
+CUR_NUM_OP = int(os.environ.get('BENCH_NUMOP', 1000000))
 
 num_app_list = [10, 9, 8, 7, 6, 5, 4, 3, 2, 1]
 
 if cur_numapp is not None:
-    num_app_list = list(range(1, cur_numapp + 1))
-    num_app_list.reverse()
+    num_app_list = [cur_numapp]
+    # num_app_list.reverse() # ascending order for hang-probe
 
 
 if tc.use_exact_num_app():
@@ -99,6 +105,7 @@ for num_app in num_app_list:
         cur_log_dir,
         num_app_proc=num_app,
         is_fsp=cur_is_fsp,
+        is_oxbow=cur_is_oxbow,
         num_op=CUR_NUM_OP,
         is_dynamic_benchmark=cur_is_dynamic_benchmark,
         num_fsp_worker_list=cur_num_fs_wk_list,
@@ -113,7 +120,7 @@ for num_app in num_app_list:
     os.system("mv log{}* {}".format(tc.get_year_str(), CUR_ARKV_DIR))
     # save the mount option for the device to check the kernel FS experiment
     # config
-    if not cur_is_fsp:
+    if not cur_is_fsp and not cur_is_oxbow:
         os.system("tune2fs -l /dev/{} > {}/kfs_mount_option".format(
             cur_dev_name, CUR_ARKV_DIR))
         tc.dump_kernel_dirty_flush_config(CUR_ARKV_DIR)

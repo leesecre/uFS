@@ -233,8 +233,12 @@ def expr_read_mtfsp_multiapp(
         for i in range(num_app_proc):
             cur_app_dir_name = per_app_dir_name[i]
             if not is_fsp:
-                cur_app_dir_name = '{}/{}'.format(cfs_tc.get_kfs_data_dir(),
-                                                  cur_app_dir_name)
+                if is_oxbow:
+                    cur_app_dir_name = '{}/{}'.format('/oxbow',
+                                                      cur_app_dir_name)
+                else:
+                    cur_app_dir_name = '{}/{}'.format(cfs_tc.get_kfs_data_dir(),
+                                                      cur_app_dir_name)
             bench_app_cmd_dict[i] = '{} --dir={}'. \
                 format(bench_app_cmd_dict[i], cur_app_dir_name)
 
@@ -242,8 +246,12 @@ def expr_read_mtfsp_multiapp(
         for i in range(num_app_proc):
             cur_app_dir2_name = per_app_dir2_name[i]
             if not is_fsp:
-                cur_app_dir2_name = '{}/{}'.format(cfs_tc.get_kfs_data_dir(),
-                                                   cur_app_dir2_name)
+                if is_oxbow:
+                    cur_app_dir2_name = '{}/{}'.format('/oxbow',
+                                                       cur_app_dir2_name)
+                else:
+                    cur_app_dir2_name = '{}/{}'.format(cfs_tc.get_kfs_data_dir(),
+                                                       cur_app_dir2_name)
             bench_app_cmd_dict[i] = '{} --dir2={}'. \
                 format(bench_app_cmd_dict[i], cur_app_dir2_name)
     if per_app_block_no is not None:

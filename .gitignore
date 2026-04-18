@@ -2,6 +2,7 @@
 *.o
 aprt_vsfs
 cilent
+log*
 
 # vim swap files
 [._]*.s[a-v][a-z]

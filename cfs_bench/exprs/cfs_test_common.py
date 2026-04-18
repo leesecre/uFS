@@ -328,9 +328,11 @@ def expr_start_oxbow_daemon():
     # Reset status before starting daemon.
     write_status(DAEMON_STATUS, MODULE_UNINIT)
 
-    tmux_daemon_pane = "oxbow:0.0"
+    tmux_daemon_pane = "oxbow:main.1"
+    os.system(f'tmux send-keys -t {tmux_daemon_pane} "stty sane; reset" Enter')
+    time.sleep(0.3)
     # cmd = "cd ~/codes/oxbow.code/oxbow/secure_daemon && ./run.sh"
-    cmd = "cd $SECURE_DAEMON && ./run.sh"
+    cmd = "cd /home/jhlee/oxbow.code/oxbow/secure_daemon && ./run.sh build/secure_daemon"
     tmux_cmd = f'tmux send-keys -t {tmux_daemon_pane} "{cmd}" Enter'
     os.system(tmux_cmd)
 
@@ -343,9 +345,11 @@ def expr_start_oxbow_devfs():
     # Reset status before starting devfs.
     write_status(DEVFS_STATUS, MODULE_UNINIT)
 
-    tmux_daemon_pane = "oxbow:0.3"
+    tmux_daemon_pane = "oxbow:main.0"
+    os.system(f'tmux send-keys -t {tmux_daemon_pane} "stty sane; reset" Enter')
+    time.sleep(0.3)
     # cmd = "cd ~/codes/oxbow.code/oxbow/devfs && ./run.sh"
-    cmd = "cd $DEVFS && ./run.sh"
+    cmd = "cd /home/jhlee/oxbow.code/oxbow/devfs && ./run.sh build/devfs"
     tmux_cmd = f'tmux send-keys -t {tmux_daemon_pane} "{cmd}" Enter'
     os.system(tmux_cmd)
 
@@ -363,7 +367,7 @@ def expr_exit_oxbow_devfs():
     print("Exit devfs.")
     # if os.environ.get("OXBOW_HOST_JOURNALING") is not None:
     #     return exit_local_devfs()
-    tmux_daemon_pane = "oxbow:0.3"
+    tmux_daemon_pane = "oxbow:main.0"
     tmux_cmd = f"tmux send-keys -t {tmux_daemon_pane} C-c"
     os.system(tmux_cmd)
 
@@ -382,9 +386,12 @@ def expr_checkpoint_oxbow():
         # Clear checkpoint flag.
         write_status(CKPT_DONE_STATUS, 0)
 
-        # Send remote checkpoint signal (from host to device)
+        # Send checkpoint signal. In VM/local env, devfs runs on the same
+        # host, so use the local signal script instead of ssh.
         if os.environ.get("OXBOW_HOST_JOURNALING") is not None:
             script_path = os.path.join(oxbow_root, "scripts", "host", "host_journaling_ckpt.sh")
+        elif os.environ.get("OXBOW_USE_VM_ENV") is not None:
+            script_path = os.path.join(oxbow_root, "scripts", "device", "send_ckpt_signal.sh")
         else:
             script_path = os.path.join(oxbow_root, "scripts", "host", "remote_ckpt.sh")
         os.system(f"bash {script_path}")
@@ -398,16 +405,11 @@ def expr_checkpoint_oxbow():
 
 
 def clear_page_cache_oxbow():
-    print("Clear page cache for oxbow ############ (DROP CACHE) ############")
-    expr_exit_oxbow_daemon()
-
-    # XXX: to be deleted
-    # expr_exit_oxbow_devfs()
-    # os.system("sudo find /dev/shm -mindepth 1 -name 'ox_*' -delete")
-    # os.system("sudo ipcrm --all")
-    # expr_start_oxbow_devfs()
-
-    expr_start_oxbow_daemon()
+    # SIGINT does not flush dirty metadata and the VM-local checkpoint
+    # path is incomplete, so restarting the daemon here drops recent ops
+    # (e.g. the warmup mkdir) and breaks the following benchmark phase.
+    # Skip the drop for now.
+    print("Clear page cache for oxbow: SKIPPED (VM env)")
 
 
 def expr_mkfs_oxbow():

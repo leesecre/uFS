@@ -72,7 +72,7 @@ num_app_list = [10, 9, 8, 7, 6, 5, 4, 3, 2, 1]
 #num_app_list = [20 - i for i in range(20)]
 
 if cur_numapp is not None:
-    num_app_list = list(range(1, cur_numapp + 1))
+    num_app_list = [cur_numapp]
     num_app_list.reverse()
 
 if tc.use_exact_num_app():

@@ -12,6 +12,7 @@ import cfsmt_expr_read as me_read
 def bench_mkdir(log_dir,
                 num_app_proc=1,
                 is_fsp=True,
+                is_oxbow=False,
                 num_op=1000,
                 listdir_option=None,
                 is_create=False,
@@ -70,6 +71,8 @@ def bench_mkdir(log_dir,
                     # mkfs
                     if is_fsp:
                         cfs_tc.expr_mkfs()
+                    elif is_oxbow:
+                        cfs_tc.expr_mkfs_oxbow()
                     else:
                         cfs_tc.expr_mkfs_for_kfs()
                     # wait a bit after mkfs
@@ -85,6 +88,7 @@ def bench_mkdir(log_dir,
                         1,  # num_app_proc
                         bench_cfg_dict,
                         is_fsp=is_fsp,
+                        is_oxbow=is_oxbow,
                         per_app_name_prefix={i: 'mkd' for i in range(1)},
                         log_no_save=True
                     )
@@ -102,6 +106,7 @@ def bench_mkdir(log_dir,
                     num_app_proc,
                     bench_cfg_dict,
                     is_fsp=is_fsp,
+                    is_oxbow=is_oxbow,
                     clear_pgcache=cp,
                     pin_cpu=pc,
                     per_app_name_prefix=cur_per_app_name_prefix,
@@ -116,6 +121,7 @@ def bench_mkdir(log_dir,
 def bench_unlink(log_dir,
                  num_app_proc=1,
                  is_fsp=True,
+                 is_oxbow=False,
                  num_op=1000,
                  is_move=False,
                  num_fsp_worker_list=None,
@@ -166,6 +172,7 @@ def bench_unlink(log_dir,
                     num_app_proc,
                     bench_cfg_dict,
                     is_fsp=is_fsp,
+                    is_oxbow=is_oxbow,
                     clear_pgcache=cp,
                     pin_cpu=pc,
                     per_app_name_prefix=cur_per_app_name_prefix,
@@ -179,6 +186,7 @@ def bench_unlink(log_dir,
 def bench_rename(log_dir,
                  num_app_proc=1,
                  is_fsp=True,
+                 is_oxbow=False,
                  num_op=1000,
                  is_move=False,
                  num_fsp_worker_list=None,
@@ -227,6 +235,8 @@ def bench_rename(log_dir,
                 # mkfs
                 if is_fsp:
                     cfs_tc.expr_mkfs()
+                elif is_oxbow:
+                    cfs_tc.expr_mkfs_oxbow()
                 else:
                     cfs_tc.expr_mkfs_for_kfs()
                 # wait a bit after mkfs
@@ -240,6 +250,7 @@ def bench_rename(log_dir,
                     1,  # num_app_proc
                     bench_cfg_dict,
                     is_fsp=is_fsp,
+                    is_oxbow=is_oxbow,
                     per_app_name_prefix={i: 'mkd' for i in range(1)},
                     log_no_save=True
                 )
@@ -249,6 +260,7 @@ def bench_rename(log_dir,
                     1,  # num_app_proc
                     bench_cfg_dict,
                     is_fsp=is_fsp,
+                    is_oxbow=is_oxbow,
                     per_app_name_prefix={i: 'mkdDST' for i in range(1)},
                     log_no_save=True
                 )
@@ -264,6 +276,7 @@ def bench_rename(log_dir,
                     num_app_proc,
                     bench_cfg_dict,
                     is_fsp=is_fsp,
+                    is_oxbow=is_oxbow,
                     clear_pgcache=cp,
                     pin_cpu=pc,
                     per_app_name_prefix=cur_per_app_name_prefix,
@@ -283,6 +296,7 @@ def bench_rename(log_dir,
                     num_app_proc,
                     bench_cfg_dict,
                     is_fsp=is_fsp,
+                    is_oxbow=is_oxbow,
                     clear_pgcache=cp,
                     pin_cpu=pc,
                     per_app_name_prefix=cur_per_app_name_prefix,
@@ -298,6 +312,7 @@ def bench_rename(log_dir,
 def bench_stat(log_dir,
                num_app_proc=1,
                is_fsp=True,
+               is_oxbow=False,
                num_op=1000,
                is_openclosedir=False,
                is_dynamic_benchmark=False,
@@ -342,6 +357,8 @@ def bench_stat(log_dir,
                 if is_fsp:
                     if '--think_micro=' not in bench_cfg_dict:
                         cfs_tc.expr_mkfs()
+                elif is_oxbow:
+                    cfs_tc.expr_mkfs_oxbow()
                 else:
                     cfs_tc.expr_mkfs_for_kfs()
                 # wait a bit after mkfs
@@ -352,6 +369,7 @@ def bench_stat(log_dir,
                     num_app_proc,
                     bench_cfg_dict,
                     is_fsp=is_fsp,
+                    is_oxbow=is_oxbow,
                     clear_pgcache=cp,
                     pin_cpu=pc,
                     per_app_dir_name=per_app_dir_name,
