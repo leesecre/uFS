@@ -276,6 +276,7 @@ def expr_read_mtfsp_multiapp(
         #     bench_app_cmd_dict[i] = '{}'.format(bench_app_cmd_dict[i])
 
     do_perf = False
+    do_flamegraph = False
     if os.environ.get("UFSBENCH_ENABLE_PERF") is not None and is_throughput:
         perf_dir_name = '{}/perf'.format(log_dir_name)
         subprocess.run("sudo mkdir -p {}".format(perf_dir_name), shell=True, check=True)
@@ -284,8 +285,19 @@ def expr_read_mtfsp_multiapp(
         perf_arg3 = bench_args['--value_size=']
         perf_output_path = os.path.join(perf_dir_name,
             f"perfthp_{perf_arg1}_iosize{perf_arg3}_{num_app_proc}")
-        proc = subprocess.Popen(f'sudo nice -n 0 perf record -a -o {perf_output_path} &',
-                                    shell=True, preexec_fn=os.setpgrp)
+
+        # Enable call-graph recording when flamegraph generation is requested.
+        do_flamegraph = os.environ.get("UFSBENCH_ENABLE_FLAMEGRAPH") is not None
+        perf_record_opts = '-a'
+        if do_flamegraph:
+            # DWARF-based unwinding works without frame pointers but requires
+            # debug symbols. -F 99 keeps the sampling overhead reasonable.
+            perf_record_opts += ' -g --call-graph=dwarf -F 99'
+
+        proc = subprocess.Popen(
+            f'sudo nice -n 0 perf record {perf_record_opts} '
+            f'-o {perf_output_path} &',
+            shell=True, preexec_fn=os.setpgrp)
         perf_pid = proc.pid
         do_perf = True
 
@@ -304,7 +316,38 @@ def expr_read_mtfsp_multiapp(
 
     if do_perf:
         os.killpg(os.getpgid(perf_pid), signal.SIGTERM)
+        # perf needs a brief moment to flush samples to disk after SIGTERM.
+        time.sleep(2)
         print(f"Perf stat output saved to {perf_output_path}")
+
+        if do_flamegraph:
+            flamegraph_dir = os.environ.get("UFSBENCH_FLAMEGRAPH_DIR")
+            if flamegraph_dir is None or not os.path.isdir(flamegraph_dir):
+                print('WARN: UFSBENCH_FLAMEGRAPH_DIR is not set or invalid; '
+                      'skipping flamegraph generation.')
+            else:
+                stackcollapse = os.path.join(flamegraph_dir,
+                                             'stackcollapse-perf.pl')
+                flamegraph_pl = os.path.join(flamegraph_dir, 'flamegraph.pl')
+                if not (os.path.isfile(stackcollapse)
+                        and os.path.isfile(flamegraph_pl)):
+                    print('WARN: FlameGraph scripts not found under {}; '
+                          'skipping flamegraph generation.'
+                          .format(flamegraph_dir))
+                else:
+                    folded_path = f"{perf_output_path}.folded"
+                    svg_path = f"{perf_output_path}.svg"
+                    fg_cmd = (
+                        f"sudo perf script -i {perf_output_path} | "
+                        f"{stackcollapse} > {folded_path} && "
+                        f"{flamegraph_pl} {folded_path} > {svg_path}")
+                    print(f"Generating flamegraph: {svg_path}")
+                    rc = subprocess.run(fg_cmd, shell=True,
+                                        executable='/bin/bash').returncode
+                    if rc == 0:
+                        print(f"Flamegraph saved to {svg_path}")
+                    else:
+                        print(f"ERROR: flamegraph generation failed (rc={rc})")
 
 
     if dump_mpstat:

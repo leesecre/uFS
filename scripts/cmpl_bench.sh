@@ -36,6 +36,7 @@ UFS_APP_BENCH="$BENCH_UFS/oxbow-uFS_bench"
 function cmpl_microbench() {
     if [ "$1" != "ufs" ]; then
 	    CMAKE_ARG="-DONLY_POSIX=ON"
+	    # CMAKE_ARG="-DONLY_POSIX=ON -DCMAKE_BUILD_TYPE=RelWithDebInfo"
 	    # CMAKE_ARG="-DONLY_POSIX=ON -DCMAKE_BUILD_TYPE=Debug"
     fi
     cd "$BENCH_UFS/cfs_bench"

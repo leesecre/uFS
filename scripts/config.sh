@@ -51,6 +51,19 @@ fi
 # Enable perf, latency micro benchmark automatically disable perf
 export UFSBENCH_ENABLE_PERF="1" # comment out to disable perf
 
+# Enable flamegraph generation. Requires UFSBENCH_ENABLE_PERF to be set.
+# When enabled, perf record will also collect call stacks (-g) so that a
+# flamegraph SVG can be generated automatically after each run.
+# Note that cfs_bench should be compiled with -DCMAKE_BUILD_TYPE=RelWithDebInfo
+# or -DCMAKE_BUILD_TYPE=Debug to enable flamegraph generation.
+# export UFSBENCH_ENABLE_FLAMEGRAPH="1" # comment out to disable flamegraph
+
+# Path to Brendan Gregg's FlameGraph scripts (stackcollapse-perf.pl,
+# flamegraph.pl). Required when UFSBENCH_ENABLE_FLAMEGRAPH is set.
+# Clone from: https://github.com/brendangregg/FlameGraph
+export UFSBENCH_FLAMEGRAPH_DIR="$HOME/FlameGraph"
+# export UFSBENCH_FLAMEGRAPH_DIR="/home/yulistic/oxbow/tools/flamegraph/FlameGraph"
+
 export UFSBENCH_SYNC_OP=131072
 # export UFSBENCH_SYNC_OP=-1 # Only one fsync at the end.
 
