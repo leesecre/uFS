@@ -14,7 +14,17 @@ import cfs_test_common as cfs_common
 DEV_NAME = "/dev/" + os.environ["NVME_DEV_NAME"]
 PCIE_ADDR = os.environ["NVME_PCIE_ADDR"]
 BASE_DIR = os.environ.get("BENCH_UFS")
-APPEND_BENCHMARKS = {"ADPS", "ADPS_L", "ADSS", "AMPS", "AMSS"}
+NON_REUSE_BENCHMARKS = {
+    "ADPS",
+    "ADPS_L",
+    "ADSS",
+    "AMPS",
+    "AMSS",
+    "WDPR",
+    "WDPR_L",
+    "WDPS",
+    "WDPS_L",
+}
 
 def get_host_name():
     return os.uname().nodename
@@ -55,8 +65,17 @@ def parse_benchmarks(jobs_arg):
     return jobs
 
 
-def should_reuse_data():
+def should_reuse_data(benchmarks=None):
     if not is_env_true("MICROBENCH_REUSE_DATA"):
+        return False
+
+    if benchmarks is not None and any(
+        bench in NON_REUSE_BENCHMARKS for bench in benchmarks
+    ):
+        logging.info(
+            "Reuse is disabled because non-reuse workloads are included: %s",
+            sorted(NON_REUSE_BENCHMARKS.intersection(set(benchmarks))),
+        )
         return False
 
     return True
@@ -343,9 +362,9 @@ def get_meta_benchmarks():
 
 
 def bench_needs_dataprep(bench_code, reuse_data=False):
-    if reuse_data and bench_code not in APPEND_BENCHMARKS:
+    if reuse_data and bench_code not in NON_REUSE_BENCHMARKS:
         # When MICROBENCH_REUSE_DATA is enabled, skip data preparation for
-        # non-append benchmarks and reuse existing data files.
+        # benchmarks that are allowed to reuse data files.
         return False
 
     need_prep_list = [
@@ -542,6 +561,13 @@ class Benchmark(object):
         os.system("mv {}/log_{}_* {}".format(BASE_DIR, self.fs, save_dir))
 
     def run(self):
+        # When reusing data for oxbow, devfs and secure_daemon are normally
+        # (re)started inside expr_mkfs_oxbow() as part of prep_data_file().
+        # Since prep_data_file() is skipped under reuse, explicitly bring up
+        # the oxbow runtime here so the benchmarks have a working devfs.
+        if self.reuse_data and self.is_oxbow():
+            cfs_common.expr_start_oxbow_runtime()
+
         # divide the benchmarks into two, and one needs prep data, the other
         # does not
         need_data_prep_list = []
@@ -551,7 +577,7 @@ class Benchmark(object):
 
         if os.environ.get("PREPARE_DATA_ONLY_ONCE") is not None:
             for bench in self.benchmarks:
-                if bench_needs_dataprep(bench):
+                if bench_needs_dataprep(bench, reuse_data=self.reuse_data):
                     prep_data_file = True
                     need_data_prep_list.append(bench)
                 else:
@@ -560,7 +586,7 @@ class Benchmark(object):
             print("\033[93m[WARNING]\033[0m This is not tested yet.")
             for bench in self.benchmarks:
                 # no_data_prep_list.append(bench)  ### All no data prep
-                if bench_needs_dataprep(bench):
+                if bench_needs_dataprep(bench, reuse_data=self.reuse_data):
                     need_data_prep_list.append(bench)
                 else:
                     no_data_prep_list.append(bench)
@@ -604,7 +630,7 @@ def main(args, loglevel):
         os.environ["CFS_BENCH_USE_SINGLE_WORKER"] = "false"
     logging.info("Use single worker: {}".format(cfs_common.use_single_worker()))
     jobs = parse_benchmarks(args.jobs)
-    reuse_data = should_reuse_data()
+    reuse_data = should_reuse_data(jobs)
     logging.info(f"RUN jobs: {jobs}")
     logging.info("Reuse benchmark data: {}".format(reuse_data))
 

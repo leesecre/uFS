@@ -438,6 +438,22 @@ def restart_oxbow_devfs():
     expr_exit_oxbow_devfs()
     expr_start_oxbow_devfs()
 
+def expr_start_oxbow_runtime():
+    """Start oxbow devfs and secure_daemon without performing mkfs.
+
+    Normally devfs/daemon are (re)started inside expr_mkfs_oxbow() during
+    the data preparation step. When MICROBENCH_REUSE_DATA is enabled and
+    no append-style workloads are included, that step is skipped, leaving
+    devfs (and the daemon) unstarted. Call this function in such cases so
+    the runtime processes are brought up without touching existing data.
+    """
+    print("Start oxbow runtime (devfs + daemon) without mkfs ############")
+    expr_exit_oxbow_devfs()
+    expr_exit_oxbow_daemon()
+    time.sleep(1)
+    expr_start_oxbow_devfs()
+    expr_start_oxbow_daemon()
+
 def fsp_do_clean_sock():
     os.system("rm -f /ufs-*")
     print("sock file cleaned")
