@@ -77,6 +77,11 @@ export PREPARE_DATA_ONLY_ONCE="1"
 # If append workloads (e.g., ADPS/ADPS_L) are included, reuse is disabled automatically.
 export MICROBENCH_REUSE_DATA="1"
 
+# Force reuse even for workloads that normally require prepared data
+# (e.g., RDPS/RDPR/WDPS/WDPR). Use only when the existing filesystem already
+# has the required bench_f_* files with sufficient size.
+# export MICROBENCH_FORCE_REUSE_DATA="1"
+
 ### Filebench configurations ###
 # Comma-separated list of workloads to run for filebench benchmark.
 # Example: "varmail,webserver"

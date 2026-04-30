@@ -14,12 +14,18 @@ import cfs_test_common as cfs_common
 DEV_NAME = "/dev/" + os.environ["NVME_DEV_NAME"]
 PCIE_ADDR = os.environ["NVME_PCIE_ADDR"]
 BASE_DIR = os.environ.get("BENCH_UFS")
-NON_REUSE_BENCHMARKS = {
+APPEND_BENCHMARKS = {
     "ADPS",
     "ADPS_L",
     "ADSS",
     "AMPS",
     "AMSS",
+}
+DATA_PREP_BENCHMARKS = {
+    "RDPR",
+    "RDPR_L",
+    "RDPS",
+    "RDPS_L",
     "WDPR",
     "WDPR_L",
     "WDPS",
@@ -69,12 +75,16 @@ def should_reuse_data(benchmarks=None):
     if not is_env_true("MICROBENCH_REUSE_DATA"):
         return False
 
+    if is_env_true("MICROBENCH_FORCE_REUSE_DATA"):
+        logging.info("MICROBENCH_FORCE_REUSE_DATA is set; force data reuse.")
+        return True
+
     if benchmarks is not None and any(
-        bench in NON_REUSE_BENCHMARKS for bench in benchmarks
+        bench in DATA_PREP_BENCHMARKS for bench in benchmarks
     ):
         logging.info(
-            "Reuse is disabled because non-reuse workloads are included: %s",
-            sorted(NON_REUSE_BENCHMARKS.intersection(set(benchmarks))),
+            "Reuse is disabled because data-preparation workloads are included: %s",
+            sorted(DATA_PREP_BENCHMARKS.intersection(set(benchmarks))),
         )
         return False
 
@@ -361,8 +371,19 @@ def get_meta_benchmarks():
     return jobs
 
 
-def bench_needs_dataprep(bench_code, reuse_data=False):
-    if reuse_data and bench_code not in NON_REUSE_BENCHMARKS:
+def bench_needs_dataprep(
+    bench_code,
+    reuse_data=False,
+    force_reuse_data=False,
+):
+    if force_reuse_data:
+        return False
+
+    if (
+        reuse_data
+        and bench_code not in APPEND_BENCHMARKS
+        and bench_code not in DATA_PREP_BENCHMARKS
+    ):
         # When MICROBENCH_REUSE_DATA is enabled, skip data preparation for
         # benchmarks that are allowed to reuse data files.
         return False
@@ -463,7 +484,9 @@ def is_oxbow(fs_str):
 
 
 class Benchmark(object):
-    def __init__(self, fs, benchmarks, num_app, reuse_data=False):
+    def __init__(
+        self, fs, benchmarks, num_app, reuse_data=False, force_reuse_data=False
+    ):
         assert isinstance(benchmarks, list)
         self.fs = fs
         self.data_file_prepared = False
@@ -471,6 +494,7 @@ class Benchmark(object):
         self.max_num_app = num_app
         self.repeat_num = 1
         self.reuse_data = reuse_data
+        self.force_reuse_data = force_reuse_data
 
     def is_fsp(self):
         return "fsp" in self.fs
@@ -505,7 +529,11 @@ class Benchmark(object):
             raise RuntimeError("benchmark:{} not supported".format(code))
 
         # Do only when PREPARE_DATA_ONLY_ONCE is not set
-        if bench_needs_dataprep(code, reuse_data=self.reuse_data):
+        if bench_needs_dataprep(
+            code,
+            reuse_data=self.reuse_data,
+            force_reuse_data=self.force_reuse_data,
+        ):
             self.prep_data_file()
 
         logging.info("-------{}-------".format(code))
@@ -577,7 +605,11 @@ class Benchmark(object):
 
         if os.environ.get("PREPARE_DATA_ONLY_ONCE") is not None:
             for bench in self.benchmarks:
-                if bench_needs_dataprep(bench, reuse_data=self.reuse_data):
+                if bench_needs_dataprep(
+                    bench,
+                    reuse_data=self.reuse_data,
+                    force_reuse_data=self.force_reuse_data,
+                ):
                     prep_data_file = True
                     need_data_prep_list.append(bench)
                 else:
@@ -586,7 +618,11 @@ class Benchmark(object):
             print("\033[93m[WARNING]\033[0m This is not tested yet.")
             for bench in self.benchmarks:
                 # no_data_prep_list.append(bench)  ### All no data prep
-                if bench_needs_dataprep(bench, reuse_data=self.reuse_data):
+                if bench_needs_dataprep(
+                    bench,
+                    reuse_data=self.reuse_data,
+                    force_reuse_data=self.force_reuse_data,
+                ):
                     need_data_prep_list.append(bench)
                 else:
                     no_data_prep_list.append(bench)
@@ -631,6 +667,7 @@ def main(args, loglevel):
     logging.info("Use single worker: {}".format(cfs_common.use_single_worker()))
     jobs = parse_benchmarks(args.jobs)
     reuse_data = should_reuse_data(jobs)
+    force_reuse_data = is_env_true("MICROBENCH_FORCE_REUSE_DATA")
     logging.info(f"RUN jobs: {jobs}")
     logging.info("Reuse benchmark data: {}".format(reuse_data))
 
@@ -638,7 +675,13 @@ def main(args, loglevel):
         if not args.nomount:
             setup_spdk()
         if not args.devonly:
-            b = Benchmark("fsp", jobs, args.numapp, reuse_data=reuse_data)
+            b = Benchmark(
+                "fsp",
+                jobs,
+                args.numapp,
+                reuse_data=reuse_data,
+                force_reuse_data=force_reuse_data,
+            )
             b.run()
         if not args.nomount and not args.devonly:
             reset_spdk()
@@ -656,14 +699,26 @@ def main(args, loglevel):
 
         verify_dev_options()
         if not args.devonly:
-            b = Benchmark("ext4", jobs, args.numapp, reuse_data=reuse_data)
+            b = Benchmark(
+                "ext4",
+                jobs,
+                args.numapp,
+                reuse_data=reuse_data,
+                force_reuse_data=force_reuse_data,
+            )
             b.run()
         if not args.nomount and not args.devonly:
             reset_ext4()
     elif args.fs == "oxbow":
         if not args.devonly:
             # warmup_ssd()
-            b = Benchmark("oxbow", jobs, args.numapp, reuse_data=reuse_data)
+            b = Benchmark(
+                "oxbow",
+                jobs,
+                args.numapp,
+                reuse_data=reuse_data,
+                force_reuse_data=force_reuse_data,
+            )
             b.run()
     else:
         logging.error("fs not supported")
