@@ -5,8 +5,8 @@ from pathlib import Path
 from collections import defaultdict
 
 
-#path = "/home/koo/workspace/uFS/cfs_bench/exprs/DATA_microbench_omnicache_12-11-02-29-39"
-#BASE_DIR = Path(path)
+# path = "/home/koo/workspace/uFS/cfs_bench/exprs/DATA_microbench_omnicache_05-02-13-45-53"
+# BASE_DIR = Path(path)
 
 # 결과가 들어 있는 최상위 디렉토리
 BASE_DIR = Path("/home/koo/workspace/uFS/cfs_bench/exprs/DATA_microbench_omnicache_latest")

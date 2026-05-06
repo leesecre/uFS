@@ -227,8 +227,8 @@ def get_default_benchmarks():
     benchmarks = [
         ### OXBOW only activate these workloads
         ### Throughput
-        #'ADPS',  # Appending with sequential
-        'RDPS', # Seqeuntial read
+        'ADPS',  # Appending with sequential
+        #'RDPS', # Seqeuntial read
         #'RDPR',  # Random read
         #'WDPS', # Sequential overwrite
         #'WDPR', # Random overwrite

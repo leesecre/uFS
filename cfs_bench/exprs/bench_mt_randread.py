@@ -84,7 +84,7 @@ if cur_numapp > 16:
     print(f"Error: cur_numapp ({cur_numapp}) must not be greater than 16.")
     cur_numapp = 16
     
-num_app_list = [8]
+num_app_list = [1]
 
 # if cur_is_throughput:
 #     if cur_is_fsp:

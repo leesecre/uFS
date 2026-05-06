@@ -5,7 +5,8 @@ from pathlib import Path
 from collections import defaultdict
 
 # 결과가 들어 있는 최상위 디렉토리
-BASE_DIR = Path("/home/koo/workspace/uFS/cfs_bench/exprs/DATA_microbench_omnicache_latest")
+#BASE_DIR = Path("/home/koo/workspace/uFS/cfs_bench/exprs/DATA_microbench_omnicache_latest")
+BASE_DIR = Path("/home/koo/workspace/uFS/cfs_bench/exprs/DATA_microbench_omnicache_05-01-04-27-08")
 
 # 여기 리스트에 "실험 목록"을 넣으면 됩니다.
 # 예: ['ADPS', 'RDPS', 'RDPR'] 이런 식으로.

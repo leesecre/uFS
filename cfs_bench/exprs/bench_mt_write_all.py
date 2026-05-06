@@ -108,7 +108,7 @@ if cur_numapp > 16:
 # else:
 #     num_app_list  = [1]
 
-num_app_list = [8]
+num_app_list = [32]
 
 for num_app in num_app_list:
     print("=========================================")
