@@ -233,8 +233,8 @@ def reset_ext4():
     subprocess.call("sudo umount {}".format(cfs_common.get_kfs_mount_dir()), shell=True)
     logging.info("ext4 unmounted")
 
-    # reset readahead
-    ret = subprocess.call("blockdev --setra {} {}".format(128, DEV_NAME), shell=True)
+    # Do not reset readahead here; keep the device state controlled by the caller.
+    # ret = subprocess.call("blockdev --setra {} {}".format(128, DEV_NAME), shell=True)
 
 
 def verify_dev_options():
