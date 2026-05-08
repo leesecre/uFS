@@ -346,7 +346,7 @@ function ae-init-after-reboot {
 	fi
 
 	# disable hyperthreading
-	echo off | sudo tee /sys/devices/system/cpu/smt/control
+	# echo off | sudo tee /sys/devices/system/cpu/smt/control
 	# for reading cpu performance counter
 	sudo modprobe msr
 	sudo sysctl kernel.nmi_watchdog=0
