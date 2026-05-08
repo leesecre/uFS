@@ -6,17 +6,17 @@ from collections import defaultdict
 
 BASE_DIR = Path('.')
 
-# 디렉토리명 → operation 이름 매핑
+# Map directory names to operation names.
 dir_to_op = {
     'RDPR': 'random read',
     'RDPS': 'sequential read',
     'ADPS': 'append',
     'WDPS': 'sequential write',
     'WDPR': 'random write',
-    # 필요한 경우 더 추가 가능
+    # Add more mappings as needed.
 }
 
-# {(operation, io_size_KB, process_count) : total_throughput_MBps}
+# {(operation, io_size_KB, process_count): total_throughput_MBps}
 throughput_results = defaultdict(float)
 
 def parse_throughput_from_log(filepath, operation, process_count):

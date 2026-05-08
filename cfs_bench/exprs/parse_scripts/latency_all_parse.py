@@ -3,10 +3,10 @@ import re
 import csv
 from pathlib import Path
 
-# 작업 디렉토리 기준으로 실행
+# Run relative to the current working directory.
 BASE_DIR = Path('.')
 
-# operation 이름 매핑
+# Map directory names to operation names.
 operation_order = ["append", "sequential write", "random write", "sequential read", "random read"]
 dir_to_op = {
     'ADPS': 'append',
@@ -16,10 +16,10 @@ dir_to_op = {
     'RDPR': 'random read'
 }
 
-# 결과 저장용 리스트
+# Stores parsed result rows.
 results = []
 
-# bench_log_0 파싱 함수
+# Parses a bench_log_0 file.
 def parse_bench_log(filepath, operation):
     with open(filepath, 'r') as f:
         lines = f.readlines()
@@ -74,7 +74,7 @@ def parse_bench_log(filepath, operation):
 
         i += 1
 
-    # 마지막 블록 처리
+    # Process the final block.
     if io_size and op_stats:
         row = [operation, f"{io_size // 1024}K",
                op_stats.get('average'), op_stats.get('stddev'),
@@ -91,7 +91,7 @@ def parse_bench_log(filepath, operation):
             ]
         results.append(row)
 
-# 디렉토리 순회
+# Walk log directories and parse matching logs.
 def find_and_parse_logs():
     for subdir in BASE_DIR.rglob('fsp_*_run_0'):
         match = re.search(r'fsp_(ADPS|RDPR|RDPS|WDPR|WDPS)_run_0', str(subdir))
@@ -102,7 +102,7 @@ def find_and_parse_logs():
                 if log_file.is_file():
                     parse_bench_log(log_file, operation)
 
-# CSV 저장 함수
+# Writes parsed results to CSV.
 def write_csv(filename='results.csv'):
     header = ["operation", "io size (K)", "average", "stddev", "min", "median", "max",
               "fsync average", "fsync stddev", "fsync min", "fsync median", "fsync max"]
