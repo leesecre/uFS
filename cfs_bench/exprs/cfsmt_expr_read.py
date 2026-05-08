@@ -183,7 +183,10 @@ def expr_read_mtfsp_multiapp(
     microbench_bin = cfs_tc.get_microbench_bin(is_fsp)
 
     numactl_cmd = ''
-    #numactl_cmd = 'numactl --cpunodebind=0 --membind=0'
+    ext4_numa_node = os.environ.get('UFSBENCH_EXT4_NUMA_NODE')
+    if ext4_numa_node and not is_fsp and not is_oxbow:
+        numactl_cmd = 'numactl --cpunodebind={} --preferred={}'.format(
+            ext4_numa_node, ext4_numa_node)
     bench_app_cmd_dict = {}
     if per_app_cfg_dict is None:
         for i in range(num_app_proc):

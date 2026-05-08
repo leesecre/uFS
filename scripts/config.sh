@@ -111,3 +111,7 @@ export LDB_OXB_SNAP_SIZE_MB=10240 # 10 GB.
 
 ### Ext4 Configuration ###
 export EXT4_JNL_SIZE=40000 # Around 40GB journal size (max allowed by ext4, in MB)
+
+# Pin ext4 microbenchmark client processes to this NUMA node.
+# Leave empty to disable numactl pinning.
+export UFSBENCH_EXT4_NUMA_NODE=1
