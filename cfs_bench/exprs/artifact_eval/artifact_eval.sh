@@ -46,6 +46,9 @@ fi
 if [ -z "$AE_EXT4_WAIT_AFTER_MOUNT" ]; then
 	export AE_EXT4_WAIT_AFTER_MOUNT='15'  # unit is second
 fi
+if [ -z "$KP_LOAD_SUMMARY_LOG" ]; then
+	export KP_LOAD_SUMMARY_LOG='0'
+fi
 ## Optional NUMA/core placement for microbenchmarks.
 ## Example: AE_NUMA_NODE=1 ae run microbench ufs
 ## Explicit core lists use the benchmark's 1-based core IDs.

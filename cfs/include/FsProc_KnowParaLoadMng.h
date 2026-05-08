@@ -11,6 +11,8 @@
 #include "perfutil/Cycles.h"
 
 #include <atomic>
+#include <cstdlib>
+#include <cstring>
 #include <iostream>
 #include <map>
 #include <memory>
@@ -215,6 +217,22 @@ struct KPLoadStatsSummary {
   KPLoadStatsSummary(int w, perfstat_ts_t ts) : wid(w), summary_ts(ts) {}
   KPLoadStatsSummary(int w) : wid(w), is_imagine(true) {}
 
+  // Toggle verbose load summary log with env var.
+  // Default: enabled (preserves existing behavior). To disable, set
+  // KP_LOAD_SUMMARY_LOG=0 in the environment of fsMain/cfs_bench.
+  static bool LogEnabled() {
+    static int enabled = []() {
+      const char *env = std::getenv("KP_LOAD_SUMMARY_LOG");
+      if (env == nullptr) return 1;
+      if (env[0] == '0') return 0;
+      if (std::strcmp(env, "false") == 0 || std::strcmp(env, "off") == 0) {
+        return 0;
+      }
+      return 1;
+    }();
+    return enabled;
+  }
+
   int wid;
   bool is_imagine = false;
 
@@ -262,6 +280,7 @@ struct KPLoadStatsSummary {
 
   template <typename OStream>
   friend OStream &operator<<(OStream &os, const KPLoadStatsSummary &c) {
+    if (!KPLoadStatsSummary::LogEnabled()) return os;
     os << "[KPLoadStatsSummary]"
        << " wid:" << c.wid
        << " real_nano:" << PerfUtils::Cycles::toNanoseconds(c.summary_ts)
