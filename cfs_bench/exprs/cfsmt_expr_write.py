@@ -168,7 +168,7 @@ def bench_seq_sync_write(log_dir, num_app_proc=1, is_fsp=True,
         value_sz_op_num_dict = {
             # 4096: 250000, # first value
             4096: int(2*1024*1024/4), # 2GB
-            65536: int(2*1024*1024/64),
+            # 65536: int(2*1024*1024/64),
             # 16384: 60000, # Not work
         }
 
@@ -286,7 +286,7 @@ def bench_rand_write(log_dir, num_app_proc=1, is_fsp=True,
             value_sz_op_num_dict = {
                 # 4096: 250000, # first value
                 4096: int(2*1024*1024/4), # 2GB
-                65536: int(2*1024*1024/64),
+                # 65536: int(2*1024*1024/64),
                 #16384: 60000, # Not work
             }
 
