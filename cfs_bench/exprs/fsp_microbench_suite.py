@@ -157,11 +157,11 @@ def setup_ext4(
             "-E lazy_itable_init=0,lazy_journal_init=0 -F"
         )
     else:
-        # MKFS_OPTIONS = "-t ext4 -F -E lazy_itable_init=0,lazy_journal_init=0 -F"
-        MKFS_OPTIONS = (
-            f"-t ext4 -J size={ext4_jnl_size} "
-            "-E lazy_itable_init=0,lazy_journal_init=0 -F"
-        )
+        MKFS_OPTIONS = "-t ext4 -F -E lazy_itable_init=0,lazy_journal_init=0 -F"
+        # MKFS_OPTIONS = (
+        #     f"-t ext4 -J size={ext4_jnl_size} "
+        #     "-E lazy_itable_init=0,lazy_journal_init=0 -F"
+        # )
 
     if reuse_data:
         print(
