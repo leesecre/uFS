@@ -188,18 +188,18 @@ def get_benchmark_script(bench_code):
         (['WDPR'], 'bench_mt_randwrite.py {}'),
         # (['WDSR'], 'bench_mt_randwrite.py {} share'),
 
-        (['S1MS'], 'bench_mt_stat.py {} share'),
-        (['S1MP'], 'bench_mt_stat.py {}'),
-        (['SaMP'], 'bench_mt_statall.py {} 1000'),
-        (['SaMS'], 'bench_mt_statall.py {} 1000 share'),
-        (['LsMP'], 'bench_mt_listdir.py {} 1000'),
-        (['LsMS'], 'bench_mt_listdir.py {} 1000 share'),
-        (['CMP'], 'bench_mt_mkdir.py {} create'),
-        (['CMS'], 'bench_mt_mkdir.py {} create share'),
-        (['UMP'], 'bench_mt_unlink.py {}'),
-        (['UMS'], 'bench_mt_unlink.py {} share'),
-        (['RMP'], 'bench_mt_rename.py {}'),
-        (['RMS'], 'bench_mt_rename.py {} share'),
+        # (['S1MS'], 'bench_mt_stat.py {} share'),
+        # (['S1MP'], 'bench_mt_stat.py {}'),
+        # (['SaMP'], 'bench_mt_statall.py {} 1000'),
+        # (['SaMS'], 'bench_mt_statall.py {} 1000 share'),
+        # (['LsMP'], 'bench_mt_listdir.py {} 1000'),
+        # (['LsMS'], 'bench_mt_listdir.py {} 1000 share'),
+        # (['CMP'], 'bench_mt_mkdir.py {} create'),
+        # (['CMS'], 'bench_mt_mkdir.py {} create share'),
+        # (['UMP'], 'bench_mt_unlink.py {}'),
+        # (['UMS'], 'bench_mt_unlink.py {} share'),
+        # (['RMP'], 'bench_mt_rename.py {}'),
+        # (['RMS'], 'bench_mt_rename.py {} share'),
     ]
     for mapping in bench_code_mappings:
         if bench_code in mapping[0] and mapping[1] is not None:
@@ -222,28 +222,28 @@ def get_default_benchmarks():
         # 'WDSR',
 
         ### Read benchmark
-        #'RDPR', # Random read 
+        'RDPR', # Random read 
         #'RDSR', # not working
-        #'RDPS', # Seqeuntial read
+        'RDPS', # Seqeuntial read
         #'RDSS',
 
         # # ### Write benchmark
-        #'ADPS', # Appending with sequential
+        'ADPS', # Appending with sequential
         #'ADSS',
-        #'WDPS', # Sequential overwrite
+        'WDPS', # Sequential overwrite
         #'WDSS',
-        #'WDPR', # Random overwrite
+        'WDPR', # Random overwrite
         #'WDSR',
 
         # 'ADSS',
 
         ### Metadata benchmark
-        'S1MP', 'S1MS', # stat
-        'SaMP', 'SaMS', # statall
-        'LsMP', 'LsMS', # listdir
-        'CMP', 'CMS', # mkdir/create
-        'UMP', 'UMS', # unlink
-        'RMP', 'RMS', # rename
+        # 'S1MP', 'S1MS', # stat
+        # 'SaMP', 'SaMS', # statall
+        # 'LsMP', 'LsMS', # listdir
+        # 'CMP', 'CMS', # mkdir/create
+        # 'UMP', 'UMS', # unlink
+        # 'RMP', 'RMS', # rename
     ]
     return benchmarks
 
