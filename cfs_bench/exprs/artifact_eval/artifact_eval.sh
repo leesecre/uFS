@@ -49,6 +49,12 @@ fi
 if [ -z "$KP_LOAD_SUMMARY_LOG" ]; then
 	export KP_LOAD_SUMMARY_LOG='0'
 fi
+## enable detailed perf record options for throughput benchmark breakdown
+## set AE_PERF_BREAKDOWN=1 here or before invoking this script
+if [ -z "$AE_PERF_BREAKDOWN" ]; then
+	export AE_PERF_BREAKDOWN='1'
+fi
+export CFS_BENCH_PERF_BREAKDOWN="$AE_PERF_BREAKDOWN"
 ## Optional NUMA/core placement for microbenchmarks.
 ## Example: AE_NUMA_NODE=1 ae run microbench ufs
 ## Explicit core lists use the benchmark's 1-based core IDs.

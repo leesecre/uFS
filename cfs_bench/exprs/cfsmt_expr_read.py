@@ -265,7 +265,21 @@ def expr_read_mtfsp_multiapp(
         
         # Create /tmp/perf directory if it doesn't exist using sudo
         subprocess.run("sudo mkdir -p /tmp/perf", shell=True, check=True)
-        proc = subprocess.Popen(f'sudo nice -n 0 perf record -a -o {perf_output_path} &',
+        enable_perf_breakdown = os.environ.get(
+            "CFS_BENCH_PERF_BREAKDOWN", "0").lower() in ("1", "true", "yes", "on")
+        if enable_perf_breakdown:
+            perf_cmd = (
+                "sudo nice -n 0 perf record "
+                "-F 99 "
+                "-e cycles:u,cycles:k "
+                "--call-graph dwarf,8192 "
+                "--sample-cpu "
+                "--timestamp "
+                "-a "
+                f"-o {perf_output_path} &")
+        else:
+            perf_cmd = f"sudo nice -n 0 perf record -a -o {perf_output_path} &"
+        proc = subprocess.Popen(perf_cmd,
                                     shell=True, preexec_fn=os.setpgrp)
         perf_pid = proc.pid
 
