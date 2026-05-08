@@ -91,14 +91,8 @@ def expr_read_mtfsp_multiapp(
 
     # update args to pin benchmarking process to specific core
     if pin_cpu:
-        per_app_core_id = {}
-        if is_fsp:
-            for i in range(num_app_proc):
-                per_app_core_id[i] = 11 + i
-        else:
-            for i in range(num_app_proc):
-                per_app_core_id[i] = 1 + i
-        print('App core pinning:{}'.format(per_app_core_id))
+        per_app_core_id = cfs_tc.get_app_core_id_map(
+            num_app_proc, is_fsp, num_fsp_worker=num_fsp_worker)
 
     # update the targeting files
     if per_app_fname is not None:

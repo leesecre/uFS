@@ -1,14 +1,14 @@
 #!/usr/bin/env python3
 # encoding: utf-8
 
-from sarge import run, Capture
 import datetime
-import sys
-import psutil
-
 import os
-import time
 import shutil
+import sys
+import time
+
+import psutil
+from sarge import Capture, run
 
 
 def compute_avg(l):
@@ -42,6 +42,138 @@ def use_single_worker():
     if use_single.lower() == "false":
         return False
     raise RuntimeError('Invalid CFS_BENCH_USE_SINGLE_WORKER: Only accept "true" OR "false"')
+
+
+def parse_core_list(core_list_str):
+    if core_list_str is None or core_list_str.strip() == '':
+        return []
+    return [int(core_id.strip()) for core_id in core_list_str.split(',')
+            if core_id.strip() != '']
+
+
+def parse_cpu_range(cpu_range_str):
+    cpus = []
+    for part in cpu_range_str.strip().split(','):
+        if part == '':
+            continue
+        if '-' in part:
+            start_cpu, end_cpu = [int(v) for v in part.split('-', 1)]
+            cpus.extend(range(start_cpu, end_cpu + 1))
+        else:
+            cpus.append(int(part))
+    return cpus
+
+
+def get_configured_numa_node():
+    numa_node = os.environ.get('CFS_BENCH_NUMA_NODE')
+    if numa_node is None or numa_node.strip() == '':
+        return None
+    return int(numa_node)
+
+
+def get_spdk_hugenode():
+    huge_node = os.environ.get('CFS_BENCH_SPDK_HUGENODE')
+    if huge_node is None or huge_node.strip() == '':
+        return None
+    return int(huge_node)
+
+
+def get_online_linux_cpu_ids():
+    online_path = '/sys/devices/system/cpu/online'
+    if not os.path.exists(online_path):
+        return None
+    with open(online_path) as online_file:
+        return set(parse_cpu_range(online_file.read()))
+
+
+def get_numa_core_ids():
+    numa_node = get_configured_numa_node()
+    if numa_node is None:
+        return []
+    cpulist_path = '/sys/devices/system/node/node{}/cpulist'.format(numa_node)
+    with open(cpulist_path) as cpulist_file:
+        linux_cpu_ids = parse_cpu_range(cpulist_file.read())
+    online_cpu_ids = get_online_linux_cpu_ids()
+    if online_cpu_ids is not None:
+        linux_cpu_ids = [cpu_id for cpu_id in linux_cpu_ids
+                         if cpu_id in online_cpu_ids]
+    return [cpu_id + 1 for cpu_id in linux_cpu_ids]
+
+
+def get_online_core_ids():
+    online_cpu_ids = get_online_linux_cpu_ids()
+    if online_cpu_ids is None:
+        return []
+    return [cpu_id + 1 for cpu_id in sorted(online_cpu_ids)]
+
+
+def get_numa_preferred_core_ids():
+    numa_core_ids = get_numa_core_ids()
+    if not numa_core_ids:
+        return []
+
+    used_core_ids = set(numa_core_ids)
+    spillover_core_ids = [
+        core_id for core_id in get_online_core_ids()
+        if core_id not in used_core_ids
+    ]
+    return numa_core_ids + spillover_core_ids
+
+
+def core_ids_to_linux_cpu_ids(core_ids):
+    return [core_id - 1 for core_id in core_ids]
+
+
+def get_core_ids_from_config(count, env_name, fallback_core_ids, skip=0):
+    configured_cores = parse_core_list(os.environ.get(env_name))
+    if configured_cores:
+        if len(configured_cores) < count:
+            raise RuntimeError('{} must provide at least {} cores'.format(
+                env_name, count))
+        return configured_cores[:count]
+
+    preferred_core_ids = get_numa_preferred_core_ids()
+    if preferred_core_ids:
+        selected_cores = preferred_core_ids[skip:skip + count]
+        if len(selected_cores) < count:
+            raise RuntimeError(
+                'Not enough online cores for NUMA-preferred pinning: node {}, need {}, have {} after skip {}'.format(
+                    get_configured_numa_node(), count, len(selected_cores), skip))
+        return selected_cores
+
+    return fallback_core_ids
+
+
+def get_worker_core_ids(num_workers):
+    if num_workers <= 10:
+        fallback_core_ids = [i + 1 for i in range(num_workers)]
+    else:
+        core_ids_1 = [i + 1 for i in range(10)]
+        core_ids_2 = [41 - i for i in range(0, num_workers - 10)]
+        fallback_core_ids = core_ids_1 + core_ids_2
+    core_ids = get_core_ids_from_config(
+        num_workers, 'CFS_BENCH_WORKER_CORES', fallback_core_ids)
+    print('uFS worker core pinning: core_ids={} linux_cpu_ids={}'.format(
+        core_ids, core_ids_to_linux_cpu_ids(core_ids)))
+    return core_ids
+
+
+def get_app_core_id_map(num_app_proc, is_fsp, num_fsp_worker=0):
+    if is_fsp:
+        fallback_core_ids = [11 + i for i in range(num_app_proc)]
+        skip = num_fsp_worker
+    else:
+        fallback_core_ids = [1 + i for i in range(num_app_proc)]
+        skip = 0
+    core_ids = get_core_ids_from_config(
+        num_app_proc, 'CFS_BENCH_APP_CORES', fallback_core_ids, skip=skip)
+    app_core_map = {i: core_ids[i] for i in range(num_app_proc)}
+    app_cpu_map = {
+        app_id: core_id - 1 for app_id, core_id in app_core_map.items()
+    }
+    print('Benchmark app core pinning: core_ids={} linux_cpu_ids={}'.format(
+        app_core_map, app_cpu_map))
+    return app_core_map
 
 
 def get_year_str():
@@ -375,12 +507,12 @@ def start_fs_proc(
     else:
         fsp_config_name = ''
 
-    if num_workers <= 10:
-        core_ids = [str(i + 1) for i in range(num_workers)]
+    if worker_cores is not None:
+        assert isinstance(worker_cores, list)
+        assert len(worker_cores) == num_workers
+        core_ids = [str(core_id) for core_id in worker_cores]
     else:
-        core_ids_1 = [str(i + 1) for i in range(10)]
-        core_ids_2 = [str(41 - i) for i in range(0, num_workers - 10)]
-        core_ids = core_ids_1 + core_ids_2
+        core_ids = [str(core_id) for core_id in get_worker_core_ids(num_workers)]
     fs_cmd = '{} {} {} {} {} {} {} {}'.format(
         fs_main_bin,
         num_workers,
@@ -390,12 +522,6 @@ def start_fs_proc(
         config_name,
         ','.join(core_ids),
         fsp_config_name,)
-
-    if worker_cores is not None:
-        assert isinstance(worker_cores, list)
-        assert len(worker_cores) == num_workers
-        worker_cores_str = ','.join(map(str, worker_cores))
-        fs_cmd += ' {}'.format(worker_cores_str)
 
     #fs_cmd = '{} {}'.format('numactl --cpunodebind=0 --membind=0', fs_cmd)
 

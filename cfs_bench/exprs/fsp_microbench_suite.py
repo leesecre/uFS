@@ -49,7 +49,17 @@ def setup_spdk(numa_node_num=None):
     if numa_node_num is None:
         numa_node_num = get_numa_node_num()
     print(f"SSD PCIe Address: {PCIE_ADDR}")
-    numa_node_list = range(numa_node_num)
+    spdk_hugenode = cfs_common.get_spdk_hugenode()
+    if spdk_hugenode is None:
+        numa_node_list = range(numa_node_num)
+    else:
+        if spdk_hugenode < 0 or spdk_hugenode >= numa_node_num:
+            raise RuntimeError(
+                'Invalid CFS_BENCH_SPDK_HUGENODE: {}'.format(spdk_hugenode))
+        numa_node_list = [spdk_hugenode]
+        logging.info('Pin SPDK hugepage memory to NUMA node {}'.format(
+            spdk_hugenode))
+    print('SPDK hugepage NUMA nodes: {}'.format(list(numa_node_list)))
     for no in numa_node_list:
         ret = subprocess.call(
             'HUGEMEM=16384 PCI_WHITELIST="{}" HUGENODE={} {}'.format(

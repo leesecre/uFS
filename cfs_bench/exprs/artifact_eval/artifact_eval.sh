@@ -46,6 +46,30 @@ fi
 if [ -z "$AE_EXT4_WAIT_AFTER_MOUNT" ]; then
 	export AE_EXT4_WAIT_AFTER_MOUNT='15'  # unit is second
 fi
+## Optional NUMA/core placement for microbenchmarks.
+## Example: AE_NUMA_NODE=1 ae run microbench ufs
+## Explicit core lists use the benchmark's 1-based core IDs.
+if [ -z "$AE_NUMA_NODE" ]; then
+	export AE_NUMA_NODE=''
+fi
+if [ -z "$AE_SPDK_HUGENODE" ]; then
+	export AE_SPDK_HUGENODE="$AE_NUMA_NODE"
+fi
+if [ -z "$AE_UFS_WORKER_CORES" ]; then
+	export AE_UFS_WORKER_CORES=''
+fi
+if [ -z "$AE_UFS_APP_CORES" ]; then
+	export AE_UFS_APP_CORES=''
+fi
+export CFS_BENCH_NUMA_NODE="$AE_NUMA_NODE"
+export CFS_BENCH_SPDK_HUGENODE="$AE_SPDK_HUGENODE"
+export CFS_BENCH_WORKER_CORES="$AE_UFS_WORKER_CORES"
+export CFS_BENCH_APP_CORES="$AE_UFS_APP_CORES"
+echo "NUMA/core placement:"
+echo "  AE_NUMA_NODE=${AE_NUMA_NODE:-<default>}"
+echo "  AE_SPDK_HUGENODE=${AE_SPDK_HUGENODE:-<default>}"
+echo "  AE_UFS_WORKER_CORES=${AE_UFS_WORKER_CORES:-<auto>}"
+echo "  AE_UFS_APP_CORES=${AE_UFS_APP_CORES:-<auto>}"
 
 ## workspace
 export AE_WORK_DIR="$HOME/workspace"
