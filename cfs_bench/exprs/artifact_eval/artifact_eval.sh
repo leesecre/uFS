@@ -177,6 +177,12 @@ function ae-init-install() {
 	# expire, espeically when experiments take hours. Thus, we introduce a sudo
 	# version alias, but please only used it when necessary
 	add-if-not-exist "alias sudo-ae='sudo -E bash $AE_SCRIPT_DIR/artifact_eval.sh'" ~/.ae_env.sh
+	add-if-not-exist "alias ae-parse-tput='sudo -E python3 $AE_REPO_DIR/cfs_bench/exprs/parse_scripts/throughput_all_parse.py'" ~/.ae_env.sh
+	add-if-not-exist "alias ae-parse-fsync='sudo -E python3 $AE_REPO_DIR/cfs_bench/exprs/parse_scripts/parse_fsync_time_old.py'" ~/.ae_env.sh
+	add-if-not-exist "alias ae-parse-lat='sudo -E python3 $AE_REPO_DIR/cfs_bench/exprs/parse_scripts/latency_all_parse.py'" ~/.ae_env.sh
+	add-if-not-exist "# alias ae-parse-perf='sudo -E python3 $AE_REPO_DIR/cfs_bench/exprs/parse_scripts/microbench_perf_parse.py'" ~/.ae_env.sh
+	add-if-not-exist "alias ae-parse-perf='sudo -E python3 $AE_REPO_DIR/cfs_bench/exprs/parse_scripts/microbench_perf_breakdown_parse.py; sudo -E python3 $AE_REPO_DIR/cfs_bench/exprs/parse_scripts/microbench_perf_script_parse.py --batch'" ~/.ae_env.sh
+	add-if-not-exist "alias ae-parse-meta='sudo -E python3 $AE_REPO_DIR/cfs_bench/exprs/parse_scripts/metadata_results_parse.py'" ~/.ae_env.sh
 
 	# env vars required by benchmark scripts
 	if [ "$1" = "cloudlab" ]; then
@@ -219,6 +225,9 @@ function ae-init-install() {
 	fi
 	add-if-not-exist "export SSD_NAME=${AE_SSD_NAME}" ~/.ae_env.sh
 	add-if-not-exist "export SSD_PICE_ADDR=${AE_SSD_PICE_ADDR}" ~/.ae_env.sh
+	if [ -n "$AE_NUMA_NODE" ]; then
+		add-if-not-exist "export AE_NUMA_NODE=${AE_NUMA_NODE}" ~/.ae_env.sh
+	fi
 	add-if-not-exist 'export KFS_MOUNT_PATH="/ssd-data"' ~/.ae_env.sh
 	add-if-not-exist 'export KFS_DATA_DIR="${KFS_MOUNT_PATH}/bench"' ~/.ae_env.sh
 	add-if-not-exist 'export CFS_ROOT_DIR="${HOME}/workspace/uFS"' ~/.ae_env.sh
