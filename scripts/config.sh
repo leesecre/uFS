@@ -1,6 +1,6 @@
 #!/bin/bash
 # Microbenchmarks configurations
-RUN_LATENCY="1" # 0: throughput, 1: latency
+RUN_LATENCY="0" # 0: throughput, 1: latency
 
 ## Workload definitions: (*_L means latency benchmarks)
 ##   RDPR,RDPR_L   - Random read
@@ -28,10 +28,11 @@ if [ "$RUN_LATENCY" = "1" ]; then
 else
 	export UFSBENCH_WORKLOADS="ADPS,WDPR,WDPS,RDPR,RDPS"
 
-	export UFSBENCH_IOSIZE="4K,16K,64K,256K"
+	# export UFSBENCH_IOSIZE="4K,16K,64K,256K"
+	export UFSBENCH_IOSIZE="4K"
 
 	# Maximum number of concurrent benchmark applications. (uFS supports up to 10, oxbow/ext4 support up to 64)
-	export UFSBENCH_NUMAPP="64"
+	export UFSBENCH_NUMAPP="16"
 
 	# File size (per file for throughput benchmarks).
 	export UFSBENCH_FILESIZE=$((2 * 1024 * 1024 * 1024)) # 2GB (Throughput)
