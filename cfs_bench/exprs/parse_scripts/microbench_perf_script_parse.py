@@ -82,7 +82,9 @@ EXCLUDED_COMM = {
 DEFAULT_LIBFS_REGEX = (
     r"(liboxbow_libfs|libufs|libfs|libsyscall_intercept|syscall_intercept|"
     r"intercept_|intercept_routine|intercept_wrapper|intercept_log_syscall|"
-    r"devfs|rpc|pf_track|lock_page|unlock_page|dirty_page|hook)"
+    r"devfs|rpc|pf_track|lock_page|unlock_page|dirty_page|hook|"
+    r"shmipc_mgr_|^fs_|FsLib|FsReq|SingleSizeMemBlockArr|AppProc|LibFS|"
+    r"fs_allocated|fs_fsync|fs_fdatasync|fs_malloc|fs_free)"
 )
 
 DEFAULT_JOURNAL_REGEX = r"(jnl|jbd2|journal_worker|checkpoint|commit)"
