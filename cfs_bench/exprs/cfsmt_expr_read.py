@@ -280,7 +280,11 @@ def expr_read_mtfsp_multiapp(
 
     do_perf = False
     do_flamegraph = False
-    if os.environ.get("UFSBENCH_ENABLE_PERF") is not None and is_throughput:
+    perf_breakdown = os.environ.get("UFSBENCH_ENABLE_PERF_BREAKDOWN") is not None
+    perf_enable = (
+        os.environ.get("UFSBENCH_ENABLE_PERF") is not None or perf_breakdown
+    )
+    if perf_enable and is_throughput:
         perf_dir_name = '{}/perf'.format(log_dir_name)
         subprocess.run("sudo mkdir -p {}".format(perf_dir_name), shell=True, check=True)
 
@@ -289,13 +293,21 @@ def expr_read_mtfsp_multiapp(
         perf_output_path = os.path.join(perf_dir_name,
             f"perfthp_{perf_arg1}_iosize{perf_arg3}_{num_app_proc}")
 
-        # Enable call-graph recording when flamegraph generation is requested.
-        do_flamegraph = os.environ.get("UFSBENCH_ENABLE_FLAMEGRAPH") is not None
-        perf_record_opts = '-a'
-        if do_flamegraph:
-            # DWARF-based unwinding works without frame pointers but requires
-            # debug symbols. -F 99 keeps the sampling overhead reasonable.
-            perf_record_opts += ' -g --call-graph=dwarf -F 99'
+        if perf_breakdown:
+            # CPU cycle breakdown: user + kernel; DWARF stacks, per-CPU and TS.
+            do_flamegraph = False
+            perf_record_opts = (
+                '-F 99 -e cycles:u,cycles:k --call-graph dwarf,8192 '
+                '--sample-cpu --timestamp -a'
+            )
+        else:
+            # Enable call-graph recording when flamegraph generation is requested.
+            do_flamegraph = os.environ.get("UFSBENCH_ENABLE_FLAMEGRAPH") is not None
+            perf_record_opts = '-a'
+            if do_flamegraph:
+                # DWARF-based unwinding works without frame pointers but requires
+                # debug symbols. -F 99 keeps the sampling overhead reasonable.
+                perf_record_opts += ' -g --call-graph=dwarf -F 99'
 
         proc = subprocess.Popen(
             f'sudo nice -n 0 perf record {perf_record_opts} '

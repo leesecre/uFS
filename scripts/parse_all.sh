@@ -31,7 +31,13 @@ if [[ "$BENCH" == "micro" ]]; then
 		echo "################ LATENCY ####################################"
 		python3 $BENCH_UFS/cfs_bench/exprs/oxbow_scripts/latency_all_parse.py --system oxbow
 		echo "################ PERF (CPU USAGE) ###########################"
-		python3 $BENCH_UFS/cfs_bench/exprs/oxbow_scripts/microbench_performance_parse.py --system oxbow
+		# python3 $BENCH_UFS/cfs_bench/exprs/oxbow_scripts/microbench_performance_parse.py --system oxbow
+		echo "---- perf.data: export .perf.script + comm/dso cycle CSV (breakdown) ----"
+		python3 "$BENCH_UFS/cfs_bench/exprs/oxbow_scripts/microbench_performance_parse_breakdown.py" \
+			--system oxbow --output-dir .
+		echo "---- .perf.script: component breakdown (microbench_parse_perf_script --batch) ----"
+		python3 "$BENCH_UFS/cfs_bench/exprs/oxbow_scripts/microbench_parse_perf_script.py" \
+			--batch --batch-root . --system oxbow
 	)
 	elif [[ "$FS_TYPE" == "ext4" ]]; then
 	(
@@ -45,7 +51,13 @@ if [[ "$BENCH" == "micro" ]]; then
 		echo "################ LATENCY ####################################"
 		python3 $BENCH_UFS/cfs_bench/exprs/oxbow_scripts/latency_all_parse.py --system ext4
 		echo "################ PERF (CPU USAGE) ###########################"
-		python3 $BENCH_UFS/cfs_bench/exprs/oxbow_scripts/microbench_performance_parse.py --system ext4
+		# python3 $BENCH_UFS/cfs_bench/exprs/oxbow_scripts/microbench_performance_parse.py --system ext4
+		echo "---- perf.data: export .perf.script + comm/dso cycle CSV (breakdown) ----"
+		python3 "$BENCH_UFS/cfs_bench/exprs/oxbow_scripts/microbench_performance_parse_breakdown.py" \
+			--system ext4 --output-dir .
+		echo "---- .perf.script: component breakdown (microbench_parse_perf_script --batch) ----"
+		python3 "$BENCH_UFS/cfs_bench/exprs/oxbow_scripts/microbench_parse_perf_script.py" \
+			--batch --batch-root . --system ext4
 	)
 	elif [[ "$FS_TYPE" == "ufs" ]]; then
 		echo "TODO"

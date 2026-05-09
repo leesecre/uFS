@@ -51,6 +51,14 @@ fi
 # Enable perf, latency micro benchmark automatically disable perf
 export UFSBENCH_ENABLE_PERF="1" # comment out to disable perf
 
+# Enable detailed cycles user/kernel profiling for microbenchmarks.
+# Requires UFSBENCH_ENABLE_PERF (or sets the same perf recording path when
+# UFSBENCH_ENABLE_PERF is absent; either flag enables throughput perf runs).
+# When set, perf record uses: -F 99 -e cycles:u,cycles:k
+# --call-graph dwarf,8192 --sample-cpu --timestamp -a
+# (UFSBENCH_ENABLE_FLAMEGRAPH is ignored during breakdown recording.)
+# export UFSBENCH_ENABLE_PERF_BREAKDOWN="1"
+
 # Enable flamegraph generation. Requires UFSBENCH_ENABLE_PERF to be set.
 # When enabled, perf record will also collect call stacks (-g) so that a
 # flamegraph SVG can be generated automatically after each run.
@@ -62,7 +70,7 @@ export UFSBENCH_ENABLE_PERF="1" # comment out to disable perf
 # flamegraph.pl). Required when UFSBENCH_ENABLE_FLAMEGRAPH is set.
 # Clone from: https://github.com/brendangregg/FlameGraph
 export UFSBENCH_FLAMEGRAPH_DIR="$HOME/FlameGraph"
-# export UFSBENCH_FLAMEGRAPH_DIR="/home/yulistic/oxbow/tools/flamegraph/FlameGraph"
+# export UFSBENCH_FLAMEGRAPH_DIR="$OXBOW_ROOT/tools/flamegraph/FlameGraph"
 
 export UFSBENCH_SYNC_OP=131072
 # export UFSBENCH_SYNC_OP=-1 # Only one fsync at the end.
